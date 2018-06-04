@@ -13,11 +13,12 @@ import arrow
 
 from collections import namedtuple
 
-HEADERS = ('start', 'stop', 'project', 'id', 'tags', 'updated_at')
+FIELDS = ('start', 'stop', 'project', 'id', 'tags', 'updated_at', 'message')
 
 
-class Frame(namedtuple('Frame', HEADERS)):
-    def __new__(cls, start, stop, project, id, tags=None, updated_at=None,):
+class Frame(namedtuple('Frame', FIELDS)):
+    def __new__(cls, start, stop, project, id, tags=None, updated_at=None,
+                message=None):
         try:
             if not isinstance(start, arrow.Arrow):
                 start = arrow.get(start)
@@ -40,7 +41,7 @@ class Frame(namedtuple('Frame', HEADERS)):
             tags = []
 
         return super(Frame, cls).__new__(
-            cls, start, stop, project, id, tags, updated_at
+            cls, start, stop, project, id, tags, updated_at, message
         )
 
     def dump(self):
@@ -48,7 +49,8 @@ class Frame(namedtuple('Frame', HEADERS)):
         stop = self.stop.to('utc').timestamp
         updated_at = self.updated_at.timestamp
 
-        return (start, stop, self.project, self.id, self.tags, updated_at)
+        return (start, stop, self.project, self.id, self.tags, updated_at,
+                self.message)
 
     @property
     def day(self):
@@ -91,7 +93,7 @@ class Frames(object):
         return len(self._rows)
 
     def __getitem__(self, key):
-        if key in HEADERS:
+        if key in FIELDS:
             return tuple(self._get_col(key))
         elif isinstance(key, int):
             return self._rows[key]
@@ -132,7 +134,7 @@ class Frames(object):
             raise KeyError("Frame with id {} not found.".format(id))
 
     def _get_col(self, col):
-        index = HEADERS.index(col)
+        index = FIELDS.index(col)
         for row in self._rows:
             yield row[index]
 
@@ -143,11 +145,11 @@ class Frames(object):
         return frame
 
     def new_frame(self, project, start, stop, tags=None, id=None,
-                  updated_at=None):
+                  updated_at=None, message=None):
         if not id:
             id = uuid.uuid4().hex
         return Frame(start, stop, project, id, tags=tags,
-                     updated_at=updated_at)
+                     updated_at=updated_at, message=message)
 
     def dump(self):
         return tuple(frame.dump() for frame in self._rows)
