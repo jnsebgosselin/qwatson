@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-# Copyright © 2014-2018 GWHAT Project Contributors
-# https://github.com/jnsebgosselin/gwhat
+# Copyright © 2018 Jean-Sébastien Gosselin
+# https://github.com/jnsebgosselin/qwatson
 #
-# This file is part of GWHAT (Ground-Water Hydrograph Analysis Toolbox).
+# This file is part of QWatson.
 # Licensed under the terms of the GNU General Public License.
 
 # ---- Imports: standard libraries
