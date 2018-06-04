@@ -53,11 +53,10 @@ class QWatson(QWidget):
         self.model = WatsonTableModel(self.client)
 
         self.frame_viewer = WatsonTableView(self.model, parent=self)
-        self.frame_viewer.show()
         self.setup()
 
     def setup(self):
-        """Setup the widget with the provided argument."""
+        """Setup the widget with the provided arguments."""
         timebar = self.setup_timebar()
         self.setup_toolbar()
         self.setup_project_cbox()
