@@ -20,7 +20,8 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QGridLayout, QLabel,
                              QTableView, QItemDelegate, QPushButton,
                              QStyleOptionButton, QStyle, QStyledItemDelegate,
                              QStyleOptionToolButton, QStyleOptionViewItem,
-                             QHeaderView, QMessageBox, QSizePolicy)
+                             QHeaderView, QMessageBox, QSizePolicy,
+                             QTextEdit)
 
 # ---- Local imports
 
@@ -61,11 +62,17 @@ class QWatson(QWidget):
         self.setup_toolbar()
         self.setup_project_cbox()
 
+        self.msg_textedit = QTextEdit()
+        self.msg_textedit.setMaximumHeight(50)
+        self.msg_textedit.setSizePolicy(
+                QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed))
+
         layout = QGridLayout(self)
         layout.addWidget(QLabel('Project :'), 0, 0)
         layout.addWidget(self.project_cbox, 0, 1)
         layout.addWidget(self.toolbar, 0, 2)
-        layout.addWidget(timebar, 1, 0, 1, 3)
+        layout.addWidget(self.msg_textedit, 1, 0, 1, 3)
+        layout.addWidget(timebar, 2, 0, 1, 3)
 
         layout.setColumnStretch(1, 100)
         layout.setRowStretch(1, 100)
@@ -169,6 +176,7 @@ class QWatson(QWidget):
             self.model.beginInsertRows(QModelIndex(),
                                        len(self.client.frames),
                                        len(self.client.frames))
+            self.client._current['message'] = self.msg_textedit.toPlainText()
             self.client.stop()
             self.client.save()
             self.model.endInsertRows()
@@ -240,7 +248,7 @@ class WatsonTableView(QTableView):
 
 class WatsonTableModel(QAbstractTableModel):
 
-    HEADER = ['', 'start', 'end', 'duration', 'project', 'id']
+    HEADER = ['', 'start', 'end', 'duration', 'project', 'comment', 'id']
     sig_btn_delrow_clicked = QSignal(QModelIndex)
 
     def __init__(self, client, checked=False):
@@ -269,6 +277,9 @@ class WatsonTableModel(QAbstractTableModel):
             elif index.column() == 4:
                 return str(self.frames[index.row()][2])
             elif index.column() == 5:
+                msg = self.frames[index.row()].message
+                return '' if msg is None else msg
+            elif index.column() == 6:
                 return self.frames[index.row()].id
             else:
                 return ''
