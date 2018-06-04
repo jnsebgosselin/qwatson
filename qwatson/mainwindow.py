@@ -13,6 +13,8 @@ import platform
 from time import strftime, gmtime
 
 # ---- Third parties imports
+
+import arrow
 from PyQt5.QtCore import pyqtSignal as QSignal
 from PyQt5.QtCore import (Qt, QAbstractTableModel, QVariant, QRect, QPoint,
                           QSize,QEvent, QModelIndex)
@@ -20,7 +22,8 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QGridLayout, QLabel,
                              QTableView, QItemDelegate, QPushButton,
                              QStyleOptionButton, QStyle, QStyledItemDelegate,
                              QStyleOptionToolButton, QStyleOptionViewItem,
-                             QHeaderView, QMessageBox, QSizePolicy)
+                             QHeaderView, QMessageBox, QSizePolicy,
+                             QTextEdit, QLineEdit)
 
 # ---- Local imports
 
@@ -61,11 +64,17 @@ class QWatson(QWidget):
         self.setup_toolbar()
         self.setup_project_cbox()
 
+        self.msg_textedit = QTextEdit()
+        self.msg_textedit.setMaximumHeight(50)
+        self.msg_textedit.setSizePolicy(
+                QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed))
+
         layout = QGridLayout(self)
         layout.addWidget(QLabel('Project :'), 0, 0)
         layout.addWidget(self.project_cbox, 0, 1)
         layout.addWidget(self.toolbar, 0, 2)
-        layout.addWidget(timebar, 1, 0, 1, 3)
+        layout.addWidget(self.msg_textedit, 1, 0, 1, 3)
+        layout.addWidget(timebar, 2, 0, 1, 3)
 
         layout.setColumnStretch(1, 100)
         layout.setRowStretch(1, 100)
@@ -169,6 +178,7 @@ class QWatson(QWidget):
             self.model.beginInsertRows(QModelIndex(),
                                        len(self.client.frames),
                                        len(self.client.frames))
+            self.client._current['message'] = self.msg_textedit.toPlainText()
             self.client.stop()
             self.client.save()
             self.model.endInsertRows()
@@ -217,6 +227,7 @@ class WatsonTableView(QTableView):
 
         self.setModel(model)
         self.setItemDelegateForColumn(0, ToolButtonDelegate(self))
+        self.setItemDelegateForColumn(5, LineEditDelegate(self))
 
         self.setColumnWidth(0, icons.get_iconsize('small').width() + 8)
         self.horizontalHeader().setSectionResizeMode(QHeaderView.Fixed)
@@ -240,7 +251,7 @@ class WatsonTableView(QTableView):
 
 class WatsonTableModel(QAbstractTableModel):
 
-    HEADER = ['', 'start', 'end', 'duration', 'project', 'id']
+    HEADER = ['', 'start', 'end', 'duration', 'project', 'comment', 'id']
     sig_btn_delrow_clicked = QSignal(QModelIndex)
 
     def __init__(self, client, checked=False):
@@ -269,6 +280,9 @@ class WatsonTableModel(QAbstractTableModel):
             elif index.column() == 4:
                 return str(self.frames[index.row()][2])
             elif index.column() == 5:
+                msg = self.frames[index.row()].message
+                return '' if msg is None else msg
+            elif index.column() == 6:
                 return self.frames[index.row()].id
             else:
                 return ''
@@ -291,7 +305,12 @@ class WatsonTableModel(QAbstractTableModel):
 
     def flags(self, index):
         """Qt method override."""
-        return Qt.ItemIsEnabled
+        if index.column() == 5:
+            return Qt.ItemIsEnabled | Qt.ItemIsEditable
+        else:
+            return Qt.ItemIsEnabled
+
+    # ---- Watson handlers
 
     def removeRows(self, index):
         """Qt method override to remove rows from the model."""
@@ -299,6 +318,22 @@ class WatsonTableModel(QAbstractTableModel):
         frame_id = self.frames[index.row()].id
         del self.client.frames[frame_id]
         self.endRemoveRows()
+
+    def editMessage(self, index, message):
+        """Edit message field in the frame stored at index."""
+        datetime_format = '{} {}'.format('YYYY-MM-DD', 'HH:mm:ss')
+        frame = self.frames[index.row()]
+        if message != frame.message:
+            self.frames[frame.id] = (
+                frame.project,
+                frame.start.format(datetime_format),
+                frame.stop.format(datetime_format),
+                frame.tags,
+                frame.id,
+                arrow.utcnow().format(datetime_format),
+                message)
+        self.client.save()
+        self.dataChanged.emit(index, index)
 
 
 class ToolButtonDelegate(QStyledItemDelegate):
@@ -338,6 +373,23 @@ class ToolButtonDelegate(QStyledItemDelegate):
         else:
             return super(ToolButtonDelegate, self).editorEvent(
                        event, model, option, index)
+
+
+class LineEditDelegate(QStyledItemDelegate):
+    def __init__(self, parent):
+        QStyledItemDelegate.__init__(self, parent)
+
+    def createEditor(self, parent, option, index):
+        """Qt method override to prevent the creation of an editor."""
+        return QLineEdit(parent)
+
+    def setEditorData(self, editor, index):
+        """Qt method override."""
+        editor.setText(index.model().data(index))
+
+    def setModelData(self, editor, model, index):
+        """Qt method override."""
+        model.editMessage(index, editor.text())
 
 
 if __name__ == '__main__':
