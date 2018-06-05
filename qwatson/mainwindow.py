@@ -271,6 +271,7 @@ class WatsonTableModel(QAbstractTableModel):
         return len(self.HEADER)
 
     def data(self, index, role=Qt.DisplayRole):
+        """Qt method override."""
         if role == Qt.DisplayRole:
             if index.column() == 1:
                 return self.frames[index.row()][0].format('YYYY-MM-DD HH:mm')
@@ -357,6 +358,7 @@ class WatsonTableModel(QAbstractTableModel):
         self.editFrame(index, project=project)
 
     def editDateTime(self, index, date_time):
+        """Edit the start or stop field in the frame stored at index."""
         if index.column() == 1:
             self.editFrame(index, start=date_time)
         elif index.column() == 2:
