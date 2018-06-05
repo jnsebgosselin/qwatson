@@ -282,7 +282,7 @@ class WatsonTableModel(QAbstractTableModel):
             elif index.column() == 3:
                 total_seconds = (self.frames[index.row()][1] -
                                  self.frames[index.row()][0]).total_seconds()
-                return strftime("%H:%M:%S", gmtime(total_seconds))
+                return strftime("%Hh %Mmin", gmtime(total_seconds))
             elif index.column() == 4:
                 return str(self.frames[index.row()].project)
             elif index.column() == 5:
