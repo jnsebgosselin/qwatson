@@ -18,7 +18,8 @@ import dateutil
 import arrow
 from PyQt5.QtCore import pyqtSignal as QSignal
 from PyQt5.QtCore import (Qt, QAbstractTableModel, QVariant, QRect, QPoint,
-                          QEvent, QModelIndex, QDateTime)
+                          QEvent, QModelIndex, QDateTime,
+                          QSortFilterProxyModel)
 from PyQt5.QtWidgets import (QApplication, QWidget, QGridLayout, QLabel,
                              QTableView, QStyle, QStyledItemDelegate,
                              QStyleOptionToolButton, QHeaderView, QMessageBox,
@@ -258,7 +259,9 @@ class WatsonTableView(QTableView):
         self.setMinimumHeight(500)
         self.setSortingEnabled(False)
 
-        self.setModel(model)
+        proxy_model = WatsonSortFilterProxyModel(model)
+        self.setModel(proxy_model)
+
         self.setItemDelegateForColumn(
             model.COLUMNS['icons'], ToolButtonDelegate(self))
         self.setItemDelegateForColumn(
@@ -268,7 +271,7 @@ class WatsonTableView(QTableView):
         self.setItemDelegateForColumn(
             model.COLUMNS['start'], StartDelegate(self))
         self.setItemDelegateForColumn(
-            model.COLUMNS['end'], EndDelegate(self))
+            model.COLUMNS['end'], StopDelegate(self))
 
         self.setColumnWidth(
             model.COLUMNS['icons'], icons.get_iconsize('small').width() + 8)
@@ -284,7 +287,7 @@ class WatsonTableView(QTableView):
 
     def del_model_row(self, index):
         """Delete a row from the model."""
-        frame_id = self.model().frames[index.row()].id
+        frame_id = self.model().get_frameid_from_index(index)
         ans = QMessageBox.question(
             self, 'Delete frame', "Do you want to delete frame %s?" % frame_id,
             defaultButton=QMessageBox.No)
@@ -341,7 +344,7 @@ class WatsonTableModel(QAbstractTableModel):
             elif index.column() == self.COLUMNS['id']:
                 return self.frames[index.row()].id
             elif index.column() == self.COLUMNS['icons']:
-                return "Delete corresponding frame"
+                return "Delete frame"
         elif role == Qt.TextAlignmentRole:
             if index.column() == self.COLUMNS['comment']:
                 return Qt.AlignLeft | Qt.AlignVCenter
@@ -367,6 +370,42 @@ class WatsonTableModel(QAbstractTableModel):
             return Qt.ItemIsEnabled
 
     # ---- Watson handlers
+
+    @property
+    def projects(self):
+        return self.client.projects
+
+    def get_frameid_from_index(self, index):
+        """Return the frame id from a table index."""
+        return self.frames[index.row()].id
+
+    def get_start_qdatetime_range(self, index):
+        """
+        Return QDateTime objects representing the range in which the start
+        time of the frame located at index can be moved without creating
+        any conflict.
+        """
+        if index.row() > 0:
+            lmin = self.frames[index.row()-1].stop.format('YYYY-MM-DD HH:mm')
+        else:
+            lmin = '1900-01-01 00:00'
+        lmax = self.frames[index.row()].stop.format('YYYY-MM-DD HH:mm')
+
+        return qdatetime_from_str(lmin), qdatetime_from_str(lmax)
+
+    def get_stop_qdatetime_range(self, index):
+        """
+        Return QDateTime objects representing the range in which the stop
+        time of the frame located at index can be moved without creating
+        any conflict.
+        """
+        lmin = self.frames[index.row()].start.format('YYYY-MM-DD HH:mm')
+        if index.row() == len(self.frames)-1:
+            lmax = arrow.now().format('YYYY-MM-DD HH:mm')
+        else:
+            lmax = self.frames[index.row()+1].start.format('YYYY-MM-DD HH:mm')
+
+        return qdatetime_from_str(lmin), qdatetime_from_str(lmax)
 
     def removeRows(self, index):
         """Qt method override to remove rows from the model."""
@@ -407,6 +446,53 @@ class WatsonTableModel(QAbstractTableModel):
             self.editFrame(index, start=date_time)
         elif index.column() == self.COLUMNS['end']:
             self.editFrame(index, stop=date_time)
+
+
+class WatsonSortFilterProxyModel(QSortFilterProxyModel):
+    sig_btn_delrow_clicked = QSignal(QModelIndex)
+
+    def __init__(self, source_model):
+        super(WatsonSortFilterProxyModel, self).__init__()
+        self.setSourceModel(source_model)
+
+        self.sig_btn_delrow_clicked.connect(
+            source_model.sig_btn_delrow_clicked.emit)
+
+    def filterAcceptsRow(self, source_row, source_parent):
+        return True
+
+    @property
+    def projects(self):
+        return self.sourceModel().client.projects
+
+    def get_frameid_from_index(self, index):
+        """Return the frame id from a table index."""
+        return self.sourceModel().get_frameid_from_index(
+                   self.mapToSource(index))
+
+    def get_start_qdatetime_range(self, index):
+        """Map proxy method to source."""
+        return self.sourceModel().get_start_qdatetime_range(
+                   self.mapToSource(index))
+
+    def get_stop_qdatetime_range(self, index):
+        """Map proxy method to source."""
+        return self.sourceModel().get_stop_qdatetime_range(
+                   self.mapToSource(index))
+
+    def removeRows(self, index):
+        """Map proxy method to source."""
+        self.sourceModel().removeRows(self.mapToSource(index))
+
+    def editFrame(self, index, start=None, stop=None, project=None,
+                  message=None):
+        """Map proxy method to source."""
+        self.sourceModel().editFrame(
+            self.mapToSource(index), start, stop, project, message)
+
+    def editDateTime(self, index, date_time):
+        """Map proxy method to source."""
+        self.sourceModel().editDateTime(self.mapToSource(index), date_time)
 
 
 class ToolButtonDelegate(QStyledItemDelegate):
@@ -462,7 +548,7 @@ class LineEditDelegate(QStyledItemDelegate):
 
     def setModelData(self, editor, model, index):
         """Qt method override."""
-        if editor.text() != index.model().data(index):
+        if editor.text() != model.data(index):
             model.editFrame(index, message=editor.text())
 
 
@@ -476,12 +562,12 @@ class ComboBoxDelegate(QStyledItemDelegate):
 
     def setEditorData(self, editor, index):
         """Qt method override."""
-        editor.addItems(index.model().client.projects)
+        editor.addItems(index.model().projects)
         editor.setCurrentIndex(editor.findText(index.model().data(index)))
 
     def setModelData(self, editor, model, index):
         """Qt method override."""
-        if editor.currentText() != index.model().data(index):
+        if editor.currentText() != model.data(index):
             model.editFrame(index, project=editor.currentText())
 
 
@@ -503,37 +589,22 @@ class DateTimeDelegate(QStyledItemDelegate):
     def setModelData(self, editor, model, index):
         """Qt method override."""
         date_time = editor.dateTime().toString("yyyy-MM-dd hh:mm")
-        if date_time != index.model().data(index):
+        if date_time != model.data(index):
             model.editDateTime(index, date_time+':00')
 
 
 class StartDelegate(DateTimeDelegate):
     def setEditorData(self, editor, index):
         super(StartDelegate, self).setEditorData(editor, index)
-        frames = index.model().frames
-
-        if index.row() > 0:
-            editor.setMinimumDateTime(qdatetime_from_str(
-                frames[index.row()-1].stop.format('YYYY-MM-DD HH:mm')))
-
-        editor.setMaximumDateTime(qdatetime_from_str(
-            frames[index.row()].stop.format('YYYY-MM-DD HH:mm')))
+        qdatetime_range = index.model().get_start_qdatetime_range(index)
+        editor.setDateTimeRange(*qdatetime_range)
 
 
-class EndDelegate(DateTimeDelegate):
+class StopDelegate(DateTimeDelegate):
     def setEditorData(self, editor, index):
-        super(EndDelegate, self).setEditorData(editor, index)
-        frames = index.model().frames
-
-        if index.row() == len(frames)-1:
-            editor.setMaximumDateTime(qdatetime_from_str(
-                arrow.now().format('YYYY-MM-DD HH:mm')))
-        else:
-            editor.setMaximumDateTime(qdatetime_from_str(
-                frames[index.row()+1].start.format('YYYY-MM-DD HH:mm')))
-
-        editor.setMinimumDateTime(qdatetime_from_str(
-            frames[index.row()].start.format('YYYY-MM-DD HH:mm')))
+        super(StopDelegate, self).setEditorData(editor, index)
+        qdatetime_range = index.model().get_stop_qdatetime_range(index)
+        editor.setDateTimeRange(*qdatetime_range)
 
 
 def qdatetime_from_str(str_date_time):
