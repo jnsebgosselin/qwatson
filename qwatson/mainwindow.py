@@ -226,6 +226,7 @@ class WatsonTableView(QTableView):
 
         self.setModel(model)
         self.setItemDelegateForColumn(0, ToolButtonDelegate(self))
+        self.setItemDelegateForColumn(4, ComboBoxDelegate(self))
         self.setItemDelegateForColumn(5, LineEditDelegate(self))
 
         self.setColumnWidth(0, icons.get_iconsize('small').width() + 8)
@@ -277,7 +278,7 @@ class WatsonTableModel(QAbstractTableModel):
                                  self.frames[index.row()][0]).total_seconds()
                 return strftime("%H:%M:%S", gmtime(total_seconds))
             elif index.column() == 4:
-                return str(self.frames[index.row()][2])
+                return str(self.frames[index.row()].project)
             elif index.column() == 5:
                 msg = self.frames[index.row()].message
                 return '' if msg is None else msg
@@ -304,7 +305,7 @@ class WatsonTableModel(QAbstractTableModel):
 
     def flags(self, index):
         """Qt method override."""
-        if index.column() == 5:
+        if index.column() in [4, 5]:
             return Qt.ItemIsEnabled | Qt.ItemIsEditable
         else:
             return Qt.ItemIsEnabled
@@ -396,7 +397,7 @@ class LineEditDelegate(QStyledItemDelegate):
         QStyledItemDelegate.__init__(self, parent)
 
     def createEditor(self, parent, option, index):
-        """Qt method override to prevent the creation of an editor."""
+        """Qt method override."""
         return QLineEdit(parent)
 
     def setEditorData(self, editor, index):
@@ -405,7 +406,9 @@ class LineEditDelegate(QStyledItemDelegate):
 
     def setModelData(self, editor, model, index):
         """Qt method override."""
-        model.editMessage(index, editor.text())
+        if editor.text() != index.model().data(index):
+            model.editMessage(index, editor.text())
+
 
 class ComboBoxDelegate(QStyledItemDelegate):
     def __init__(self, parent):
