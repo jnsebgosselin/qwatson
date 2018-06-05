@@ -368,6 +368,35 @@ class WatsonTableModel(QAbstractTableModel):
 
     # ---- Watson handlers
 
+
+    def get_start_qdatetime_range(self, index):
+        """
+        Return QDateTime objects representing the range in which the start
+        time of the frame located at index can be moved without creating
+        any conflict.
+        """
+        if index.row() > 0:
+            lmin = self.frames[index.row()-1].stop.format('YYYY-MM-DD HH:mm')
+        else:
+            lmin = '1900-01-01 00:00'
+        lmax = self.frames[index.row()].stop.format('YYYY-MM-DD HH:mm')
+
+        return qdatetime_from_str(lmin), qdatetime_from_str(lmax)
+
+    def get_stop_qdatetime_range(self, index):
+        """
+        Return QDateTime objects representing the range in which the stop
+        time of the frame located at index can be moved without creating
+        any conflict.
+        """
+        lmin = self.frames[index.row()].start.format('YYYY-MM-DD HH:mm')
+        if index.row() == len(self.frames)-1:
+            lmax = arrow.now().format('YYYY-MM-DD HH:mm')
+        else:
+            lmax = self.frames[index.row()+1].start.format('YYYY-MM-DD HH:mm')
+
+        return qdatetime_from_str(lmin), qdatetime_from_str(lmax)
+
     def removeRows(self, index):
         """Qt method override to remove rows from the model."""
         self.beginRemoveRows(index.parent(), index.row(), index.row())
@@ -510,30 +539,15 @@ class DateTimeDelegate(QStyledItemDelegate):
 class StartDelegate(DateTimeDelegate):
     def setEditorData(self, editor, index):
         super(StartDelegate, self).setEditorData(editor, index)
-        frames = index.model().frames
-
-        if index.row() > 0:
-            editor.setMinimumDateTime(qdatetime_from_str(
-                frames[index.row()-1].stop.format('YYYY-MM-DD HH:mm')))
-
-        editor.setMaximumDateTime(qdatetime_from_str(
-            frames[index.row()].stop.format('YYYY-MM-DD HH:mm')))
+        qdatetime_range = index.model().get_start_qdatetime_range(index)
+        editor.setDateTimeRange(*qdatetime_range)
 
 
-class EndDelegate(DateTimeDelegate):
+class StopDelegate(DateTimeDelegate):
     def setEditorData(self, editor, index):
-        super(EndDelegate, self).setEditorData(editor, index)
-        frames = index.model().frames
-
-        if index.row() == len(frames)-1:
-            editor.setMaximumDateTime(qdatetime_from_str(
-                arrow.now().format('YYYY-MM-DD HH:mm')))
-        else:
-            editor.setMaximumDateTime(qdatetime_from_str(
-                frames[index.row()+1].start.format('YYYY-MM-DD HH:mm')))
-
-        editor.setMinimumDateTime(qdatetime_from_str(
-            frames[index.row()].start.format('YYYY-MM-DD HH:mm')))
+        super(StopDelegate, self).setEditorData(editor, index)
+        qdatetime_range = index.model().get_stop_qdatetime_range(index)
+        editor.setDateTimeRange(*qdatetime_range)
 
 
 def qdatetime_from_str(str_date_time):
