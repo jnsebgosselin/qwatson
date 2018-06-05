@@ -126,6 +126,11 @@ class QWatson(QWidget):
             self.toolbar.addWidget(item)
 
     def setup_timebar(self):
+        """
+        Setup the widget that contains a button to start/stop Watson and a
+        digital clock that shows the elapsed amount of time since Watson
+        was started.
+        """
         self.btn_startstop = OnOffToolButton('process_start', 'process_stop')
         self.btn_startstop.setIconSize(icons.get_iconsize('large'))
         self.btn_startstop.setToolTip(
@@ -200,12 +205,15 @@ class QWatson(QWidget):
         self.model.endInsertRows()
 
     def btn_add_isclicked(self):
+        """Handle when the button to add a new project is clicked."""
         self.project_cbox.set_edit_mode('add')
 
     def btn_rename_isclicked(self):
+        """Handle when the button to rename a new project is clicked."""
         self.project_cbox.set_edit_mode('rename')
 
     def btn_del_isclicked(self):
+        """Handle when the button to delete a project is clicked."""
         project = self.project_cbox.currentText()
         index = self.project_cbox.currentIndex()
 
