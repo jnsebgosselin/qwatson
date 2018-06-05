@@ -159,9 +159,10 @@ class QWatson(QWidget):
 
     def project_renamed(self, old_name, new_name):
         """Handle when a project is renamed in the combobox."""
-        self.model.beginResetModel()
-        self.client.rename_project(old_name, new_name)
-        self.model.endResetModel()
+        if old_name != new_name:
+            self.model.beginResetModel()
+            self.client.rename_project(old_name, new_name)
+            self.model.endResetModel()
 
     def new_project_added(self, name):
         """Handle when a new project is added in the combobox."""
