@@ -65,6 +65,7 @@ class QWatson(QWidget):
         self.setup_project_cbox()
 
         self.msg_textedit = QTextEdit()
+        self.msg_textedit.setPlaceholderText("Description")
         self.msg_textedit.setMaximumHeight(50)
         self.msg_textedit.setSizePolicy(
                 QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed))
