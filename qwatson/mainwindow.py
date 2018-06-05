@@ -491,7 +491,7 @@ class LineEditDelegate(QStyledItemDelegate):
 
     def setModelData(self, editor, model, index):
         """Qt method override."""
-        if editor.text() != index.model().data(index):
+        if editor.text() != model.data(index):
             model.editFrame(index, message=editor.text())
 
 
@@ -510,7 +510,7 @@ class ComboBoxDelegate(QStyledItemDelegate):
 
     def setModelData(self, editor, model, index):
         """Qt method override."""
-        if editor.currentText() != index.model().data(index):
+        if editor.currentText() != model.data(index):
             model.editFrame(index, project=editor.currentText())
 
 
@@ -532,7 +532,7 @@ class DateTimeDelegate(QStyledItemDelegate):
     def setModelData(self, editor, model, index):
         """Qt method override."""
         date_time = editor.dateTime().toString("yyyy-MM-dd hh:mm")
-        if date_time != index.model().data(index):
+        if date_time != model.data(index):
             model.editDateTime(index, date_time+':00')
 
 
