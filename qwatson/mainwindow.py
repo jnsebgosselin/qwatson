@@ -10,7 +10,7 @@
 
 import sys
 import platform
-from time import strftime, gmtime
+from time import strftime, gmtime, strptime
 import dateutil
 
 # ---- Third parties imports
@@ -18,11 +18,12 @@ import dateutil
 import arrow
 from PyQt5.QtCore import pyqtSignal as QSignal
 from PyQt5.QtCore import (Qt, QAbstractTableModel, QVariant, QRect, QPoint,
-                          QEvent, QModelIndex)
+                          QEvent, QModelIndex, QDateTime)
 from PyQt5.QtWidgets import (QApplication, QWidget, QGridLayout, QLabel,
                              QTableView, QStyle, QStyledItemDelegate,
                              QStyleOptionToolButton, QHeaderView, QMessageBox,
-                             QSizePolicy, QTextEdit, QLineEdit, QComboBox)
+                             QSizePolicy, QTextEdit, QLineEdit, QComboBox,
+                             QDateTimeEdit)
 
 # ---- Local imports
 
@@ -228,6 +229,8 @@ class WatsonTableView(QTableView):
         self.setItemDelegateForColumn(0, ToolButtonDelegate(self))
         self.setItemDelegateForColumn(4, ComboBoxDelegate(self))
         self.setItemDelegateForColumn(5, LineEditDelegate(self))
+        self.setItemDelegateForColumn(1, DateTimeDelegate(self))
+        self.setItemDelegateForColumn(2, DateTimeDelegate(self))
 
         self.setColumnWidth(0, icons.get_iconsize('small').width() + 8)
         self.horizontalHeader().setSectionResizeMode(QHeaderView.Fixed)
@@ -305,7 +308,7 @@ class WatsonTableModel(QAbstractTableModel):
 
     def flags(self, index):
         """Qt method override."""
-        if index.column() in [4, 5]:
+        if index.column() in [1, 2, 4, 5]:
             return Qt.ItemIsEnabled | Qt.ItemIsEditable
         else:
             return Qt.ItemIsEnabled
@@ -319,7 +322,8 @@ class WatsonTableModel(QAbstractTableModel):
         del self.client.frames[frame_id]
         self.endRemoveRows()
 
-    def editFrame(self, index, project=None, message=None):
+    def editFrame(self, index, start=None, stop=None, project=None,
+                  message=None):
         """
         Edit Frame stored at index in the model from the provided
         arguments
@@ -327,11 +331,11 @@ class WatsonTableModel(QAbstractTableModel):
         datetime_format = '{} {}'.format('YYYY-MM-DD', 'HH:mm:ss')
         frame = self.frames[index.row()]
 
-        start = frame.start.format(datetime_format)
+        start = frame.start.format(datetime_format) if start is None else start
         start = arrow.get(start, datetime_format).replace(
             tzinfo=dateutil.tz.tzlocal()).to('utc')
 
-        stop = frame.stop.format(datetime_format)
+        stop = frame.stop.format(datetime_format) if stop is None else stop
         stop = arrow.get(stop, datetime_format).replace(
             tzinfo=dateutil.tz.tzlocal()).to('utc')
 
@@ -351,6 +355,12 @@ class WatsonTableModel(QAbstractTableModel):
     def editProject(self, index, project):
         """Edit project field in the frame stored at index."""
         self.editFrame(index, project=project)
+
+    def editDateTime(self, index, date_time):
+        if index.column() == 1:
+            self.editFrame(index, start=date_time)
+        elif index.column() == 2:
+            self.editFrame(index, stop=date_time)
 
 
 class ToolButtonDelegate(QStyledItemDelegate):
@@ -427,6 +437,31 @@ class ComboBoxDelegate(QStyledItemDelegate):
         """Qt method override."""
         if editor.currentText() != index.model().data(index):
             model.editProject(index, editor.currentText())
+
+
+class DateTimeDelegate(QStyledItemDelegate):
+    def __init__(self, parent):
+        QStyledItemDelegate.__init__(self, parent)
+
+    def createEditor(self, parent, option, index):
+        """Qt method override."""
+        date_time_edit = QDateTimeEdit(parent)
+        date_time_edit.setCalendarPopup(True)
+        date_time_edit.setDisplayFormat("yyyy-MM-dd hh:mm")
+        return date_time_edit
+
+    def setEditorData(self, editor, index):
+        """Qt method override."""
+        struct_time = strptime(index.model().data(index), "%Y-%m-%d %H:%M")
+        editor.setDateTime(QDateTime(
+            struct_time.tm_year, struct_time.tm_mon, struct_time.tm_mday,
+            struct_time.tm_hour, struct_time.tm_min))
+
+    def setModelData(self, editor, model, index):
+        """Qt method override."""
+        date_time = editor.dateTime().toString("yyyy-MM-dd hh:mm")
+        if date_time != index.model().data(index):
+            model.editDateTime(index, date_time+':00')
 
 
 if __name__ == '__main__':
