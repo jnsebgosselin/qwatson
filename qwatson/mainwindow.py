@@ -266,9 +266,9 @@ class WatsonTableView(QTableView):
         self.setItemDelegateForColumn(
             model.COLUMNS['comment'], LineEditDelegate(self))
         self.setItemDelegateForColumn(
-            model.COLUMNS['start'], DateTimeDelegate(self))
+            model.COLUMNS['start'], StartDelegate(self))
         self.setItemDelegateForColumn(
-            model.COLUMNS['end'], DateTimeDelegate(self))
+            model.COLUMNS['end'], EndDelegate(self))
 
         self.setColumnWidth(
             model.COLUMNS['icons'], icons.get_iconsize('small').width() + 8)
@@ -301,7 +301,7 @@ class WatsonTableModel(QAbstractTableModel):
                     COLUMNS['comment']]
     sig_btn_delrow_clicked = QSignal(QModelIndex)
 
-    def __init__(self, client, checked=False):
+    def __init__(self, client):
         super(WatsonTableModel, self).__init__()
         self.client = client
         self.frames = client.frames
@@ -401,14 +401,6 @@ class WatsonTableModel(QAbstractTableModel):
         self.client.save()
         self.dataChanged.emit(index, index)
 
-    def editMessage(self, index, message):
-        """Edit message field in the frame stored at index."""
-        self.editFrame(index, message=message)
-
-    def editProject(self, index, project):
-        """Edit project field in the frame stored at index."""
-        self.editFrame(index, project=project)
-
     def editDateTime(self, index, date_time):
         """Edit the start or stop field in the frame stored at index."""
         if index.column() == self.COLUMNS['start']:
@@ -471,7 +463,7 @@ class LineEditDelegate(QStyledItemDelegate):
     def setModelData(self, editor, model, index):
         """Qt method override."""
         if editor.text() != index.model().data(index):
-            model.editMessage(index, editor.text())
+            model.editFrame(index, message=editor.text())
 
 
 class ComboBoxDelegate(QStyledItemDelegate):
@@ -490,7 +482,7 @@ class ComboBoxDelegate(QStyledItemDelegate):
     def setModelData(self, editor, model, index):
         """Qt method override."""
         if editor.currentText() != index.model().data(index):
-            model.editProject(index, editor.currentText())
+            model.editProject(index, project=editor.currentText())
 
 
 class DateTimeDelegate(QStyledItemDelegate):
@@ -506,16 +498,50 @@ class DateTimeDelegate(QStyledItemDelegate):
 
     def setEditorData(self, editor, index):
         """Qt method override."""
-        struct_time = strptime(index.model().data(index), "%Y-%m-%d %H:%M")
-        editor.setDateTime(QDateTime(
-            struct_time.tm_year, struct_time.tm_mon, struct_time.tm_mday,
-            struct_time.tm_hour, struct_time.tm_min))
+        editor.setDateTime(qdatetime_from_str(index.model().data(index)))
 
     def setModelData(self, editor, model, index):
         """Qt method override."""
         date_time = editor.dateTime().toString("yyyy-MM-dd hh:mm")
         if date_time != index.model().data(index):
             model.editDateTime(index, date_time+':00')
+
+
+class StartDelegate(DateTimeDelegate):
+    def setEditorData(self, editor, index):
+        super(StartDelegate, self).setEditorData(editor, index)
+        frames = index.model().frames
+
+        if index.row() > 0:
+            editor.setMinimumDateTime(qdatetime_from_str(
+                frames[index.row()-1].stop.format('YYYY-MM-DD HH:mm')))
+
+        editor.setMaximumDateTime(qdatetime_from_str(
+            frames[index.row()].stop.format('YYYY-MM-DD HH:mm')))
+
+
+class EndDelegate(DateTimeDelegate):
+    def setEditorData(self, editor, index):
+        super(EndDelegate, self).setEditorData(editor, index)
+        frames = index.model().frames
+
+        if index.row() == len(frames)-1:
+            editor.setMaximumDateTime(qdatetime_from_str(
+                arrow.now().format('YYYY-MM-DD HH:mm')))
+        else:
+            editor.setMaximumDateTime(qdatetime_from_str(
+                frames[index.row()+1].start.format('YYYY-MM-DD HH:mm')))
+
+        editor.setMinimumDateTime(qdatetime_from_str(
+            frames[index.row()].start.format('YYYY-MM-DD HH:mm')))
+
+
+def qdatetime_from_str(str_date_time):
+    """Convert a date time str to a QDateTime object."""
+    struct_time = strptime(str_date_time, "%Y-%m-%d %H:%M")
+    return QDateTime(struct_time.tm_year, struct_time.tm_mon,
+                     struct_time.tm_mday, struct_time.tm_hour,
+                     struct_time.tm_min)
 
 
 if __name__ == '__main__':
