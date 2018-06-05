@@ -57,7 +57,7 @@ class QWatson(QWidget):
             self.stop_watson(message="last session not closed correctly.")
         self.model = WatsonTableModel(self.client)
 
-        self.frame_viewer = WatsonTableView(self.model, parent=self)
+        self.overview_widg = WatsonOverviewWidget(self.client, self.model)
         self.setup()
 
     def setup(self):
@@ -116,7 +116,8 @@ class QWatson(QWidget):
         self.btn_del.setToolTip("Delete the current project")
 
         self.btn_report = QToolButtonSmall('note')
-        self.btn_report.clicked.connect(self.frame_viewer.show)
+        self.btn_report.clicked.connect(self.overview_widg.show)
+        self.btn_report.setToolTip("Open the overview window")
 
         # ---- Populate the toolbar
 
@@ -236,10 +237,21 @@ class QWatson(QWidget):
         event.accept()
 
 
+class WatsonOverviewWidget(QWidget):
+    """A widget to show and edit activities logged with Watson."""
+    def __init__(self, client, model, parent=None):
+        super(WatsonOverviewWidget, self).__init__(parent)
+        self.setWindowIcon(icons.get_icon('master'))
+
+        self.frame_viewer = WatsonTableView(model, parent=self)
+
+        layout = QGridLayout(self)
+        layout.addWidget(self.frame_viewer)
+
+
 class WatsonTableView(QTableView):
     def __init__(self, model, parent=None, *args):
-        super(WatsonTableView, self).__init__()
-        self.setWindowIcon(icons.get_icon('master'))
+        super(WatsonTableView, self).__init__(parent)
         self.setShowGrid(False)
         self.setAlternatingRowColors(True)
         self.setMinimumWidth(750)
