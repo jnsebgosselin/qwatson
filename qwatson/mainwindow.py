@@ -11,19 +11,18 @@
 import sys
 import platform
 from time import strftime, gmtime
+import dateutil
 
 # ---- Third parties imports
 
 import arrow
 from PyQt5.QtCore import pyqtSignal as QSignal
 from PyQt5.QtCore import (Qt, QAbstractTableModel, QVariant, QRect, QPoint,
-                          QSize,QEvent, QModelIndex)
+                          QEvent, QModelIndex)
 from PyQt5.QtWidgets import (QApplication, QWidget, QGridLayout, QLabel,
-                             QTableView, QItemDelegate, QPushButton,
-                             QStyleOptionButton, QStyle, QStyledItemDelegate,
-                             QStyleOptionToolButton, QStyleOptionViewItem,
-                             QHeaderView, QMessageBox, QSizePolicy,
-                             QTextEdit, QLineEdit)
+                             QTableView, QStyle, QStyledItemDelegate,
+                             QStyleOptionToolButton, QHeaderView, QMessageBox,
+                             QSizePolicy, QTextEdit, QLineEdit, QComboBox)
 
 # ---- Local imports
 
@@ -227,6 +226,7 @@ class WatsonTableView(QTableView):
 
         self.setModel(model)
         self.setItemDelegateForColumn(0, ToolButtonDelegate(self))
+        self.setItemDelegateForColumn(4, ComboBoxDelegate(self))
         self.setItemDelegateForColumn(5, LineEditDelegate(self))
 
         self.setColumnWidth(0, icons.get_iconsize('small').width() + 8)
@@ -278,7 +278,7 @@ class WatsonTableModel(QAbstractTableModel):
                                  self.frames[index.row()][0]).total_seconds()
                 return strftime("%H:%M:%S", gmtime(total_seconds))
             elif index.column() == 4:
-                return str(self.frames[index.row()][2])
+                return str(self.frames[index.row()].project)
             elif index.column() == 5:
                 msg = self.frames[index.row()].message
                 return '' if msg is None else msg
@@ -305,7 +305,7 @@ class WatsonTableModel(QAbstractTableModel):
 
     def flags(self, index):
         """Qt method override."""
-        if index.column() == 5:
+        if index.column() in [4, 5]:
             return Qt.ItemIsEnabled | Qt.ItemIsEditable
         else:
             return Qt.ItemIsEnabled
@@ -319,21 +319,38 @@ class WatsonTableModel(QAbstractTableModel):
         del self.client.frames[frame_id]
         self.endRemoveRows()
 
-    def editMessage(self, index, message):
-        """Edit message field in the frame stored at index."""
+    def editFrame(self, index, project=None, message=None):
+        """
+        Edit Frame stored at index in the model from the provided
+        arguments
+        """
         datetime_format = '{} {}'.format('YYYY-MM-DD', 'HH:mm:ss')
         frame = self.frames[index.row()]
-        if message != frame.message:
-            self.frames[frame.id] = (
-                frame.project,
-                frame.start.format(datetime_format),
-                frame.stop.format(datetime_format),
-                frame.tags,
-                frame.id,
-                arrow.utcnow().format(datetime_format),
-                message)
+
+        start = frame.start.format(datetime_format)
+        start = arrow.get(start, datetime_format).replace(
+            tzinfo=dateutil.tz.tzlocal()).to('utc')
+
+        stop = frame.stop.format(datetime_format)
+        stop = arrow.get(stop, datetime_format).replace(
+            tzinfo=dateutil.tz.tzlocal()).to('utc')
+
+        project = frame.project if project is None else project
+        message = frame.message if message is None else message
+        updated_at = arrow.utcnow().format(datetime_format)
+
+        self.frames[frame.id] = [
+            project, start, stop, frame.tags, frame.id, updated_at, message]
         self.client.save()
         self.dataChanged.emit(index, index)
+
+    def editMessage(self, index, message):
+        """Edit message field in the frame stored at index."""
+        self.editFrame(index, message=message)
+
+    def editProject(self, index, project):
+        """Edit project field in the frame stored at index."""
+        self.editFrame(index, project=project)
 
 
 class ToolButtonDelegate(QStyledItemDelegate):
@@ -380,7 +397,7 @@ class LineEditDelegate(QStyledItemDelegate):
         QStyledItemDelegate.__init__(self, parent)
 
     def createEditor(self, parent, option, index):
-        """Qt method override to prevent the creation of an editor."""
+        """Qt method override."""
         return QLineEdit(parent)
 
     def setEditorData(self, editor, index):
@@ -389,7 +406,27 @@ class LineEditDelegate(QStyledItemDelegate):
 
     def setModelData(self, editor, model, index):
         """Qt method override."""
-        model.editMessage(index, editor.text())
+        if editor.text() != index.model().data(index):
+            model.editMessage(index, editor.text())
+
+
+class ComboBoxDelegate(QStyledItemDelegate):
+    def __init__(self, parent):
+        QStyledItemDelegate.__init__(self, parent)
+
+    def createEditor(self, parent, option, index):
+        """Qt method override."""
+        return QComboBox(parent)
+
+    def setEditorData(self, editor, index):
+        """Qt method override."""
+        editor.addItems(index.model().client.projects)
+        editor.setCurrentIndex(editor.findText(index.model().data(index)))
+
+    def setModelData(self, editor, model, index):
+        """Qt method override."""
+        if editor.currentText() != index.model().data(index):
+            model.editProject(index, editor.currentText())
 
 
 if __name__ == '__main__':
