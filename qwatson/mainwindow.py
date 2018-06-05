@@ -53,6 +53,8 @@ class QWatson(QWidget):
                 myappid)
 
         self.client = Watson()
+        if self.client.is_started:
+            self.stop_watson(message="last session not closed correctly.")
         self.model = WatsonTableModel(self.client)
 
         self.frame_viewer = WatsonTableView(self.model, parent=self)
@@ -176,17 +178,26 @@ class QWatson(QWidget):
             self.elap_timer.start()
         else:
             self.elap_timer.stop()
-            self.model.beginInsertRows(QModelIndex(),
-                                       len(self.client.frames),
-                                       len(self.client.frames))
-            self.client._current['message'] = self.msg_textedit.toPlainText()
-            self.client.stop()
-            self.client.save()
-            self.model.endInsertRows()
+            self.stop_watson(message=self.msg_textedit.toPlainText(),
+                             project=self.project_cbox.currentText())
+
         self.project_cbox.setEnabled(not self.btn_startstop.value())
         self.btn_add.setEnabled(not self.btn_startstop.value())
         self.btn_rename.setEnabled(not self.btn_startstop.value())
         self.btn_del.setEnabled(not self.btn_startstop.value())
+
+    def stop_watson(self, message=None, project=None):
+        """Stop Watson and update the table model."""
+        if message is not None:
+            self.client._current['message'] = message
+        if project is not None:
+            self.client._current['project'] = project
+
+        self.model.beginInsertRows(
+            QModelIndex(), len(self.client.frames), len(self.client.frames))
+        self.client.stop()
+        self.client.save()
+        self.model.endInsertRows()
 
     def btn_add_isclicked(self):
         self.project_cbox.set_edit_mode('add')
