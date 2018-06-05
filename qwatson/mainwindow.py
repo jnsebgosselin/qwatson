@@ -284,7 +284,7 @@ class WatsonTableView(QTableView):
 
     def del_model_row(self, index):
         """Delete a row from the model."""
-        frame_id = self.model().frames[index.row()].id
+        frame_id = self.model().get_frameid_from_index(index)
         ans = QMessageBox.question(
             self, 'Delete frame', "Do you want to delete frame %s?" % frame_id,
             defaultButton=QMessageBox.No)
@@ -371,6 +371,10 @@ class WatsonTableModel(QAbstractTableModel):
     @property
     def projects(self):
         return self.client.projects
+
+    def get_frameid_from_index(self, index):
+        """Return the frame id from a table index."""
+        return self.frames[index.row()].id
 
     def get_start_qdatetime_range(self, index):
         """
