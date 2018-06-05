@@ -18,7 +18,8 @@ import dateutil
 import arrow
 from PyQt5.QtCore import pyqtSignal as QSignal
 from PyQt5.QtCore import (Qt, QAbstractTableModel, QVariant, QRect, QPoint,
-                          QEvent, QModelIndex, QDateTime)
+                          QEvent, QModelIndex, QDateTime,
+                          QSortFilterProxyModel)
 from PyQt5.QtWidgets import (QApplication, QWidget, QGridLayout, QLabel,
                              QTableView, QStyle, QStyledItemDelegate,
                              QStyleOptionToolButton, QHeaderView, QMessageBox,
@@ -258,7 +259,9 @@ class WatsonTableView(QTableView):
         self.setMinimumHeight(500)
         self.setSortingEnabled(False)
 
-        self.setModel(model)
+        proxy_model = WatsonSortFilterProxyModel(model)
+        self.setModel(proxy_model)
+
         self.setItemDelegateForColumn(
             model.COLUMNS['icons'], ToolButtonDelegate(self))
         self.setItemDelegateForColumn(
@@ -268,7 +271,7 @@ class WatsonTableView(QTableView):
         self.setItemDelegateForColumn(
             model.COLUMNS['start'], StartDelegate(self))
         self.setItemDelegateForColumn(
-            model.COLUMNS['end'], EndDelegate(self))
+            model.COLUMNS['end'], StopDelegate(self))
 
         self.setColumnWidth(
             model.COLUMNS['icons'], icons.get_iconsize('small').width() + 8)
@@ -443,6 +446,53 @@ class WatsonTableModel(QAbstractTableModel):
             self.editFrame(index, start=date_time)
         elif index.column() == self.COLUMNS['end']:
             self.editFrame(index, stop=date_time)
+
+
+class WatsonSortFilterProxyModel(QSortFilterProxyModel):
+    sig_btn_delrow_clicked = QSignal(QModelIndex)
+
+    def __init__(self, source_model):
+        super(WatsonSortFilterProxyModel, self).__init__()
+        self.setSourceModel(source_model)
+
+        self.sig_btn_delrow_clicked.connect(
+            source_model.sig_btn_delrow_clicked.emit)
+
+    def filterAcceptsRow(self, source_row, source_parent):
+        return True
+
+    @property
+    def projects(self):
+        return self.sourceModel().client.projects
+
+    def get_frameid_from_index(self, index):
+        """Return the frame id from a table index."""
+        return self.sourceModel().get_frameid_from_index(
+                   self.mapToSource(index))
+
+    def get_start_qdatetime_range(self, index):
+        """Map proxy method to source."""
+        return self.sourceModel().get_start_qdatetime_range(
+                   self.mapToSource(index))
+
+    def get_stop_qdatetime_range(self, index):
+        """Map proxy method to source."""
+        return self.sourceModel().get_stop_qdatetime_range(
+                   self.mapToSource(index))
+
+    def removeRows(self, index):
+        """Map proxy method to source."""
+        self.sourceModel().removeRows(self.mapToSource(index))
+
+    def editFrame(self, index, start=None, stop=None, project=None,
+                  message=None):
+        """Map proxy method to source."""
+        self.sourceModel().editFrame(
+            self.mapToSource(index), start, stop, project, message)
+
+    def editDateTime(self, index, date_time):
+        """Map proxy method to source."""
+        self.sourceModel().editDateTime(self.mapToSource(index), date_time)
 
 
 class ToolButtonDelegate(QStyledItemDelegate):
