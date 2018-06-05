@@ -368,6 +368,9 @@ class WatsonTableModel(QAbstractTableModel):
 
     # ---- Watson handlers
 
+    @property
+    def projects(self):
+        return self.client.projects
 
     def get_start_qdatetime_range(self, index):
         """
@@ -505,7 +508,7 @@ class ComboBoxDelegate(QStyledItemDelegate):
 
     def setEditorData(self, editor, index):
         """Qt method override."""
-        editor.addItems(index.model().client.projects)
+        editor.addItems(index.model().projects)
         editor.setCurrentIndex(editor.findText(index.model().data(index)))
 
     def setModelData(self, editor, model, index):
