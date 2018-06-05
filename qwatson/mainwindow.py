@@ -318,21 +318,38 @@ class WatsonTableModel(QAbstractTableModel):
         del self.client.frames[frame_id]
         self.endRemoveRows()
 
-    def editMessage(self, index, message):
-        """Edit message field in the frame stored at index."""
+    def editFrame(self, index, project=None, message=None):
+        """
+        Edit Frame stored at index in the model from the provided
+        arguments
+        """
         datetime_format = '{} {}'.format('YYYY-MM-DD', 'HH:mm:ss')
         frame = self.frames[index.row()]
-        if message != frame.message:
-            self.frames[frame.id] = (
-                frame.project,
-                frame.start.format(datetime_format),
-                frame.stop.format(datetime_format),
-                frame.tags,
-                frame.id,
-                arrow.utcnow().format(datetime_format),
-                message)
+
+        start = frame.start.format(datetime_format)
+        start = arrow.get(start, datetime_format).replace(
+            tzinfo=dateutil.tz.tzlocal()).to('utc')
+
+        stop = frame.stop.format(datetime_format)
+        stop = arrow.get(stop, datetime_format).replace(
+            tzinfo=dateutil.tz.tzlocal()).to('utc')
+
+        project = frame.project if project is None else project
+        message = frame.message if message is None else message
+        updated_at = arrow.utcnow().format(datetime_format)
+
+        self.frames[frame.id] = [
+            project, start, stop, frame.tags, frame.id, updated_at, message]
         self.client.save()
         self.dataChanged.emit(index, index)
+
+    def editMessage(self, index, message):
+        """Edit message field in the frame stored at index."""
+        self.editFrame(index, message=message)
+
+    def editProject(self, index, project):
+        """Edit project field in the frame stored at index."""
+        self.editFrame(index, project=project)
 
 
 class ToolButtonDelegate(QStyledItemDelegate):
@@ -389,6 +406,24 @@ class LineEditDelegate(QStyledItemDelegate):
     def setModelData(self, editor, model, index):
         """Qt method override."""
         model.editMessage(index, editor.text())
+
+class ComboBoxDelegate(QStyledItemDelegate):
+    def __init__(self, parent):
+        QStyledItemDelegate.__init__(self, parent)
+
+    def createEditor(self, parent, option, index):
+        """Qt method override."""
+        return QComboBox(parent)
+
+    def setEditorData(self, editor, index):
+        """Qt method override."""
+        editor.addItems(index.model().client.projects)
+        editor.setCurrentIndex(editor.findText(index.model().data(index)))
+
+    def setModelData(self, editor, model, index):
+        """Qt method override."""
+        if editor.currentText() != index.model().data(index):
+            model.editProject(index, editor.currentText())
 
 
 if __name__ == '__main__':
