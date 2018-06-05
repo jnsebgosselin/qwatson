@@ -197,7 +197,8 @@ class QWatson(QWidget):
         project = self.project_cbox.currentText()
         index = self.project_cbox.currentIndex()
 
-        msg = ("Do you want to delete project %s and all related frame?"
+        msg = ("Are you sure that you want to delete project %s and all "
+               " related frames?<br><br>All data will be lost."
                ) % project
         ans = QMessageBox.question(self, 'Delete project', msg,
                                    defaultButton=QMessageBox.No)
