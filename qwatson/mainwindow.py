@@ -172,7 +172,7 @@ class QWatson(QWidget):
 
     def new_project_added(self, name):
         """Handle when a new project is added in the combobox."""
-        self.btn_startstop.setValue(True)
+        pass
 
     # ---- Toolbar handlers
 
