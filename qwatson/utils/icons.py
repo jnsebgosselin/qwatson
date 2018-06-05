@@ -26,7 +26,8 @@ ICON_NAMES = {'master': 'master',
               'clear': 'clear-search',
               'edit': 'edit',
               'note': 'note',
-              'erase-left': 'erase_left'}
+              'erase-left': 'erase_left',
+              'erase-right': 'erase_right'}
 
 ICON_SIZES = {'large': (32, 32),
               'normal': (28, 28),

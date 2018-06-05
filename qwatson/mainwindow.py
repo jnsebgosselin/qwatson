@@ -242,20 +242,27 @@ class WatsonTableView(QTableView):
         self.setWindowIcon(icons.get_icon('master'))
         self.setShowGrid(False)
         self.setAlternatingRowColors(True)
-        self.setMinimumWidth(650)
+        self.setMinimumWidth(750)
         self.setMinimumHeight(500)
         self.setSortingEnabled(False)
 
         self.setModel(model)
-        self.setItemDelegateForColumn(0, ToolButtonDelegate(self))
-        self.setItemDelegateForColumn(4, ComboBoxDelegate(self))
-        self.setItemDelegateForColumn(5, LineEditDelegate(self))
-        self.setItemDelegateForColumn(1, DateTimeDelegate(self))
-        self.setItemDelegateForColumn(2, DateTimeDelegate(self))
+        self.setItemDelegateForColumn(
+            model.COLUMNS['icons'], ToolButtonDelegate(self))
+        self.setItemDelegateForColumn(
+            model.COLUMNS['project'], ComboBoxDelegate(self))
+        self.setItemDelegateForColumn(
+            model.COLUMNS['comment'], LineEditDelegate(self))
+        self.setItemDelegateForColumn(
+            model.COLUMNS['start'], DateTimeDelegate(self))
+        self.setItemDelegateForColumn(
+            model.COLUMNS['end'], DateTimeDelegate(self))
 
-        self.setColumnWidth(0, icons.get_iconsize('small').width() + 8)
+        self.setColumnWidth(
+            model.COLUMNS['icons'], icons.get_iconsize('small').width() + 8)
         self.horizontalHeader().setSectionResizeMode(QHeaderView.Fixed)
-        self.horizontalHeader().setSectionResizeMode(5, QHeaderView.Stretch)
+        self.horizontalHeader().setSectionResizeMode(
+            model.COLUMNS['comment'], QHeaderView.Stretch)
         self.verticalHeader().hide()
 
     def setModel(self, model):
@@ -275,7 +282,11 @@ class WatsonTableView(QTableView):
 
 class WatsonTableModel(QAbstractTableModel):
 
-    HEADER = ['', 'start', 'end', 'duration', 'project', 'comment', 'id']
+    HEADER = ['start', 'end', 'duration', 'project', 'comment', 'id', '']
+    COLUMNS = {'start': 0, 'end': 1, 'duration': 2, 'project': 3,
+               'comment': 4, 'id': 5, 'icons': 6}
+    EDIT_COLUMNS = [COLUMNS['start'], COLUMNS['end'], COLUMNS['project'],
+                    COLUMNS['comment']]
     sig_btn_delrow_clicked = QSignal(QModelIndex)
 
     def __init__(self, client, checked=False):
@@ -294,25 +305,25 @@ class WatsonTableModel(QAbstractTableModel):
     def data(self, index, role=Qt.DisplayRole):
         """Qt method override."""
         if role == Qt.DisplayRole:
-            if index.column() == 1:
+            if index.column() == self.COLUMNS['start']:
                 return self.frames[index.row()][0].format('YYYY-MM-DD HH:mm')
-            elif index.column() == 2:
+            elif index.column() == self.COLUMNS['end']:
                 return self.frames[index.row()][1].format('YYYY-MM-DD HH:mm')
-            elif index.column() == 3:
+            elif index.column() == self.COLUMNS['duration']:
                 total_seconds = (self.frames[index.row()][1] -
                                  self.frames[index.row()][0]).total_seconds()
                 return strftime("%Hh %Mmin", gmtime(total_seconds))
-            elif index.column() == 4:
+            elif index.column() == self.COLUMNS['project']:
                 return str(self.frames[index.row()].project)
-            elif index.column() == 5:
+            elif index.column() == self.COLUMNS['comment']:
                 msg = self.frames[index.row()].message
                 return '' if msg is None else msg
-            elif index.column() == 6:
+            elif index.column() == self.COLUMNS['id']:
                 return self.frames[index.row()].id
             else:
                 return ''
         elif role == Qt.TextAlignmentRole:
-            if index.column() == 5:
+            if index.column() == self.COLUMNS['comment']:
                 return Qt.AlignLeft | Qt.AlignVCenter
             else:
                 return Qt.AlignCenter
@@ -330,7 +341,7 @@ class WatsonTableModel(QAbstractTableModel):
 
     def flags(self, index):
         """Qt method override."""
-        if index.column() in [1, 2, 4, 5]:
+        if index.column() in self.EDIT_COLUMNS:
             return Qt.ItemIsEnabled | Qt.ItemIsEditable
         else:
             return Qt.ItemIsEnabled
@@ -380,9 +391,9 @@ class WatsonTableModel(QAbstractTableModel):
 
     def editDateTime(self, index, date_time):
         """Edit the start or stop field in the frame stored at index."""
-        if index.column() == 1:
+        if index.column() == self.COLUMNS['start']:
             self.editFrame(index, start=date_time)
-        elif index.column() == 2:
+        elif index.column() == self.COLUMNS['end']:
             self.editFrame(index, stop=date_time)
 
 
@@ -399,7 +410,7 @@ class ToolButtonDelegate(QStyledItemDelegate):
         """Paint a toolbutton with an icon."""
         opt = QStyleOptionToolButton()
         opt.rect = self.get_btn_rect(option)
-        opt.icon = icons.get_icon('erase-left')
+        opt.icon = icons.get_icon('erase-right')
         opt.iconSize = icons.get_iconsize('small')
         opt.state |= QStyle.State_Enabled | QStyle.State_Raised
 
@@ -409,7 +420,7 @@ class ToolButtonDelegate(QStyledItemDelegate):
     def get_btn_rect(self, option):
         """Calculate the size and position of the checkbox."""
         bsize = icons.get_iconsize('small')
-        x = option.rect.x() + 3
+        x = option.rect.x() + option.rect.width()/2 - bsize.width()/2
         y = option.rect.y() + option.rect.height()/2 - bsize.height()/2
 
         return QRect(QPoint(x, y), bsize)
