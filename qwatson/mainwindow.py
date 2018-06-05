@@ -322,6 +322,14 @@ class WatsonTableModel(QAbstractTableModel):
                 return self.frames[index.row()].id
             else:
                 return ''
+        elif role == Qt.ToolTipRole:
+            if index.column() == self.COLUMNS['comment']:
+                msg = self.frames[index.row()].message
+                return '' if msg is None else msg
+            elif index.column() == self.COLUMNS['id']:
+                return self.frames[index.row()].id
+            elif index.column() == self.COLUMNS['icons']:
+                return "Delete corresponding frame"
         elif role == Qt.TextAlignmentRole:
             if index.column() == self.COLUMNS['comment']:
                 return Qt.AlignLeft | Qt.AlignVCenter
