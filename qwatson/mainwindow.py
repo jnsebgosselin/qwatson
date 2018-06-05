@@ -11,19 +11,18 @@
 import sys
 import platform
 from time import strftime, gmtime
+import dateutil
 
 # ---- Third parties imports
 
 import arrow
 from PyQt5.QtCore import pyqtSignal as QSignal
 from PyQt5.QtCore import (Qt, QAbstractTableModel, QVariant, QRect, QPoint,
-                          QSize,QEvent, QModelIndex)
+                          QEvent, QModelIndex)
 from PyQt5.QtWidgets import (QApplication, QWidget, QGridLayout, QLabel,
-                             QTableView, QItemDelegate, QPushButton,
-                             QStyleOptionButton, QStyle, QStyledItemDelegate,
-                             QStyleOptionToolButton, QStyleOptionViewItem,
-                             QHeaderView, QMessageBox, QSizePolicy,
-                             QTextEdit, QLineEdit)
+                             QTableView, QStyle, QStyledItemDelegate,
+                             QStyleOptionToolButton, QHeaderView, QMessageBox,
+                             QSizePolicy, QTextEdit, QLineEdit, QComboBox)
 
 # ---- Local imports
 
