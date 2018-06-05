@@ -88,16 +88,14 @@ class QWatson(QWidget):
         self.project_cbox = ComboBoxEdit()
         self.project_cbox.setFixedHeight(icons.get_iconsize('small').height())
 
-        self.project_cbox.currentIndexChanged.connect(
-            self._project_cbox_currentIndexChanged)
+        self.project_cbox.currentIndexChanged.connect(self.project_changed)
         self.project_cbox.sig_item_renamed.connect(self.project_renamed)
         self.project_cbox.sig_item_added.connect(self.new_project_added)
 
         self.project_cbox.addItems(self.client.projects)
         if len(self.client.frames) > 0:
             self.project_cbox.setCurentText(self.client.frames[-1][2])
-        self._project_cbox_currentIndexChanged(
-            self.project_cbox.currentIndex())
+        self.project_changed(self.project_cbox.currentIndex())
 
     def setup_toolbar(self):
         """Setup the main toolbar of the widget"""
@@ -152,7 +150,8 @@ class QWatson(QWidget):
 
     # ---- Project combobox handlers
 
-    def _project_cbox_currentIndexChanged(self, index):
+    def project_changed(self, index):
+        """Handle when the project selection change in the combobox."""
         self.btn_startstop.setEnabled(index != -1)
         self.btn_rename.setEnabled(index != -1)
         self.btn_del.setEnabled(index != -1)
