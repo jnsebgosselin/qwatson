@@ -113,7 +113,7 @@ class DateRangeNavigator(ToolBarWidget):
         return date_range_text
 
     def setup_date_range_label(self):
-        """Setup the text in the label wisget."""
+        """Setup the text in the label widget."""
         self.date_range_labl.setText(self.get_date_range_text())
 
 
