@@ -1,0 +1,246 @@
+# -*- coding: utf-8 -*-
+
+# Copyright © 2018 Jean-Sébastien Gosselin
+# https://github.com/jnsebgosselin/qwatson
+#
+# This file is part of QWatson.
+# Licensed under the terms of the GNU General Public License.
+
+# ---- Standard imports
+
+from time import strftime, gmtime
+import dateutil
+
+# ---- Third parties imports
+
+import arrow
+from PyQt5.QtCore import pyqtSignal as QSignal
+from PyQt5.QtCore import (QAbstractTableModel, QModelIndex,
+                          QSortFilterProxyModel, Qt, QVariant)
+
+# ---- Local imports
+
+from qwatson.utils.dates import qdatetime_from_str
+
+
+class WatsonTableModel(QAbstractTableModel):
+
+    HEADER = ['start', 'end', 'duration', 'project', 'comment', 'id', '']
+    COLUMNS = {'start': 0, 'end': 1, 'duration': 2, 'project': 3,
+               'comment': 4, 'id': 5, 'icons': 6}
+    EDIT_COLUMNS = [COLUMNS['start'], COLUMNS['end'], COLUMNS['project'],
+                    COLUMNS['comment']]
+    sig_btn_delrow_clicked = QSignal(QModelIndex)
+
+    def __init__(self, client):
+        super(WatsonTableModel, self).__init__()
+        self.client = client
+        self.frames = client.frames
+
+    def rowCount(self, x):
+        """Qt method override. Return the number of row of the table."""
+        return len(self.frames)
+
+    def columnCount(self, x):
+        """Qt method override. Return the number of column of the table."""
+        return len(self.HEADER)
+
+    def data(self, index, role=Qt.DisplayRole):
+        """Qt method override."""
+        if role == Qt.DisplayRole:
+            if index.column() == self.COLUMNS['start']:
+                return self.frames[index.row()][0].format('YYYY-MM-DD HH:mm')
+            elif index.column() == self.COLUMNS['end']:
+                return self.frames[index.row()][1].format('YYYY-MM-DD HH:mm')
+            elif index.column() == self.COLUMNS['duration']:
+                total_seconds = (self.frames[index.row()][1] -
+                                 self.frames[index.row()][0]).total_seconds()
+                return strftime("%Hh %Mmin", gmtime(total_seconds))
+            elif index.column() == self.COLUMNS['project']:
+                return str(self.frames[index.row()].project)
+            elif index.column() == self.COLUMNS['comment']:
+                msg = self.frames[index.row()].message
+                return '' if msg is None else msg
+            elif index.column() == self.COLUMNS['id']:
+                return self.frames[index.row()].id
+            else:
+                return ''
+        elif role == Qt.ToolTipRole:
+            if index.column() == self.COLUMNS['comment']:
+                msg = self.frames[index.row()].message
+                return '' if msg is None else msg
+            elif index.column() == self.COLUMNS['id']:
+                return self.frames[index.row()].id
+            elif index.column() == self.COLUMNS['icons']:
+                return "Delete frame"
+        elif role == Qt.TextAlignmentRole:
+            if index.column() == self.COLUMNS['comment']:
+                return Qt.AlignLeft | Qt.AlignVCenter
+            else:
+                return Qt.AlignCenter
+        else:
+            return QVariant()
+
+    def headerData(self, section, orientation, role):
+        """Qt method override."""
+        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
+            return self.HEADER[section]
+        if role == Qt.DisplayRole and orientation == Qt.Vertical:
+            return section
+        else:
+            return QVariant()
+
+    def flags(self, index):
+        """Qt method override."""
+        if index.column() in self.EDIT_COLUMNS:
+            return Qt.ItemIsEnabled | Qt.ItemIsEditable
+        else:
+            return Qt.ItemIsEnabled
+
+    # ---- Utils
+
+    @property
+    def projects(self):
+        return self.client.projects
+
+    def get_frameid_from_index(self, index):
+        """Return the frame id from a table index."""
+        return self.frames[index.row()].id
+
+    def get_start_qdatetime_range(self, index):
+        """
+        Return QDateTime objects representing the range in which the start
+        time of the frame located at index can be moved without creating
+        any conflict.
+        """
+        if index.row() > 0:
+            lmin = self.frames[index.row()-1].stop.format('YYYY-MM-DD HH:mm')
+        else:
+            lmin = '1900-01-01 00:00'
+        lmax = self.frames[index.row()].stop.format('YYYY-MM-DD HH:mm')
+
+        return qdatetime_from_str(lmin), qdatetime_from_str(lmax)
+
+    def get_stop_qdatetime_range(self, index):
+        """
+        Return QDateTime objects representing the range in which the stop
+        time of the frame located at index can be moved without creating
+        any conflict.
+        """
+        lmin = self.frames[index.row()].start.format('YYYY-MM-DD HH:mm')
+        if index.row() == len(self.frames)-1:
+            lmax = arrow.now().format('YYYY-MM-DD HH:mm')
+        else:
+            lmax = self.frames[index.row()+1].start.format('YYYY-MM-DD HH:mm')
+
+        return qdatetime_from_str(lmin), qdatetime_from_str(lmax)
+
+    # ---- Watson handlers
+
+    def removeRows(self, index):
+        """Qt method override to remove rows from the model."""
+        self.beginRemoveRows(index.parent(), index.row(), index.row())
+        frame_id = self.frames[index.row()].id
+        del self.client.frames[frame_id]
+        self.endRemoveRows()
+
+    def editFrame(self, index, start=None, stop=None, project=None,
+                  message=None):
+        """
+        Edit Frame stored at index in the model from the provided
+        arguments
+        """
+        datetime_format = '{} {}'.format('YYYY-MM-DD', 'HH:mm:ss')
+        frame = self.frames[index.row()]
+
+        start = frame.start.format(datetime_format) if start is None else start
+        start = arrow.get(start, datetime_format).replace(
+            tzinfo=dateutil.tz.tzlocal()).to('utc')
+
+        stop = frame.stop.format(datetime_format) if stop is None else stop
+        stop = arrow.get(stop, datetime_format).replace(
+            tzinfo=dateutil.tz.tzlocal()).to('utc')
+
+        project = frame.project if project is None else project
+        message = frame.message if message is None else message
+        updated_at = arrow.utcnow().format(datetime_format)
+
+        self.frames[frame.id] = [
+            project, start, stop, frame.tags, frame.id, updated_at, message]
+        self.client.save()
+        self.dataChanged.emit(index, index)
+
+    def editDateTime(self, index, date_time):
+        """Edit the start or stop field in the frame stored at index."""
+        if index.column() == self.COLUMNS['start']:
+            self.editFrame(index, start=date_time)
+        elif index.column() == self.COLUMNS['end']:
+            self.editFrame(index, stop=date_time)
+
+
+class WatsonSortFilterProxyModel(QSortFilterProxyModel):
+    sig_btn_delrow_clicked = QSignal(QModelIndex)
+
+    def __init__(self, source_model, date_span=None):
+        super(WatsonSortFilterProxyModel, self).__init__()
+        self.setSourceModel(source_model)
+        self.date_span = date_span
+
+        self.sig_btn_delrow_clicked.connect(
+            source_model.sig_btn_delrow_clicked.emit)
+
+    def set_date_span(self, date_span):
+        """Set the date span to use to filter the row of the source model."""
+        if date_span != self.date_span:
+            self.date_span = date_span
+            self.invalidateFilter()
+
+    def filterAcceptsRow(self, source_row, source_parent):
+        """Qt method override."""
+        if self.date_span is None:
+            return True
+        else:
+            return self.is_in_date_span(source_row, self.date_span)
+
+    def is_in_date_span(self, source_row, date_span):
+        """
+        Return whether the start time of the frame stored at the specified
+        row of the source model is within the specified date_span.
+        """
+        frame_start = self.sourceModel().frames[source_row].start
+        return (frame_start >= date_span[0] and frame_start < date_span[1])
+
+    # ---- Map proxy to source
+
+    @property
+    def projects(self):
+        return self.sourceModel().client.projects
+
+    def get_frameid_from_index(self, index):
+        """Return the frame id from a table index."""
+        return self.sourceModel().get_frameid_from_index(
+                   self.mapToSource(index))
+
+    def get_start_qdatetime_range(self, index):
+        """Map proxy method to source."""
+        return self.sourceModel().get_start_qdatetime_range(
+                   self.mapToSource(index))
+
+    def get_stop_qdatetime_range(self, index):
+        """Map proxy method to source."""
+        return self.sourceModel().get_stop_qdatetime_range(
+                   self.mapToSource(index))
+
+    def removeRows(self, index):
+        """Map proxy method to source."""
+        self.sourceModel().removeRows(self.mapToSource(index))
+
+    def editFrame(self, index, start=None, stop=None, project=None,
+                  message=None):
+        """Map proxy method to source."""
+        self.sourceModel().editFrame(
+            self.mapToSource(index), start, stop, project, message)
+
+    def editDateTime(self, index, date_time):
+        """Map proxy method to source."""
+        self.sourceModel().editDateTime(self.mapToSource(index), date_time)
