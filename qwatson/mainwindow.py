@@ -244,6 +244,7 @@ class WatsonOverviewWidget(QWidget):
     def __init__(self, client, model, parent=None):
         super(WatsonOverviewWidget, self).__init__(parent)
         self.setWindowIcon(icons.get_icon('master'))
+        self.setWindowTitle("Activity Overview")
 
         self.setup(model)
         self.date_span_changed()
@@ -259,6 +260,7 @@ class WatsonOverviewWidget(QWidget):
         # ---- Setup the layout
 
         layout = QGridLayout(self)
+        layout.addWidget(self.date_range_nav)
         layout.addWidget(self.frame_viewer)
 
     def date_span_changed(self):
@@ -495,6 +497,7 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
         within the specified date_span.
         """
         frame_start = self.sourceModel().frames[source_row].start
+        return (frame_start >= date_span[0] and frame_start < date_span[1])
 
     # ---- Map proxy to source
 
