@@ -32,6 +32,7 @@ from qwatson.watson.watson import Watson
 from qwatson.utils import icons
 from qwatson.widgets.comboboxes import ComboBoxEdit
 from qwatson.widgets.clock import ElapsedTimeLCDNumber
+from qwatson.widgets.dates import DateRangeNavigator
 from qwatson.widgets.toolbar import (ToolBarWidget, OnOffToolButton,
                                      QToolButtonSmall)
 from qwatson import __namever__
@@ -243,11 +244,29 @@ class WatsonOverviewWidget(QWidget):
     def __init__(self, client, model, parent=None):
         super(WatsonOverviewWidget, self).__init__(parent)
         self.setWindowIcon(icons.get_icon('master'))
+        self.setWindowTitle("Activity Overview")
 
+        self.setup(model)
+        self.date_span_changed()
+
+    def setup(self, model):
+        """Setup the widget with the provided arguments."""
         self.frame_viewer = WatsonTableView(model, parent=self)
 
+        self.date_range_nav = DateRangeNavigator()
+        self.date_range_nav.sig_date_span_changed.connect(
+            self.date_span_changed)
+
+        # ---- Setup the layout
+
         layout = QGridLayout(self)
+        layout.addWidget(self.date_range_nav)
         layout.addWidget(self.frame_viewer)
+
+    def date_span_changed(self):
+        """Handle when the range of the date range navigator widget change."""
+        self.frame_viewer.model().set_date_span(
+            self.date_range_nav.current)
 
 
 class WatsonTableView(QTableView):
@@ -294,6 +313,8 @@ class WatsonTableView(QTableView):
         if ans == QMessageBox.Yes:
             self.model().removeRows(index)
 
+
+# ---- Models
 
 class WatsonTableModel(QAbstractTableModel):
 
@@ -451,15 +472,35 @@ class WatsonTableModel(QAbstractTableModel):
 class WatsonSortFilterProxyModel(QSortFilterProxyModel):
     sig_btn_delrow_clicked = QSignal(QModelIndex)
 
-    def __init__(self, source_model):
+    def __init__(self, source_model, date_span=None):
         super(WatsonSortFilterProxyModel, self).__init__()
         self.setSourceModel(source_model)
+        self.date_span = date_span
 
         self.sig_btn_delrow_clicked.connect(
             source_model.sig_btn_delrow_clicked.emit)
 
+    def set_date_span(self, date_span):
+        if date_span != self.date_span:
+            self.date_span = date_span
+            self.invalidateFilter()
+
     def filterAcceptsRow(self, source_row, source_parent):
-        return True
+        """Qt method override."""
+        if self.date_span is None:
+            return True
+        else:
+            return self.is_in_date_span(source_row, self.date_span)
+
+    def is_in_date_span(self, source_row, date_span):
+        """
+        Return whether the start time of the frame stored at the specified
+        row of the source model is within the specified date_span.
+        """
+        frame_start = self.sourceModel().frames[source_row].start
+        return (frame_start >= date_span[0] and frame_start < date_span[1])
+
+    # ---- Map proxy to source
 
     @property
     def projects(self):
@@ -494,6 +535,8 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
         """Map proxy method to source."""
         self.sourceModel().editDateTime(self.mapToSource(index), date_time)
 
+
+# ---- Delegates
 
 class ToolButtonDelegate(QStyledItemDelegate):
 
