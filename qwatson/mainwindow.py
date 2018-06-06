@@ -486,6 +486,7 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
             self.invalidateFilter()
 
     def filterAcceptsRow(self, source_row, source_parent):
+        """Qt method override."""
         if self.date_span is None:
             return True
         else:
@@ -493,8 +494,8 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
 
     def is_in_date_span(self, source_row, date_span):
         """
-        Return whether the start time of the frame stored at row is
-        within the specified date_span.
+        Return whether the start time of the frame stored at the specified
+        row of the source model is within the specified date_span.
         """
         frame_start = self.sourceModel().frames[source_row].start
         return (frame_start >= date_span[0] and frame_start < date_span[1])
