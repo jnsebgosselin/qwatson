@@ -209,6 +209,18 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
         frame_start = self.sourceModel().frames[source_row].start
         return (frame_start >= date_span[0] and frame_start < date_span[1])
 
+    def total_seconds(self):
+        """
+        Return the total number of seconds of all the activities accepted
+        by the proxy model.
+        """
+        timedelta = datetime.timedelta()
+        for i in range(self.rowCount()):
+            source_row = self.mapToSource(self.index(i, 0)).row()
+            frame = self.sourceModel().frames[source_row]
+            timedelta = timedelta + (frame.stop - frame.start)
+        return timedelta.total_seconds()
+
     # ---- Map proxy to source
 
     @property
