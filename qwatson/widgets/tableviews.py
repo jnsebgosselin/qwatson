@@ -188,7 +188,8 @@ class WatsonTableWidget(QWidget):
         """
         self.total_seconds = self.table.proxy_model.total_seconds()
         self.timecount.setText(total_seconds_to_hour_min(self.total_seconds))
-        self.table.setVisible(self.total_seconds > 0)
+        self.table.setVisible(
+            self.table.proxy_model.get_accepted_row_count() > 0)
 
 
 # ---- TableView
