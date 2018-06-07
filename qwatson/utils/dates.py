@@ -16,6 +16,16 @@ import arrow
 from PyQt5.QtCore import QDateTime
 
 
+def total_seconds_to_hour_min(total_seconds):
+    """
+    Format the total number of seconds to a non-zero-padded str hour-minute
+    format with units.
+    """
+    hours, residual = divmod(total_seconds, 3600)
+    minutes = residual // 60
+    return "%dh %dmin" % (hours, minutes)
+
+
 def qdatetime_from_str(str_date_time, datetime_format="%Y-%m-%d %H:%M"):
     """Convert a date time str to a QDateTime object."""
     struct_time = strptime(str_date_time, datetime_format)
