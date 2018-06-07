@@ -290,3 +290,15 @@ class FormatedWatsonTableView(BasicWatsonTableView):
         super(FormatedWatsonTableView, self).set_date_span(date_span)
         self.update_table_height()
 
+
+if __name__ == '__main__':
+    from qwatson.watson.watson import Watson
+    from qwatson.models.tablemodels import WatsonTableModel
+
+    client = Watson()
+    model = WatsonTableModel(client)
+
+    app = QApplication(sys.argv)
+    date_range_nav = WatsonDailyTableWidget(model)
+    date_range_nav.show()
+    app.exec_()
