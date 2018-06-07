@@ -16,7 +16,7 @@
    inkscape:version="0.92.2 (5c3e80d, 2017-08-06)"
    viewBox="0 0 256 256"
    sodipodi:docname="erase_right.svg"
-   inkscape:export-filename="C:\Users\jsgosselin\QWatson\qwatson\ressources\icons_png\erase_right.png"
+   inkscape:export-filename="D:\qwatson\qwatson\ressources\icons_png\erase_right.png"
    inkscape:export-xdpi="96"
    inkscape:export-ydpi="96">
   <defs
@@ -29,7 +29,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.8014399"
-     inkscape:cx="24.07626"
+     inkscape:cx="-66.129358"
      inkscape:cy="82.012588"
      inkscape:document-units="px"
      inkscape:current-layer="g1910"
@@ -53,8 +53,8 @@
      inkscape:snap-center="true"
      showguides="true"
      inkscape:guide-bbox="true"
-     inkscape:window-width="1600"
-     inkscape:window-height="838"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
      inkscape:window-x="-8"
      inkscape:window-y="-8"
      inkscape:window-maximized="1">
@@ -104,7 +104,7 @@
              id="rect1914"
              style="color:#000000;display:inline;overflow:visible;visibility:visible;fill:none;stroke:none;stroke-width:4;marker:none;enable-background:accumulate" />
           <path
-             style="color:#000000;display:inline;overflow:visible;visibility:visible;fill:#4d4d4d;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:2.82222223;marker:none;enable-background:accumulate"
+             style="color:#000000;display:inline;overflow:visible;visibility:visible;fill:#282828;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:2.82222223;marker:none;enable-background:accumulate"
              d="m 461.5168,237.09882 c 0,0 -63.22571,31.24225 -118.5168,76.26062 h 0.0169 c 55.29075,45.01842 118.51643,76.26615 118.5164,76.26615 v -0.12672 H 597 v -152.4 H 461.53333 v 43.39167 l 17.99167,-17.99167 32.80833,32.80833 32.80834,-32.80833 17.99166,17.99167 -32.80833,32.80833 32.80833,32.80834 -17.99166,17.99166 -32.80834,-32.80833 -32.80833,32.80833 -17.99167,-17.99166 32.80834,-32.80834 -32.80834,-32.80833 v 32.86894 h -0.0169 z"
              id="rect1916"
              inkscape:connector-curvature="0" />

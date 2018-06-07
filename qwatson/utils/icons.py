@@ -18,7 +18,7 @@ from PyQt5.QtGui import QIcon
 from qwatson import __rootdir__
 
 dirname = os.path.join(__rootdir__, 'ressources', 'icons_png')
-ICON_NAMES = {'master': 'master',
+ICON_NAMES = {'master': 'qwatson',
               'process_start': 'process_start',
               'process_stop': 'process_stop',
               'plus': 'plus_sign',

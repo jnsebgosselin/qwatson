@@ -16,9 +16,9 @@
    inkscape:version="0.92.2 (5c3e80d, 2017-08-06)"
    viewBox="0 0 256 256"
    sodipodi:docname="clear-search.svg"
-   inkscape:export-filename="/home/jsgosselin/Documents/Research/Hydrogeology/WHAT/WHAT/Icons/clear-search.png"
-   inkscape:export-xdpi="90"
-   inkscape:export-ydpi="90">
+   inkscape:export-filename="D:\qwatson\qwatson\ressources\icons_png\clear-search.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96">
   <defs
      id="defs4876" />
   <sodipodi:namedview
@@ -29,10 +29,10 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.5916158"
-     inkscape:cx="125.53768"
+     inkscape:cx="23.440176"
      inkscape:cy="121.05416"
      inkscape:document-units="px"
-     inkscape:current-layer="layer1"
+     inkscape:current-layer="g830"
      showgrid="true"
      showborder="true"
      fit-margin-top="0"
@@ -53,8 +53,8 @@
      inkscape:snap-center="true"
      showguides="true"
      inkscape:guide-bbox="true"
-     inkscape:window-width="1600"
-     inkscape:window-height="838"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
      inkscape:window-x="-8"
      inkscape:window-y="-8"
      inkscape:window-maximized="1">
@@ -70,15 +70,18 @@
     <sodipodi:guide
        orientation="1,0"
        position="-0.052507271,46.927561"
-       id="guide2997" />
+       id="guide2997"
+       inkscape:locked="false" />
     <sodipodi:guide
        orientation="0,1"
        position="-2.0525073,-0.072439304"
-       id="guide2999" />
+       id="guide2999"
+       inkscape:locked="false" />
     <sodipodi:guide
        orientation="1,0"
        position="243.94749,115.92756"
-       id="guide3001" />
+       id="guide3001"
+       inkscape:locked="false" />
   </sodipodi:namedview>
   <metadata
      id="metadata4879">
@@ -88,7 +91,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -105,17 +108,17 @@
          inkscape:connector-curvature="0"
          id="path825"
          d="M 92.060752,105.87434 0.65956258,14.660888 20.22496,-4.8642686 111.62615,86.349127 Z"
-         style="color:#000000;display:inline;overflow:visible;visibility:visible;fill:#4d4d4d;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:2;marker:none;enable-background:accumulate" />
+         style="color:#000000;display:inline;overflow:visible;visibility:visible;fill:#282828;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:2;marker:none;enable-background:accumulate" />
       <ellipse
          ry="28.529242"
          rx="28.489321"
          cy="458.39276"
          cx="151.99873"
-         style="color:#000000;display:inline;overflow:visible;visibility:visible;fill:none;stroke:#4d4d4d;stroke-width:9.00294495;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker:none;enable-background:accumulate"
+         style="color:#000000;display:inline;overflow:visible;visibility:visible;fill:none;stroke:#282828;stroke-width:9.00294495;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker:none;enable-background:accumulate"
          id="path2995"
          transform="matrix(3.6964599,0,0,3.6912875,-505.71437,-1641.5544)" />
       <path
-         style="color:#000000;display:inline;overflow:visible;visibility:visible;fill:#4d4d4d;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:2;marker:none;enable-background:accumulate"
+         style="color:#000000;display:inline;overflow:visible;visibility:visible;fill:#282828;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:2;marker:none;enable-background:accumulate"
          d="M 0.65956208,86.349123 92.060751,-4.8642691 111.62615,14.660917 20.22499,105.87435 Z"
          id="path4002"
          inkscape:connector-curvature="0"
