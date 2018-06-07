@@ -49,9 +49,9 @@ class QWatson(QWidget):
                 myappid)
 
         self.client = Watson()
+        self.model = WatsonTableModel(self.client)
         if self.client.is_started:
             self.stop_watson(message="last session not closed correctly.")
-        self.model = WatsonTableModel(self.client)
 
         self.overview_widg = WatsonOverviewWidget(self.client, self.model)
         self.setup()
