@@ -29,6 +29,105 @@ from qwatson.models.delegates import (
     StopDelegate)
 
 
+# ---- TableWidget
+
+class WatsonDailyTableWidget(QFrame):
+    """
+    A widget that displays Watson activities on a daily basis over a
+    given timespan.
+    """
+
+    def __init__(self, model, date_span=arrow.now().floor('week').span('week'),
+                 parent=None):
+        super(WatsonDailyTableWidget, self).__init__(parent)
+
+        self.date_span = date_span
+        self.model = model
+        self.tables = []
+
+        self.setup()
+        self.set_date_span(date_span)
+        self.setup_time_total()
+
+        model.sig_model_changed.connect(self.setup_time_total)
+        self.setup_time_total()
+
+    def setup(self):
+        """Setup the widget with the provided arguments."""
+        layout = QGridLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(3)
+
+        scrollarea = self.setup_scrollarea()
+        layout.addWidget(scrollarea, 0, 0)
+
+        statusbar = self.setup_satusbar()
+        layout.addWidget(statusbar, 1, 0)
+
+    def setup_scrollarea(self):
+        """Setup the scrollarea that holds all the table widgets."""
+        scrollarea = QScrollArea()
+
+        self.view = QFrame()
+        self.view.setStyleSheet("QFrame {background-color:white;}")
+
+        self.scene = QVBoxLayout(self.view)
+        self.scene.addStretch(100)
+        self.scene.setSpacing(5)
+        self.scene.setContentsMargins(10, 5, 10, 5)
+
+        scrollarea.setMinimumWidth(750)
+        scrollarea.setMinimumHeight(500)
+        scrollarea.setWidget(self.view)
+        scrollarea.setWidgetResizable(True)
+
+        return scrollarea
+
+    def setup_satusbar(self):
+        """Setup the statusbar of the table."""
+        self.total_time_labl = QLabel()
+        self.total_time_labl.setAlignment(Qt.AlignRight)
+
+        font = self.total_time_labl.font()
+        font.setBold(True)
+        self.total_time_labl.setFont(font)
+
+        return self.total_time_labl
+
+    def set_date_span(self, date_span):
+        """
+        Set the range over which actitivies are displayed in the widget
+        and update the layout accordingly by adding or removing tables.
+        """
+        total_seconds = round((date_span[1] - date_span[0]).total_seconds())
+        ndays = ceil(total_seconds / (60*60*24))
+        while True:
+            if len(self.tables) == ndays:
+                break
+            elif len(self.tables) < ndays:
+                self.tables.append(WatsonTableWidget(self.model, parent=self))
+                self.scene.insertWidget(self.scene.count()-1, self.tables[-1])
+            else:
+                self.tables.remove(self.tables[-1])
+                self.scene.removeWidget(self.tables[-1])
+                self.tables[-1].deleteLater()
+
+        base_span = date_span[0].span('day')
+        for i, table in enumerate(self.tables):
+            table.set_date_span(
+                (base_span[0].shift(days=i), base_span[1].shift(days=i)))
+
+    def setup_time_total(self):
+        """
+        Setup the total amount of time for all the activities listed
+        for the date span.
+        """
+        total_seconds = 0
+        for table in self.tables:
+            total_seconds += table.total_seconds
+        self.total_time_labl.setText(
+            "Total : %s" % total_seconds_to_hour_min(total_seconds))
+
 
 class WatsonTableWidget(QWidget):
     """
