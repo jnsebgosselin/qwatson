@@ -37,6 +37,8 @@ class WatsonTableModel(QAbstractTableModel):
         self.client = client
         self.frames = client.frames
 
+
+    def rowCount(self, parent=QModelIndex()):
         """Qt method override. Return the number of row of the table."""
         return len(self.frames)
 
