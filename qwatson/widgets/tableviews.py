@@ -21,42 +21,40 @@ from qwatson.models.delegates import (
     StopDelegate)
 
 
-class WatsonTableView(QTableView):
+# ---- TableView
+
+class BasicWatsonTableView(QTableView):
     """A single table view that displays the Watson data."""
 
-    def __init__(self, model, parent=None, *args):
-        super(WatsonTableView, self).__init__(parent)
-        self.setShowGrid(False)
-        self.setAlternatingRowColors(True)
-        self.setMinimumWidth(750)
-        self.setMinimumHeight(500)
+    def __init__(self, model, parent=None):
+        super(BasicWatsonTableView, self).__init__(parent)
         self.setSortingEnabled(False)
 
         proxy_model = WatsonSortFilterProxyModel(model)
         self.setModel(proxy_model)
+        proxy_model.sig_btn_delrow_clicked.connect(self.del_model_row)
+
+        # ---- Setup the delegates
+
+        columns = model.COLUMNS
 
         self.setItemDelegateForColumn(
-            model.COLUMNS['icons'], ToolButtonDelegate(self))
+            columns['icons'], ToolButtonDelegate(self))
         self.setItemDelegateForColumn(
-            model.COLUMNS['project'], ComboBoxDelegate(self))
+            columns['project'], ComboBoxDelegate(self))
         self.setItemDelegateForColumn(
-            model.COLUMNS['comment'], LineEditDelegate(self))
-        self.setItemDelegateForColumn(
-            model.COLUMNS['start'], StartDelegate(self))
-        self.setItemDelegateForColumn(
-            model.COLUMNS['end'], StopDelegate(self))
+            columns['comment'], LineEditDelegate(self))
+        self.setItemDelegateForColumn(columns['start'], StartDelegate(self))
+        self.setItemDelegateForColumn(columns['end'], StopDelegate(self))
+
+        # ---- Setup column size
 
         self.setColumnWidth(
-            model.COLUMNS['icons'], icons.get_iconsize('small').width() + 8)
+            columns['icons'], icons.get_iconsize('small').width() + 12)
         self.horizontalHeader().setSectionResizeMode(QHeaderView.Fixed)
         self.horizontalHeader().setSectionResizeMode(
-            model.COLUMNS['comment'], QHeaderView.Stretch)
+            columns['comment'], QHeaderView.Stretch)
         self.verticalHeader().hide()
-
-    def setModel(self, model):
-        """Qt method override."""
-        super(WatsonTableView, self).setModel(model)
-        model.sig_btn_delrow_clicked.connect(self.del_model_row)
 
     def del_model_row(self, index):
         """Delete a row from the model, but ask for confirmation first."""
