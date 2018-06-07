@@ -221,6 +221,10 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
             timedelta = timedelta + (frame.stop - frame.start)
         return timedelta.total_seconds()
 
+    def get_accepted_row_count(self):
+        """Return the number of rows that were accepted by the proxy."""
+        return self.rowCount()
+
     # ---- Map proxy to source
 
     @property
