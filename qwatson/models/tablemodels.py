@@ -32,12 +32,21 @@ class WatsonTableModel(QAbstractTableModel):
     EDIT_COLUMNS = [COLUMNS['start'], COLUMNS['end'], COLUMNS['project'],
                     COLUMNS['comment']]
     sig_btn_delrow_clicked = QSignal(QModelIndex)
+    sig_model_changed = QSignal()
 
     def __init__(self, client):
         super(WatsonTableModel, self).__init__()
         self.client = client
         self.frames = client.frames
 
+        self.dataChanged.connect(self.model_changed)
+        self.rowsInserted.connect(self.model_changed)
+        self.modelReset.connect(self.model_changed)
+        self.rowsRemoved.connect(self.model_changed)
+
+    def model_changed(self):
+        """Emit a signal whenever the model is changed."""
+        self.sig_model_changed.emit()
 
     def rowCount(self, parent=QModelIndex()):
         """Qt method override. Return the number of row of the table."""
@@ -182,6 +191,7 @@ class WatsonTableModel(QAbstractTableModel):
 
 class WatsonSortFilterProxyModel(QSortFilterProxyModel):
     sig_btn_delrow_clicked = QSignal(QModelIndex)
+    sig_model_changed = QSignal()
 
     def __init__(self, source_model, date_span=None):
         super(WatsonSortFilterProxyModel, self).__init__()
@@ -190,6 +200,15 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
 
         self.sig_btn_delrow_clicked.connect(
             source_model.sig_btn_delrow_clicked.emit)
+
+        self.sourceModel().dataChanged.connect(self.model_changed)
+        self.sourceModel().rowsInserted.connect(self.model_changed)
+        self.sourceModel().modelReset.connect(self.model_changed)
+        self.sourceModel().rowsRemoved.connect(self.model_changed)
+
+    def model_changed(self):
+        """Emit a signal whenever the model is changed."""
+        self.sig_model_changed.emit()
 
     def set_date_span(self, date_span):
         """Set the date span to use to filter the row of the source model."""
@@ -234,31 +253,32 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
     def projects(self):
         return self.sourceModel().client.projects
 
-    def get_frameid_from_index(self, index):
+    def get_frameid_from_index(self, proxy_index):
         """Return the frame id from a table index."""
         return self.sourceModel().get_frameid_from_index(
-                   self.mapToSource(index))
+                   self.mapToSource(proxy_index))
 
-    def get_start_qdatetime_range(self, index):
+    def get_start_qdatetime_range(self, proxy_index):
         """Map proxy method to source."""
         return self.sourceModel().get_start_qdatetime_range(
-                   self.mapToSource(index))
+                   self.mapToSource(proxy_index))
 
-    def get_stop_qdatetime_range(self, index):
+    def get_stop_qdatetime_range(self, proxy_index):
         """Map proxy method to source."""
         return self.sourceModel().get_stop_qdatetime_range(
-                   self.mapToSource(index))
+                   self.mapToSource(proxy_index))
 
-    def removeRows(self, index):
+    def removeRows(self, proxy_index):
         """Map proxy method to source."""
-        self.sourceModel().removeRows(self.mapToSource(index))
+        self.sourceModel().removeRows(self.mapToSource(proxy_index))
 
-    def editFrame(self, index, start=None, stop=None, project=None,
+    def editFrame(self, proxy_index, start=None, stop=None, project=None,
                   message=None):
         """Map proxy method to source."""
         self.sourceModel().editFrame(
-            self.mapToSource(index), start, stop, project, message)
+            self.mapToSource(proxy_index), start, stop, project, message)
 
-    def editDateTime(self, index, date_time):
+    def editDateTime(self, proxy_index, date_time):
         """Map proxy method to source."""
-        self.sourceModel().editDateTime(self.mapToSource(index), date_time)
+        self.sourceModel().editDateTime(
+            self.mapToSource(proxy_index), date_time)
