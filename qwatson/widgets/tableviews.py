@@ -24,15 +24,18 @@ from qwatson.models.delegates import (
 # ---- TableView
 
 class BasicWatsonTableView(QTableView):
-    """A single table view that displays the Watson data."""
+    """
+    A single table view that displays Watson activity log and
+    allow sorting and filtering of the data through the use of a proxy model.
+    """
 
     def __init__(self, model, parent=None):
         super(BasicWatsonTableView, self).__init__(parent)
         self.setSortingEnabled(False)
 
-        proxy_model = WatsonSortFilterProxyModel(model)
-        self.setModel(proxy_model)
-        proxy_model.sig_btn_delrow_clicked.connect(self.del_model_row)
+        self.proxy_model = WatsonSortFilterProxyModel(model)
+        self.setModel(self.proxy_model)
+        self.proxy_model.sig_btn_delrow_clicked.connect(self.del_model_row)
 
         # ---- Setup the delegates
 
@@ -54,13 +57,13 @@ class BasicWatsonTableView(QTableView):
         self.horizontalHeader().setSectionResizeMode(QHeaderView.Fixed)
         self.horizontalHeader().setSectionResizeMode(
             columns['comment'], QHeaderView.Stretch)
-        self.verticalHeader().hide()
 
-    def del_model_row(self, index):
+    def del_model_row(self, proxy_index):
         """Delete a row from the model, but ask for confirmation first."""
-        frame_id = self.model().get_frameid_from_index(index)
+        frame_id = self.proxy_model.get_frameid_from_index(proxy_index)
         ans = QMessageBox.question(
             self, 'Delete frame', "Do you want to delete frame %s?" % frame_id,
             defaultButton=QMessageBox.No)
         if ans == QMessageBox.Yes:
-            self.model().removeRows(index)
+            self.proxy_model.removeRows(proxy_index)
+
