@@ -191,7 +191,7 @@ class WatsonTableModel(QAbstractTableModel):
 
 class WatsonSortFilterProxyModel(QSortFilterProxyModel):
     sig_btn_delrow_clicked = QSignal(QModelIndex)
-    sig_model_changed = QSignal()
+    sig_sourcemodel_changed = QSignal()
 
     def __init__(self, source_model, date_span=None):
         super(WatsonSortFilterProxyModel, self).__init__()
@@ -201,14 +201,14 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
         self.sig_btn_delrow_clicked.connect(
             source_model.sig_btn_delrow_clicked.emit)
 
-        self.sourceModel().dataChanged.connect(self.model_changed)
-        self.sourceModel().rowsInserted.connect(self.model_changed)
-        self.sourceModel().modelReset.connect(self.model_changed)
-        self.sourceModel().rowsRemoved.connect(self.model_changed)
+        source_model.dataChanged.connect(self.source_model_changed)
+        source_model.rowsInserted.connect(self.source_model_changed)
+        source_model.rowsRemoved.connect(self.source_model_changed)
+        source_model.modelReset.connect(self.source_model_changed)
 
-    def model_changed(self):
-        """Emit a signal whenever the model is changed."""
-        self.sig_model_changed.emit()
+    def source_model_changed(self):
+        """Emit a signal whenever the source model changes."""
+        self.sig_sourcemodel_changed.emit()
 
     def set_date_span(self, date_span):
         """Set the date span to use to filter the row of the source model."""
