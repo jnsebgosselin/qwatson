@@ -25,7 +25,7 @@ from qwatson.utils import icons
 from qwatson.widgets.comboboxes import ComboBoxEdit
 from qwatson.widgets.clock import ElapsedTimeLCDNumber
 from qwatson.widgets.dates import DateRangeNavigator
-from qwatson.widgets.tableviews import WatsonTableView
+from qwatson.widgets.tableviews import WatsonDailyTableWidget
 from qwatson.widgets.toolbar import (ToolBarWidget, OnOffToolButton,
                                      QToolButtonSmall)
 from qwatson import __namever__
@@ -245,7 +245,7 @@ class WatsonOverviewWidget(QWidget):
 
     def setup(self, model):
         """Setup the widget with the provided arguments."""
-        self.frame_viewer = WatsonTableView(model, parent=self)
+        self.table_widg = WatsonDailyTableWidget(model, parent=self)
 
         self.date_range_nav = DateRangeNavigator()
         self.date_range_nav.sig_date_span_changed.connect(
@@ -255,12 +255,11 @@ class WatsonOverviewWidget(QWidget):
 
         layout = QGridLayout(self)
         layout.addWidget(self.date_range_nav)
-        layout.addWidget(self.frame_viewer)
+        layout.addWidget(self.table_widg)
 
     def date_span_changed(self):
         """Handle when the range of the date range navigator widget change."""
-        self.frame_viewer.model().set_date_span(
-            self.date_range_nav.current)
+        self.table_widg.set_date_span(self.date_range_nav.current)
 
 
 if __name__ == '__main__':

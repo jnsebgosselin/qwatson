@@ -19,6 +19,7 @@ from PyQt5.QtWidgets import QApplication, QLabel
 # ---- Local imports
 
 from qwatson.utils import icons
+from qwatson.utils.dates import arrowspan_to_str
 from qwatson.widgets.toolbar import QToolButtonBase, ToolBarWidget
 
 
@@ -85,36 +86,9 @@ class DateRangeNavigator(ToolBarWidget):
         self.setup_date_range_label()
         self.sig_date_span_changed.emit(self.current)
 
-    def get_date_range_text(self):
-        """Return the text to be displayed in the label."""
-        start, end = self.current
-        if start.year != end.year:
-            date_range_text = "%s %d, %d - %s %d, %d" % (
-                arrow.locales.EnglishLocale().month_abbreviation(start.month),
-                start.day, start.year,
-                arrow.locales.EnglishLocale().month_abbreviation(end.month),
-                end.day, end.year)
-        elif start.month != end.month:
-            date_range_text = "%s %d - %s %d, %d" % (
-                arrow.locales.EnglishLocale().month_abbreviation(start.month),
-                start.day,
-                arrow.locales.EnglishLocale().month_abbreviation(end.month),
-                end.day, end.year)
-        elif start.day != end.day:
-            date_range_text = "%s %d - %d, %d" % (
-                arrow.locales.EnglishLocale().month_abbreviation(start.month),
-                start.day, end.day, start.year)
-            return date_range_text
-        else:
-            date_range_text = "%s %d, %d" % (
-                arrow.locales.EnglishLocale().month_abbreviation(start.month),
-                start.day, start.year)
-
-        return date_range_text
-
     def setup_date_range_label(self):
         """Setup the text in the label widget."""
-        self.date_range_labl.setText(self.get_date_range_text())
+        self.date_range_labl.setText(arrowspan_to_str(self.current))
 
 
 if __name__ == '__main__':

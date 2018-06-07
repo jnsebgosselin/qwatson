@@ -10,6 +10,7 @@
 
 from time import strftime, gmtime
 import dateutil
+import datetime
 
 # ---- Third parties imports
 
@@ -31,17 +32,27 @@ class WatsonTableModel(QAbstractTableModel):
     EDIT_COLUMNS = [COLUMNS['start'], COLUMNS['end'], COLUMNS['project'],
                     COLUMNS['comment']]
     sig_btn_delrow_clicked = QSignal(QModelIndex)
+    sig_model_changed = QSignal()
 
     def __init__(self, client):
         super(WatsonTableModel, self).__init__()
         self.client = client
         self.frames = client.frames
 
-    def rowCount(self, x):
+        self.dataChanged.connect(self.model_changed)
+        self.rowsInserted.connect(self.model_changed)
+        self.modelReset.connect(self.model_changed)
+        self.rowsRemoved.connect(self.model_changed)
+
+    def model_changed(self):
+        """Emit a signal whenever the model is changed."""
+        self.sig_model_changed.emit()
+
+    def rowCount(self, parent=QModelIndex()):
         """Qt method override. Return the number of row of the table."""
         return len(self.frames)
 
-    def columnCount(self, x):
+    def columnCount(self, parent=QModelIndex()):
         """Qt method override. Return the number of column of the table."""
         return len(self.HEADER)
 
@@ -180,6 +191,7 @@ class WatsonTableModel(QAbstractTableModel):
 
 class WatsonSortFilterProxyModel(QSortFilterProxyModel):
     sig_btn_delrow_clicked = QSignal(QModelIndex)
+    sig_sourcemodel_changed = QSignal()
 
     def __init__(self, source_model, date_span=None):
         super(WatsonSortFilterProxyModel, self).__init__()
@@ -188,6 +200,15 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
 
         self.sig_btn_delrow_clicked.connect(
             source_model.sig_btn_delrow_clicked.emit)
+
+        source_model.dataChanged.connect(self.source_model_changed)
+        source_model.rowsInserted.connect(self.source_model_changed)
+        source_model.rowsRemoved.connect(self.source_model_changed)
+        source_model.modelReset.connect(self.source_model_changed)
+
+    def source_model_changed(self):
+        """Emit a signal whenever the source model changes."""
+        self.sig_sourcemodel_changed.emit()
 
     def set_date_span(self, date_span):
         """Set the date span to use to filter the row of the source model."""
@@ -210,37 +231,54 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
         frame_start = self.sourceModel().frames[source_row].start
         return (frame_start >= date_span[0] and frame_start < date_span[1])
 
+    def total_seconds(self):
+        """
+        Return the total number of seconds of all the activities accepted
+        by the proxy model.
+        """
+        timedelta = datetime.timedelta()
+        for i in range(self.rowCount()):
+            source_row = self.mapToSource(self.index(i, 0)).row()
+            frame = self.sourceModel().frames[source_row]
+            timedelta = timedelta + (frame.stop - frame.start)
+        return timedelta.total_seconds()
+
+    def get_accepted_row_count(self):
+        """Return the number of rows that were accepted by the proxy."""
+        return self.rowCount()
+
     # ---- Map proxy to source
 
     @property
     def projects(self):
         return self.sourceModel().client.projects
 
-    def get_frameid_from_index(self, index):
+    def get_frameid_from_index(self, proxy_index):
         """Return the frame id from a table index."""
         return self.sourceModel().get_frameid_from_index(
-                   self.mapToSource(index))
+                   self.mapToSource(proxy_index))
 
-    def get_start_qdatetime_range(self, index):
+    def get_start_qdatetime_range(self, proxy_index):
         """Map proxy method to source."""
         return self.sourceModel().get_start_qdatetime_range(
-                   self.mapToSource(index))
+                   self.mapToSource(proxy_index))
 
-    def get_stop_qdatetime_range(self, index):
+    def get_stop_qdatetime_range(self, proxy_index):
         """Map proxy method to source."""
         return self.sourceModel().get_stop_qdatetime_range(
-                   self.mapToSource(index))
+                   self.mapToSource(proxy_index))
 
-    def removeRows(self, index):
+    def removeRows(self, proxy_index):
         """Map proxy method to source."""
-        self.sourceModel().removeRows(self.mapToSource(index))
+        self.sourceModel().removeRows(self.mapToSource(proxy_index))
 
-    def editFrame(self, index, start=None, stop=None, project=None,
+    def editFrame(self, proxy_index, start=None, stop=None, project=None,
                   message=None):
         """Map proxy method to source."""
         self.sourceModel().editFrame(
-            self.mapToSource(index), start, stop, project, message)
+            self.mapToSource(proxy_index), start, stop, project, message)
 
-    def editDateTime(self, index, date_time):
+    def editDateTime(self, proxy_index, date_time):
         """Map proxy method to source."""
-        self.sourceModel().editDateTime(self.mapToSource(index), date_time)
+        self.sourceModel().editDateTime(
+            self.mapToSource(proxy_index), date_time)
