@@ -21,6 +21,69 @@ from qwatson.models.delegates import (
     StopDelegate)
 
 
+
+class WatsonTableWidget(QWidget):
+    """
+    A widget that contains a formatted table view and a custom title bar
+    that shows the date span and the time count of all the activities listed
+    in the table.
+    """
+
+    def __init__(self, model, parent=None):
+        super(WatsonTableWidget, self).__init__(parent)
+        self.total_seconds = 0
+        self.table = FormatedWatsonTableView(model)
+        titlebar = self.setup_titlebar()
+
+        layout = QGridLayout(self)
+        layout.addWidget(titlebar, 0, 0)
+        layout.addWidget(self.table, 1, 0)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        self.table.proxy_model.sig_sourcemodel_changed.connect(
+            self.setup_timecount)
+
+    def setup_titlebar(self):
+        """Setup the titlebar of the table."""
+        font = QLabel().font()
+        font.setBold(True)
+
+        self.title = QLabel()
+        self.title.setMargin(5)
+        self.title.setFont(font)
+
+        self.timecount = QLabel()
+        self.timecount.setMargin(5)
+        self.timecount.setFont(font)
+
+        titlebar = QFrame()
+        titlebar.setStyleSheet("QFrame {background-color:gray;}")
+
+        layout = QGridLayout(titlebar)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setColumnStretch(1, 100)
+
+        layout.addWidget(self.title, 0, 0)
+        layout.addWidget(self.timecount, 0, 2)
+
+        return titlebar
+
+    def set_date_span(self, date_span):
+        """Set the date span in the table and title."""
+        self.table.set_date_span(date_span)
+        self.title.setText(arrowspan_to_str(date_span))
+        self.setup_timecount()
+
+    def setup_timecount(self):
+        """
+        Setup the time count for the activities of the table in the titlebar.
+        """
+        self.total_seconds = self.table.proxy_model.total_seconds()
+        self.timecount.setText(total_seconds_to_hour_min(self.total_seconds))
+        self.table.setVisible(self.total_seconds > 0)
+
+
 # ---- TableView
 
 class BasicWatsonTableView(QTableView):
