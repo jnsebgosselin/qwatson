@@ -6,15 +6,23 @@
 # This file is part of QWatson.
 # Licensed under the terms of the GNU General Public License.
 
+# ---- Standard imports
 
-# ---- Imports: Third Parties
+import sys
+from math import ceil
 
-from PyQt5.QtCore import pyqtSignal as QSignal
-from PyQt5.QtWidgets import QHeaderView, QMessageBox, QTableView
+# ---- Third party imports
+
+import arrow
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (
+    QApplication, QGridLayout, QHeaderView, QLabel, QMessageBox, QScrollArea,
+    QTableView, QVBoxLayout, QWidget, QFrame)
 
 # ---- Local imports
 
 from qwatson.utils import icons
+from qwatson.utils.dates import arrowspan_to_str, total_seconds_to_hour_min
 from qwatson.models.tablemodels import WatsonSortFilterProxyModel
 from qwatson.models.delegates import (
     ToolButtonDelegate, ComboBoxDelegate, LineEditDelegate, StartDelegate,
