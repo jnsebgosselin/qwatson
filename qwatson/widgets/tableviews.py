@@ -72,3 +72,51 @@ class BasicWatsonTableView(QTableView):
         self.proxy_model.set_date_span(date_span)
 
 
+class FormatedWatsonTableView(BasicWatsonTableView):
+    """
+    A BasicWatsonTableView formatted to look good when put in a scrollarea
+    in a vertical stack of tables.
+    """
+
+    def __init__(self, source_model, parent=None):
+        super(FormatedWatsonTableView, self).__init__(source_model, parent)
+        self.setup()
+        self.update_table_height()
+
+    def setup(self):
+        """Setup the table view with the provided arguments."""
+        self.setAlternatingRowColors(False)
+        self.setShowGrid(False)
+        self.setFrameShape(QFrame.NoFrame)
+        self.setWordWrap(False)
+
+        self.horizontalHeader().hide()
+        self.verticalHeader().hide()
+
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+        self.proxy_model.sig_sourcemodel_changed.connect(
+            self.update_table_height)
+
+    def update_table_height(self):
+        """
+        Update the height of the table to fit all the data, so that there is
+        no need for a vertical scrollbar.
+        """
+        self.setFixedHeight(self.get_min_height())
+
+    def get_min_height(self):
+        """Calculate the height of the table content."""
+        h = 2 * self.frameWidth()
+        for i in range(self.model().get_accepted_row_count()):
+            h += self.rowHeight(i)
+        return h
+
+    def set_date_span(self, date_span):
+        """
+        Method override to update table height when setting the date span.
+        """
+        super(FormatedWatsonTableView, self).set_date_span(date_span)
+        self.update_table_height()
+
