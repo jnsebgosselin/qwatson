@@ -209,7 +209,7 @@ class BasicWatsonTableView(QTableView):
 
         # ---- Setup the delegates
 
-        columns = model.COLUMNS
+        columns = source_model.COLUMNS
 
         self.setItemDelegateForColumn(
             columns['icons'], ToolButtonDelegate(self))
