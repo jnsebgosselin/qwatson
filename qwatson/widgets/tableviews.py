@@ -29,11 +29,11 @@ class BasicWatsonTableView(QTableView):
     allow sorting and filtering of the data through the use of a proxy model.
     """
 
-    def __init__(self, model, parent=None):
+    def __init__(self, source_model, parent=None):
         super(BasicWatsonTableView, self).__init__(parent)
         self.setSortingEnabled(False)
 
-        self.proxy_model = WatsonSortFilterProxyModel(model)
+        self.proxy_model = WatsonSortFilterProxyModel(source_model)
         self.setModel(self.proxy_model)
         self.proxy_model.sig_btn_delrow_clicked.connect(self.del_model_row)
 
@@ -66,4 +66,9 @@ class BasicWatsonTableView(QTableView):
             defaultButton=QMessageBox.No)
         if ans == QMessageBox.Yes:
             self.proxy_model.removeRows(proxy_index)
+
+    def set_date_span(self, date_span):
+        """Set the date span in the proxy model."""
+        self.proxy_model.set_date_span(date_span)
+
 
