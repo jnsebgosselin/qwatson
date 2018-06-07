@@ -25,6 +25,7 @@ from qwatson.utils import icons
 from qwatson.widgets.comboboxes import ComboBoxEdit
 from qwatson.widgets.clock import ElapsedTimeLCDNumber
 from qwatson.widgets.dates import DateRangeNavigator
+from qwatson.widgets.tableviews import WatsonDailyTableWidget
 from qwatson.widgets.toolbar import (ToolBarWidget, OnOffToolButton,
                                      QToolButtonSmall)
 from qwatson import __namever__
