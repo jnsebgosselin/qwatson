@@ -113,7 +113,7 @@ class QWatson(QWidget):
 
         self.btn_report = QToolButtonSmall('note')
         self.btn_report.clicked.connect(self.overview_widg.show)
-        self.btn_report.setToolTip("Open the overview window")
+        self.btn_report.setToolTip("Open the activity overview window")
 
         # ---- Populate the toolbar
 
