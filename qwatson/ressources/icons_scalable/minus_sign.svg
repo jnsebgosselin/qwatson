@@ -14,8 +14,11 @@
    height="248"
    width="248"
    version="1.0"
-   inkscape:version="0.48.4 r9939"
-   sodipodi:docname="minus_sign.svg">
+   inkscape:version="0.92.2 (5c3e80d, 2017-08-06)"
+   sodipodi:docname="minus_sign.svg"
+   inkscape:export-filename="D:\qwatson\qwatson\ressources\icons_png\minus_sign.png"
+   inkscape:export-xdpi="99.096771"
+   inkscape:export-ydpi="99.096771">
   <metadata
      id="metadata26">
     <rdf:RDF>
@@ -37,15 +40,15 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="1535"
-     inkscape:window-height="876"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
      id="namedview24"
      showgrid="true"
      inkscape:zoom="1.7383041"
-     inkscape:cx="84.32305"
+     inkscape:cx="94.390333"
      inkscape:cy="115.45166"
-     inkscape:window-x="65"
-     inkscape:window-y="24"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
      inkscape:window-maximized="1"
      inkscape:current-layer="svg3258"
      fit-margin-top="0"
@@ -180,7 +183,7 @@
      style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd"
      id="path3243" />
   <path
-     style="fill:#4d4d4d;fill-opacity:1;stroke:#4d4d4d;stroke-width:3.56607866;stroke-linecap:square;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+     style="fill:#282828;fill-opacity:1;stroke:#282828;stroke-width:3.56607866;stroke-linecap:square;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
      d="M 112.30224,243.5775 C 84.373622,240.71984 59.235449,228.73463 39.286081,208.76539 -7.4898512,161.94281 -8.0290028,87.808911 38.059975,40.174937 54.956323,22.712164 75.636791,11.230142 99.819326,5.8854181 109.92921,3.6510209 131.39459,3.1502481 142.38393,4.8925336 200.79074,14.152467 244.22334,65.021862 244.15438,124.08869 c -0.0439,37.66938 -17.69184,72.88321 -47.95368,95.68498 -23.99239,18.07783 -54.70307,26.79108 -83.89846,23.80383 z m 81.97106,-106.10932 0,-13.37949 0,-13.37942 c -19.65629,0 -101.143335,-3.3e-4 -139.898817,-3.3e-4 l 0,13.36679 0,13.36679 c 61.947887,0 36.971472,0.0257 139.898817,0.0257 z"
      id="path3049"
      inkscape:connector-curvature="0"
