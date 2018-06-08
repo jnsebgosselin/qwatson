@@ -9,7 +9,7 @@ Many thanks to [TailorDev](https://tailordev.fr) for sharing their awesome work.
 
 ## Installation
 
-QWatson is still in early stage development, so use at your own risk! An installer for the Windows platform is available for download [here](https://github.com/jnsebgosselin/qwatson/releases/latest) or you can run it directly from source by cloning the repository and installing the required dependencies ([arrow](https://arrow.readthedocs.io/en/latest/), [click](http://click.pocoo.org/5/), [requests](http://docs.python-requests.org/en/master/), and [pyqt5](https://www.riverbankcomputing.com/software/pyqt/intro)).
+QWatson is still in an early stage of development, so use at your own risk! An installer for the Windows platform is available for download [here](https://github.com/jnsebgosselin/qwatson/releases/latest) or you can run it directly from source by cloning the repository and installing the required dependencies ([arrow](https://arrow.readthedocs.io/en/latest/), [click](http://click.pocoo.org/5/), [requests](http://docs.python-requests.org/en/master/), and [pyqt5](https://www.riverbankcomputing.com/software/pyqt/intro)).
 
 ## License
 
