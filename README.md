@@ -6,3 +6,13 @@ QWatson is a simple GUI entirely written in Python with [PyQt5](https://www.rive
 Many thanks to [TailorDev](https://tailordev.fr) for sharing their awesome work.
 
 ![screenshot](https://github.com/jnsebgosselin/qwatson/blob/master/images/qwatson_printscreen.png)
+
+## Installation
+
+QWatson is still in early stage development, so use at your own risk! An installer for the windows platform is available for download [here](https://github.com/jnsebgosselin/qwatson/releases/latest) or you can run it directly from source by cloning the repository and installing the required dependencies.
+
+Dependencies: arrow, click, requests, pyqt5
+
+## License
+
+QWatson is released under the GPLv3 License. See the bundled LICENSE file for details.
