@@ -7,10 +7,10 @@
 # Licensed under the terms of the GNU General Public License.
 
 # ---- Standard imports
-import os.path as osp
+
 import sys
 import platform
-
+import os.path as osp
 
 # ---- Third parties imports
 
