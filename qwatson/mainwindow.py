@@ -7,7 +7,7 @@
 # Licensed under the terms of the GNU General Public License.
 
 # ---- Standard imports
-
+import os.path as osp
 import sys
 import platform
 
@@ -34,7 +34,7 @@ from qwatson.models.tablemodels import WatsonTableModel
 
 class QWatson(QWidget):
 
-    def __init__(self, parent=None):
+    def __init__(self, debug=False, parent=None):
         super(QWatson, self).__init__(parent)
         self.setWindowIcon(icons.get_icon('master'))
         self.setWindowTitle(__namever__)
@@ -42,13 +42,18 @@ class QWatson(QWidget):
                             Qt.WindowMinimizeButtonHint |
                             Qt.WindowCloseButtonHint)
 
+        if debug is True:
+            config_dir = osp.join(osp.dirname(__file__), 'tests', 'watson')
+        else:
+            config_dir = None
+
         if platform.system() == 'Windows':
             import ctypes
             myappid = __namever__
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
                 myappid)
 
-        self.client = Watson()
+        self.client = Watson(config_dir=config_dir)
         self.model = WatsonTableModel(self.client)
         if self.client.is_started:
             self.stop_watson(message="last session not closed correctly.")
