@@ -25,7 +25,7 @@ import os
 import sys
 
 
-version_info = (0, 1, 0)
+version_info = (0, 2, 0, 'dev')
 __version__ = '.'.join(map(str, version_info))
 __appname__ = 'QWatson'
 __namever__ = __appname__ + " " + __version__
