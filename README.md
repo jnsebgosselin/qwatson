@@ -9,8 +9,8 @@ Many thanks to [TailorDev](https://tailordev.fr) for sharing their awesome work.
 
 ## To Know More About Watson
 
-https://tailordev.fr/blog/2016/02/05/a-day-tracking-my-time-with-watson/
-https://tailordev.fr/blog/2016/03/31/watson-community-tools/
+https://tailordev.fr/blog/2016/02/05/a-day-tracking-my-time-with-watson/<br>
+https://tailordev.fr/blog/2016/03/31/watson-community-tools/<br>
 https://tailordev.fr/blog/2017/06/07/le-lab-5-crick-a-backend-for-watson-time-tracker/
 
 ## Installation
