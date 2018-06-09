@@ -7,6 +7,12 @@ Many thanks to [TailorDev](https://tailordev.fr) for sharing their awesome work.
 
 ![screenshot](https://github.com/jnsebgosselin/qwatson/blob/master/images/qwatson_printscreen.png)
 
+## To Know More About Watson
+
+https://tailordev.fr/blog/2016/02/05/a-day-tracking-my-time-with-watson/
+https://tailordev.fr/blog/2016/03/31/watson-community-tools/
+https://tailordev.fr/blog/2017/06/07/le-lab-5-crick-a-backend-for-watson-time-tracker/
+
 ## Installation
 
 QWatson is still in an early stage of development, so use at your own risk! An installer for the Windows platform is available for download [here](https://github.com/jnsebgosselin/qwatson/releases/latest) or you can run it directly from source by cloning the repository and installing the required dependencies ([arrow](https://arrow.readthedocs.io/en/latest/), [click](http://click.pocoo.org/5/), [requests](http://docs.python-requests.org/en/master/), and [pyqt5](https://www.riverbankcomputing.com/software/pyqt/intro)).
