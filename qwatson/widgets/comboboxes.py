@@ -95,6 +95,10 @@ class ComboBoxEdit(QWidget):
         self.combobox.setCurrentIndex(self.combobox.findText(name))
         self.combobox.blockSignals(False)
 
+    def clear(self):
+        """Clear all the items from the combobox."""
+        self.combobox.clear()
+
     def addItems(self, items):
         """Add the items to the combobox."""
         self.combobox.addItems(items)
