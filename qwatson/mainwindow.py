@@ -15,14 +15,13 @@ import os.path as osp
 # ---- Third parties imports
 
 from PyQt5.QtCore import (Qt, QModelIndex)
-from PyQt5.QtWidgets import (QApplication, QWidget, QGridLayout, QLabel,
-                             QMessageBox, QSizePolicy, QTextEdit)
+from PyQt5.QtWidgets import (QApplication, QWidget, QGridLayout,
+                             QSizePolicy, QTextEdit)
 
 # ---- Local imports
 
 from qwatson.watson.watson import Watson
 from qwatson.utils import icons
-from qwatson.widgets.comboboxes import ComboBoxEdit
 from qwatson.widgets.clock import ElapsedTimeLCDNumber
 from qwatson.widgets.dates import DateRangeNavigator
 from qwatson.widgets.tableviews import WatsonDailyTableWidget
@@ -30,6 +29,8 @@ from qwatson.widgets.toolbar import (ToolBarWidget, OnOffToolButton,
                                      QToolButtonSmall)
 from qwatson import __namever__
 from qwatson.models.tablemodels import WatsonTableModel
+from qwatson.widgets.layout import VSep
+from qwatson.widgets.projects_and_tags import ProjectManager
 
 
 class QWatson(QWidget):
@@ -64,8 +65,11 @@ class QWatson(QWidget):
     def setup(self):
         """Setup the widget with the provided arguments."""
         timebar = self.setup_timebar()
-        self.setup_toolbar()
-        self.setup_project_cbox()
+        self.project_manager = self.setup_project_manager()
+
+        self.btn_report = QToolButtonSmall('note')
+        self.btn_report.clicked.connect(self.overview_widg.show)
+        self.btn_report.setToolTip("Open the activity overview window")
 
         self.msg_textedit = QTextEdit()
         self.msg_textedit.setPlaceholderText("Description")
@@ -73,59 +77,37 @@ class QWatson(QWidget):
         self.msg_textedit.setSizePolicy(
                 QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed))
 
-        layout = QGridLayout(self)
-        layout.addWidget(QLabel('Project :'), 0, 0)
-        layout.addWidget(self.project_cbox, 0, 1)
-        layout.addWidget(self.toolbar, 0, 2)
-        layout.addWidget(self.msg_textedit, 1, 0, 1, 3)
-        layout.addWidget(timebar, 2, 0, 1, 3)
+        # ---- Setup the layout
 
-        layout.setColumnStretch(1, 100)
+        project_toolbar = QGridLayout()
+        project_toolbar.addWidget(self.project_manager, 0, 0)
+        project_toolbar.addWidget(VSep(), 0, 1)
+        project_toolbar.addWidget(self.btn_report, 0, 2)
+        project_toolbar.setContentsMargins(0, 0, 0, 0)
+        project_toolbar.setSpacing(5)
+
+        layout = QGridLayout(self)
+        layout.addLayout(project_toolbar, 0, 0)
+        layout.addWidget(self.msg_textedit, 1, 0)
+        layout.addWidget(timebar, 2, 0)
+
         layout.setRowStretch(1, 100)
 
-    def setup_project_cbox(self, name=None):
+    def setup_project_manager(self, name=None):
         """
         Setup the list of all the existing projects, sorted by name, in a
         combobox.
         """
-        self.project_cbox = ComboBoxEdit()
-        self.project_cbox.setFixedHeight(icons.get_iconsize('small').height())
+        project_manager = ProjectManager(self.client.projects)
 
-        self.project_cbox.currentIndexChanged.connect(self.project_changed)
-        self.project_cbox.sig_item_renamed.connect(self.project_renamed)
-        self.project_cbox.sig_item_added.connect(self.new_project_added)
-
-        self.project_cbox.addItems(self.client.projects)
+        project_manager.sig_project_removed.connect(self.project_removed)
+        project_manager.sig_project_renamed.connect(self.project_renamed)
+        project_manager.sig_project_added.connect(self.new_project_added)
+        project_manager.sig_project_changed.connect(self.project_changed)
         if len(self.client.frames) > 0:
-            self.project_cbox.setCurentText(self.client.frames[-1][2])
-        self.project_changed(self.project_cbox.currentIndex())
+            project_manager.set_current_project(self.client.frames[-1][2])
 
-    def setup_toolbar(self):
-        """Setup the main toolbar of the widget"""
-        self.toolbar = ToolBarWidget()
-
-        self.btn_add = QToolButtonSmall('plus')
-        self.btn_add.clicked.connect(self.btn_add_isclicked)
-        self.btn_add.setToolTip("Create a new project")
-
-        self.btn_rename = QToolButtonSmall('edit')
-        self.btn_rename.clicked.connect(self.btn_rename_isclicked)
-        self.btn_rename.setToolTip("Rename the current project")
-
-        self.btn_del = QToolButtonSmall('clear')
-        self.btn_del.clicked.connect(self.btn_del_isclicked)
-        self.btn_del.setToolTip("Delete the current project")
-
-        self.btn_report = QToolButtonSmall('note')
-        self.btn_report.clicked.connect(self.overview_widg.show)
-        self.btn_report.setToolTip("Open the activity overview window")
-
-        # ---- Populate the toolbar
-
-        items = [self.btn_add, self.btn_rename,
-                 self.btn_del, None, self.btn_report]
-        for item in items:
-            self.toolbar.addWidget(item)
+        return project_manager
 
     def setup_timebar(self):
         """
@@ -157,41 +139,45 @@ class QWatson(QWidget):
 
         return timebar
 
-    # ---- Project combobox handlers
+    # ---- Project handlers
 
     def project_changed(self, index):
-        """Handle when the project selection change in the combobox."""
+        """Handle when the project selection change in the manager."""
         self.btn_startstop.setEnabled(index != -1)
-        self.btn_rename.setEnabled(index != -1)
-        self.btn_del.setEnabled(index != -1)
 
     def project_renamed(self, old_name, new_name):
-        """Handle when a project is renamed in the combobox."""
+        """Handle when a project is renamed in the manager."""
         if old_name != new_name:
             self.model.beginResetModel()
             self.client.rename_project(old_name, new_name)
             self.model.endResetModel()
 
     def new_project_added(self, name):
-        """Handle when a new project is added in the combobox."""
+        """Handle when a new project is added in the manager."""
         pass
+
+    def project_removed(self, project):
+        """
+        Handle when a project is removed from the manager by removing
+        the corresponding project from the database and updating the model.
+        """
+        if project in self.client.projects:
+            self.model.beginResetModel()
+            self.client.delete_project(project)
+            self.model.endResetModel()
 
     # ---- Toolbar handlers
 
     def btn_startstop_isclicked(self):
         """Handle when the button to start and stop Watson is clicked."""
         if self.btn_startstop.value():
-            self.client.start(self.project_cbox.currentText())
+            self.client.start(self.project_manager.current_project)
             self.elap_timer.start()
         else:
             self.elap_timer.stop()
             self.stop_watson(message=self.msg_textedit.toPlainText(),
-                             project=self.project_cbox.currentText())
-
-        self.project_cbox.setEnabled(not self.btn_startstop.value())
-        self.btn_add.setEnabled(not self.btn_startstop.value())
-        self.btn_rename.setEnabled(not self.btn_startstop.value())
-        self.btn_del.setEnabled(not self.btn_startstop.value())
+                             project=self.project_manager.current_project)
+        self.project_manager.setEnabled(not self.btn_startstop.value())
 
     def stop_watson(self, message=None, project=None):
         """Stop Watson and update the table model."""
@@ -205,32 +191,6 @@ class QWatson(QWidget):
         self.client.stop()
         self.client.save()
         self.model.endInsertRows()
-
-    def btn_add_isclicked(self):
-        """Handle when the button to add a new project is clicked."""
-        self.project_cbox.set_edit_mode('add')
-
-    def btn_rename_isclicked(self):
-        """Handle when the button to rename a new project is clicked."""
-        self.project_cbox.set_edit_mode('rename')
-
-    def btn_del_isclicked(self):
-        """Handle when the button to delete a project is clicked."""
-        project = self.project_cbox.currentText()
-        index = self.project_cbox.currentIndex()
-
-        msg = ("Are you sure that you want to delete project %s and all "
-               " related frames?<br><br>All data will be lost."
-               ) % project
-        ans = QMessageBox.question(self, 'Delete project', msg,
-                                   defaultButton=QMessageBox.No)
-
-        if ans == QMessageBox.Yes:
-            self.project_cbox.removeItem(index)
-            if project in self.client.projects:
-                self.model.beginResetModel()
-                self.client.delete_project(project)
-                self.model.endResetModel()
 
     def closeEvent(self, event):
         """Qt method override."""
