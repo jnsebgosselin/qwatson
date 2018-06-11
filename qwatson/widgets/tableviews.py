@@ -116,6 +116,7 @@ class WatsonDailyTableWidget(QFrame):
         for i, table in enumerate(self.tables):
             table.set_date_span(
                 (base_span[0].shift(days=i), base_span[1].shift(days=i)))
+        self.setup_time_total()
 
     def setup_time_total(self):
         """
