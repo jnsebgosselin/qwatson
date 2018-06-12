@@ -30,7 +30,7 @@ from qwatson.widgets.toolbar import (ToolBarWidget, OnOffToolButton,
 from qwatson import __namever__
 from qwatson.models.tablemodels import WatsonTableModel
 from qwatson.widgets.layout import VSep
-from qwatson.widgets.projects_and_tags import ProjectManager
+from qwatson.widgets.projects_and_tags import ProjectManager, TagManager
 
 
 class QWatson(QWidget):
@@ -77,6 +77,10 @@ class QWatson(QWidget):
         self.msg_textedit.setSizePolicy(
                 QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed))
 
+        self.tag_manager = TagManager()
+        if len(self.client.frames) > 0:
+            self.tag_manager.set_tags(self.client.frames[-1].tags)
+
         # ---- Setup the layout
 
         project_toolbar = QGridLayout()
@@ -89,7 +93,8 @@ class QWatson(QWidget):
         layout = QGridLayout(self)
         layout.addLayout(project_toolbar, 0, 0)
         layout.addWidget(self.msg_textedit, 1, 0)
-        layout.addWidget(timebar, 2, 0)
+        layout.addWidget(self.tag_manager, 2, 0)
+        layout.addWidget(timebar, 3, 0)
 
         layout.setRowStretch(1, 100)
 
