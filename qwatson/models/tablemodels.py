@@ -33,6 +33,7 @@ class WatsonTableModel(QAbstractTableModel):
                     COLUMNS['comment']]
     sig_btn_delrow_clicked = QSignal(QModelIndex)
     sig_model_changed = QSignal()
+    sig_total_seconds_changed = QSignal(float)
 
     def __init__(self, client):
         super(WatsonTableModel, self).__init__()
@@ -192,11 +193,13 @@ class WatsonTableModel(QAbstractTableModel):
 class WatsonSortFilterProxyModel(QSortFilterProxyModel):
     sig_btn_delrow_clicked = QSignal(QModelIndex)
     sig_sourcemodel_changed = QSignal()
+    sig_total_seconds_changed = QSignal(float)
 
     def __init__(self, source_model, date_span=None):
         super(WatsonSortFilterProxyModel, self).__init__()
         self.setSourceModel(source_model)
         self.date_span = date_span
+        self.total_seconds = None
 
         self.sig_btn_delrow_clicked.connect(
             source_model.sig_btn_delrow_clicked.emit)
@@ -209,12 +212,14 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
     def source_model_changed(self):
         """Emit a signal whenever the source model changes."""
         self.sig_sourcemodel_changed.emit()
+        self.calcul_total_seconds()
 
     def set_date_span(self, date_span):
         """Set the date span to use to filter the row of the source model."""
         if date_span != self.date_span:
             self.date_span = date_span
             self.invalidateFilter()
+            self.calcul_total_seconds()
 
     def filterAcceptsRow(self, source_row, source_parent):
         """Qt method override."""
@@ -231,7 +236,7 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
         frame_start = self.sourceModel().frames[source_row].start
         return (frame_start >= date_span[0] and frame_start < date_span[1])
 
-    def total_seconds(self):
+    def calcul_total_seconds(self):
         """
         Return the total number of seconds of all the activities accepted
         by the proxy model.
@@ -241,7 +246,16 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
             source_row = self.mapToSource(self.index(i, 0)).row()
             frame = self.sourceModel().frames[source_row]
             timedelta = timedelta + (frame.stop - frame.start)
-        return timedelta.total_seconds()
+
+        total_seconds_old = self.total_seconds
+        total_seconds_new = timedelta.total_seconds()
+        if total_seconds_new != total_seconds_old:
+            self.total_seconds = total_seconds_new
+            total_seconds_old = total_seconds_old or 0
+
+            self.sig_total_seconds_changed.emit(self.total_seconds)
+            self.sourceModel().sig_total_seconds_changed.emit(
+                total_seconds_new - total_seconds_old)
 
     def get_accepted_row_count(self):
         """Return the number of rows that were accepted by the proxy."""
