@@ -24,6 +24,27 @@ from qwatson.widgets.toolbar import ToolBarWidget, QToolButtonSmall
 from qwatson.utils import icons
 
 
+class TagManager(QWidget):
+    def __init__(self, tags, parent=None):
+        super(TagManager, self).__init__(parent)
+        self.setup()
+        self.set_tag_list(tags)
+
+    def setup(self):
+        """Setup the widget with the provided arguments."""
+        self.linedit = QLineEdit()
+
+        # ---- Setup the layout
+
+        layout = QGridLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.linedit)
+
+    def set_tag_list(self, tags):
+        """Add a the tag list to the tag line edit."""
+        pass
+
+
 class ProjectManager(QWidget):
     """
     A toolbar composed of a combobox to show the existing projects and
