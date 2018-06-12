@@ -41,16 +41,14 @@ class WatsonDailyTableWidget(QFrame):
                  parent=None):
         super(WatsonDailyTableWidget, self).__init__(parent)
 
+        self.total_seconds = 0
         self.date_span = date_span
         self.model = model
+        self.model.sig_total_seconds_changed.connect(self.setup_time_total)
         self.tables = []
 
         self.setup()
         self.set_date_span(date_span)
-        self.setup_time_total()
-
-        model.sig_model_changed.connect(self.setup_time_total)
-        self.setup_time_total()
 
     def setup(self):
         """Setup the widget with the provided arguments."""
@@ -116,18 +114,15 @@ class WatsonDailyTableWidget(QFrame):
         for i, table in enumerate(self.tables):
             table.set_date_span(
                 (base_span[0].shift(days=i), base_span[1].shift(days=i)))
-        self.setup_time_total()
 
-    def setup_time_total(self):
+    def setup_time_total(self, delta_seconds):
         """
         Setup the total amount of time for all the activities listed
         for the date span.
         """
-        total_seconds = 0
-        for table in self.tables:
-            total_seconds += table.total_seconds
+        self.total_seconds = self.total_seconds + delta_seconds
         self.total_time_labl.setText(
-            "Total : %s" % total_seconds_to_hour_min(total_seconds))
+            "Total : %s" % total_seconds_to_hour_min(self.total_seconds))
 
 
 class WatsonTableWidget(QWidget):
@@ -139,7 +134,6 @@ class WatsonTableWidget(QWidget):
 
     def __init__(self, model, parent=None):
         super(WatsonTableWidget, self).__init__(parent)
-        self.total_seconds = 0
         self.table = FormatedWatsonTableView(model)
         titlebar = self.setup_titlebar()
 
@@ -149,7 +143,7 @@ class WatsonTableWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        self.table.proxy_model.sig_sourcemodel_changed.connect(
+        self.table.proxy_model.sig_total_seconds_changed.connect(
             self.setup_timecount)
 
     def setup_titlebar(self):
@@ -181,14 +175,12 @@ class WatsonTableWidget(QWidget):
         """Set the date span in the table and title."""
         self.table.set_date_span(date_span)
         self.title.setText(arrowspan_to_str(date_span))
-        self.setup_timecount()
 
-    def setup_timecount(self):
+    def setup_timecount(self, total_seconds):
         """
         Setup the time count for the activities of the table in the titlebar.
         """
-        self.total_seconds = self.table.proxy_model.total_seconds()
-        self.timecount.setText(total_seconds_to_hour_min(self.total_seconds))
+        self.timecount.setText(total_seconds_to_hour_min(total_seconds))
         self.table.setVisible(
             self.table.proxy_model.get_accepted_row_count() > 0)
 
