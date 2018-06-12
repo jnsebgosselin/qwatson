@@ -181,15 +181,18 @@ class QWatson(QWidget):
         else:
             self.elap_timer.stop()
             self.stop_watson(message=self.msg_textedit.toPlainText(),
-                             project=self.project_manager.current_project)
+                             project=self.project_manager.current_project,
+                             tags=self.tag_manager.tags)
         self.project_manager.setEnabled(not self.btn_startstop.value())
 
-    def stop_watson(self, message=None, project=None):
+    def stop_watson(self, message=None, project=None, tags=None):
         """Stop Watson and update the table model."""
         if message is not None:
             self.client._current['message'] = message
         if project is not None:
             self.client._current['project'] = project
+        if tags is not None:
+            self.client._current['tags'] = tags
 
         self.model.beginInsertRows(
             QModelIndex(), len(self.client.frames), len(self.client.frames))
