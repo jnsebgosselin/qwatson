@@ -25,14 +25,15 @@ from qwatson.utils import icons
 
 
 class TagManager(QWidget):
-    def __init__(self, tags, parent=None):
+    def __init__(self, tags=[], parent=None):
         super(TagManager, self).__init__(parent)
         self.setup()
-        self.set_tag_list(tags)
+        self.set_tags(tags)
 
     def setup(self):
         """Setup the widget with the provided arguments."""
         self.linedit = QLineEdit()
+        self.linedit.setPlaceholderText("Tags (comma separated)")
 
         # ---- Setup the layout
 
@@ -40,9 +41,15 @@ class TagManager(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.linedit)
 
-    def set_tag_list(self, tags):
+    @property
+    def tags(self):
+        """Return the list of tags entered in the lineedit."""
+        tags = self.linedit.text().split(',')
+        return sorted(set(tag.strip() for tag in tags))
+
+    def set_tags(self, tags):
         """Add a the tag list to the tag line edit."""
-        pass
+        self.linedit.setText(', '.join(tags))
 
 
 class ProjectManager(QWidget):
