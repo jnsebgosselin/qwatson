@@ -18,7 +18,7 @@ from PyQt5.QtWidgets import (
 from qwatson.utils.dates import qdatetime_from_str
 from qwatson.utils import icons
 from qwatson.utils.strformating import list_to_str
-from qwatson.widgets.projects_and_tags import TagLineEdit
+from qwatson.widgets.tags import TagLineEdit
 
 
 class TagEditDelegate(QStyledItemDelegate):
