@@ -17,6 +17,30 @@ from PyQt5.QtWidgets import (
 
 from qwatson.utils.dates import qdatetime_from_str
 from qwatson.utils import icons
+from qwatson.utils.strformating import list_to_str
+from qwatson.widgets.projects_and_tags import TagLineEdit
+
+
+class TagEditDelegate(QStyledItemDelegate):
+    """
+    A delegate that allow to edit the tags of a frame and
+    force an update of the Watson data via the model.
+    """
+    def __init__(self, parent):
+        QStyledItemDelegate.__init__(self, parent)
+
+    def createEditor(self, parent, option, index):
+        """Qt method override."""
+        return TagLineEdit(parent)
+
+    def setEditorData(self, editor, index):
+        """Qt method override."""
+        editor.set_tags(index.model().get_tags_from_index(index))
+
+    def setModelData(self, editor, model, index):
+        """Qt method override."""
+        if list_to_str(editor.tags) != model.data(index):
+            model.editFrame(index, tags=editor.tags)
 
 
 class ToolButtonDelegate(QStyledItemDelegate):
