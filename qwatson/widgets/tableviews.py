@@ -218,7 +218,7 @@ class BasicWatsonTableView(QTableView):
         # ---- Setup column size
 
         self.setColumnWidth(columns['tags'],
-                            2 * self.horizontalHeader().defaultSectionSize())
+                            1.5 * self.horizontalHeader().defaultSectionSize())
         self.setColumnWidth(columns['icons'],
                             icons.get_iconsize('small').width() + 12)
         self.horizontalHeader().setSectionResizeMode(QHeaderView.Fixed)

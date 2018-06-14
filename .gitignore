@@ -1,5 +1,6 @@
 releases/
 /qwatson/tests/watson/
+desktop.ini
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
