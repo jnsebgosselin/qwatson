@@ -60,7 +60,6 @@ class ActivityInputDialog(ColoredFrame):
     def setup_project_manager(self):
         """Setup the widget to manage projects."""
         project_manager = ProjectManager()
-        project_manager.btn_remove.hide()
 
         # Relay signals.
         project_manager.sig_project_added.connect(self.sig_project_added.emit)
