@@ -32,24 +32,38 @@ class TagManager(QWidget):
 
     def setup(self):
         """Setup the widget with the provided arguments."""
-        self.linedit = QLineEdit()
-        self.linedit.setPlaceholderText("Tags (comma separated)")
+        self.tag_edit = TagLineEdit()
+        self.tag_edit.setPlaceholderText("Tags (comma separated)")
 
         # ---- Setup the layout
 
         layout = QGridLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.linedit)
+        layout.addWidget(self.tag_edit)
 
     @property
     def tags(self):
-        """Return the list of tags entered in the lineedit."""
-        tags = self.linedit.text().split(',')
+        """Return the list of tags entered in the tag edit line."""
+        return self.tag_edit.tags
+
+    def set_tags(self, tags):
+        """Add a the tag list to the tag edit line."""
+        self.tag_edit.set_tags(tags)
+
+
+class TagLineEdit(QLineEdit):
+    def __init__(self, parent=None):
+        super(TagLineEdit, self).__init__(parent)
+
+    @property
+    def tags(self):
+        """Return the list of tags."""
+        tags = self.text().split(',')
         return sorted(set(tag.strip() for tag in tags))
 
     def set_tags(self, tags):
-        """Add a the tag list to the tag line edit."""
-        self.linedit.setText(', '.join(tags))
+        """Add a the tag list."""
+        self.setText(', '.join(tags))
 
 
 class ProjectManager(QWidget):
