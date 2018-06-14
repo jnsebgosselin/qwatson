@@ -179,17 +179,17 @@ class WatsonTableModel(QAbstractTableModel):
         datetime_format = '{} {}'.format('YYYY-MM-DD', 'HH:mm:ss')
         frame = self.frames[index.row()]
 
-        start = start or frame.start.format(datetime_format)
+        start = frame.start.format(datetime_format) if start is None else start
         start = arrow.get(start, datetime_format).replace(
             tzinfo=dateutil.tz.tzlocal()).to('utc')
 
-        stop = stop or frame.stop.format(datetime_format)
+        stop = frame.stop.format(datetime_format) if stop is None else stop
         stop = arrow.get(stop, datetime_format).replace(
             tzinfo=dateutil.tz.tzlocal()).to('utc')
 
-        project = project or frame.project
-        message = message or frame.message
-        tags = tags or frame.tags
+        project = frame.project if project is None else project
+        message = frame.message if message is None else message
+        tags = frame.tags if tags is None else tags
         updated_at = arrow.utcnow().format(datetime_format)
 
         self.frames[frame.id] = [
