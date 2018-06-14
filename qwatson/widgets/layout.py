@@ -38,6 +38,8 @@ class ColoredFrame(QFrame):
     def set_background_color(self, colorname):
         if colorname == 'light':
             color = QStyleOption().palette.light().color()
+        elif colorname == 'window':
+            color = QStyleOption().palette.window().color()
         else:
             color = QStyleOption().palette.base().color()
 
