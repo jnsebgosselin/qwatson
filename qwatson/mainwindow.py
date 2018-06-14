@@ -15,8 +15,7 @@ import os.path as osp
 # ---- Third parties imports
 
 from PyQt5.QtCore import (Qt, QModelIndex)
-from PyQt5.QtWidgets import (QApplication, QWidget, QGridLayout,
-                             QSizePolicy, QTextEdit)
+from PyQt5.QtWidgets import (QApplication, QGridLayout, QWidget)
 
 # ---- Local imports
 
@@ -28,8 +27,8 @@ from qwatson.widgets.tableviews import WatsonDailyTableWidget
 from qwatson.widgets.toolbar import OnOffToolButton, QToolButtonSmall
 from qwatson import __namever__
 from qwatson.models.tablemodels import WatsonTableModel
-from qwatson.widgets.layout import VSep
-from qwatson.widgets.projects_and_tags import ProjectManager, TagManager
+from qwatson.views.activitydialog import ActivityInputDialog
+from qwatson.widgets.layout import ColoredFrame
 
 
 class QWatson(QWidget):
@@ -38,6 +37,7 @@ class QWatson(QWidget):
         super(QWatson, self).__init__(parent)
         self.setWindowIcon(icons.get_icon('master'))
         self.setWindowTitle(__namever__)
+        self.setMinimumWidth(300)
         self.setWindowFlags(Qt.Window |
                             Qt.WindowMinimizeButtonHint |
                             Qt.WindowCloseButtonHint)
@@ -56,7 +56,8 @@ class QWatson(QWidget):
         self.client = Watson(config_dir=config_dir)
         self.model = WatsonTableModel(self.client)
         if self.client.is_started:
-            self.stop_watson(message="last session not closed correctly.")
+            self.stop_watson(message="last session not closed correctly.",
+                             tags=['error'])
 
         self.overview_widg = WatsonOverviewWidget(self.client, self.model)
         self.setup()
@@ -64,54 +65,38 @@ class QWatson(QWidget):
     def setup(self):
         """Setup the widget with the provided arguments."""
         timebar = self.setup_timebar()
-        self.project_manager = self.setup_project_manager()
+        self.activity_input_dial = self.setup_activity_input_dial()
+        statusbar = self.setup_statusbar()
 
-        self.btn_report = QToolButtonSmall('note')
-        self.btn_report.clicked.connect(self.overview_widg.show)
-        self.btn_report.setToolTip("Open the activity overview window")
+        # ---- Setup layout
 
-        self.msg_textedit = QTextEdit()
-        self.msg_textedit.setPlaceholderText("Description")
-        self.msg_textedit.setMaximumHeight(50)
-        self.msg_textedit.setSizePolicy(
-                QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed))
+        mainlayout = QGridLayout(self)
+        mainlayout.setContentsMargins(0, 0, 0, 0)
+        mainlayout.setSpacing(0)
+        mainlayout.addWidget(self.activity_input_dial, 1, 0)
+        mainlayout.addWidget(timebar, 0, 0)
+        mainlayout.addWidget(statusbar, 2, 0)
 
-        self.tag_manager = TagManager()
-        if len(self.client.frames) > 0:
-            self.tag_manager.set_tags(self.client.frames[-1].tags)
-
-        # ---- Setup the layout
-
-        project_toolbar = QGridLayout()
-        project_toolbar.addWidget(self.project_manager, 0, 0)
-        project_toolbar.addWidget(VSep(), 0, 1)
-        project_toolbar.addWidget(self.btn_report, 0, 2)
-        project_toolbar.setContentsMargins(0, 0, 0, 0)
-        project_toolbar.setSpacing(5)
-
-        layout = QGridLayout(self)
-        layout.addLayout(project_toolbar, 0, 0)
-        layout.addWidget(self.msg_textedit, 1, 0)
-        layout.addWidget(self.tag_manager, 2, 0)
-        layout.addWidget(timebar, 3, 0)
-
-        layout.setRowStretch(1, 100)
-
-    def setup_project_manager(self, name=None):
+    def setup_activity_input_dial(self):
         """
-        Setup the list of all the existing projects, sorted by name, in a
-        combobox.
+        Setup the embedded dialog to setup the current activity parameters.
         """
-        project_manager = ProjectManager(self.client.projects)
+        activity_input_dial = ActivityInputDialog()
+        activity_input_dial.set_background_color('light')
+        activity_input_dial.set_projects(self.client.projects)
 
-        project_manager.sig_project_removed.connect(self.project_removed)
-        project_manager.sig_project_renamed.connect(self.project_renamed)
-        project_manager.sig_project_added.connect(self.new_project_added)
-        project_manager.sig_project_changed.connect(self.project_changed)
+        activity_input_dial.sig_project_removed.connect(self.project_removed)
+        activity_input_dial.sig_project_renamed.connect(self.project_renamed)
+        activity_input_dial.sig_project_added.connect(self.new_project_added)
+        activity_input_dial.sig_project_changed.connect(self.project_changed)
+
+        # Set current activity inputs to the last ones savec in the database.
         if len(self.client.frames) > 0:
-            project_manager.set_current_project(self.client.frames[-1][2])
+            activity_input_dial.set_current_project(self.client.frames[-1][2])
+            activity_input_dial.set_tags(self.client.frames[-1].tags)
+            activity_input_dial.set_comment(self.client.frames[-1].message)
 
-        return project_manager
+        return activity_input_dial
 
     def setup_timebar(self):
         """
@@ -134,14 +119,36 @@ class QWatson(QWidget):
 
         # ---- Setup layout
 
-        timebar = QWidget()
+        timebar = ColoredFrame()
+        timebar.set_background_color('window')
+
         layout = QGridLayout(timebar)
         layout.addWidget(self.btn_startstop, 0, 0)
         layout.addWidget(self.elap_timer, 0, 1)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(5, 5, 5, 5)
         layout.setColumnStretch(2, 100)
 
         return timebar
+
+    # ---- Bottom toolbar
+
+    def setup_statusbar(self):
+        """Setup the toolbar located at the bottom of the main widget."""
+        self.btn_report = QToolButtonSmall('note')
+        self.btn_report.clicked.connect(self.overview_widg.show)
+        self.btn_report.setToolTip("Open the activity overview window")
+
+        # Setup the layout of the statusbar
+
+        statusbar = ColoredFrame()
+        statusbar.set_background_color('window')
+
+        layout = QGridLayout(statusbar)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.btn_report, 0, 2)
+        layout.setColumnStretch(1, 100)
+
+        return statusbar
 
     # ---- Project handlers
 
@@ -175,14 +182,13 @@ class QWatson(QWidget):
     def btn_startstop_isclicked(self):
         """Handle when the button to start and stop Watson is clicked."""
         if self.btn_startstop.value():
-            self.client.start(self.project_manager.current_project)
+            self.client.start(self.activity_input_dial.project)
             self.elap_timer.start()
         else:
             self.elap_timer.stop()
-            self.stop_watson(message=self.msg_textedit.toPlainText(),
-                             project=self.project_manager.current_project,
-                             tags=self.tag_manager.tags)
-        self.project_manager.setEnabled(not self.btn_startstop.value())
+            self.stop_watson(message=self.activity_input_dial.comment,
+                             project=self.activity_input_dial.project,
+                             tags=self.activity_input_dial.tags)
 
     def stop_watson(self, message=None, project=None, tags=None):
         """Stop Watson and update the table model."""
