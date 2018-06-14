@@ -13,57 +13,95 @@ import sys
 # ---- Third party imports
 
 from PyQt5.QtCore import pyqtSignal as QSignal
-from PyQt5.QtCore import Qt, QEvent
-from PyQt5.QtWidgets import (QApplication, QComboBox, QGridLayout, QLabel,
+from PyQt5.QtWidgets import (QApplication, QGridLayout, QLabel,
                              QLineEdit, QMessageBox, QWidget)
 
 # ---- Local imports
 
 from qwatson.widgets.comboboxes import ComboBoxEdit
 from qwatson.widgets.toolbar import ToolBarWidget, QToolButtonSmall
+from qwatson.widgets.layout import ColoredFrame
+from qwatson.widgets.tags import TagLineEdit
 from qwatson.utils import icons
 
 
-class TagManager(QWidget):
-    def __init__(self, tags=[], parent=None):
-        super(TagManager, self).__init__(parent)
-        self.setup()
-        self.set_tags(tags)
+class ActivityInputDialog(ColoredFrame):
+    """A dialog to setup the parameters of the currently running activity."""
 
-    def setup(self):
-        """Setup the widget with the provided arguments."""
-        self.tag_edit = TagLineEdit()
-        self.tag_edit.setPlaceholderText("Tags (comma separated)")
+    sig_project_added = QSignal(str)
+    sig_project_changed = QSignal(int)
+    sig_project_removed = QSignal(str)
+    sig_project_renamed = QSignal(str, str)
+
+    def __init__(self, parent=None):
+        super(ActivityInputDialog, self).__init__(parent)
+
+        self.project_manager = self.setup_project_manager()
+
+        self.tag_lineedit = TagLineEdit()
+        self.tag_lineedit.setPlaceholderText("Tags (comma separated)")
+
+        self.msg_textedit = QLineEdit()
+        self.msg_textedit.setPlaceholderText("Comment")
 
         # ---- Setup the layout
 
         layout = QGridLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.tag_edit)
+        layout.setContentsMargins(5, 5, 5, 5)
+
+        layout.addWidget(self.project_manager, 0, 1)
+        layout.addWidget(self.tag_lineedit, 1, 1)
+        layout.addWidget(self.msg_textedit, 2, 1)
+
+        layout.addWidget(QLabel('project :'), 0, 0)
+        layout.addWidget(QLabel('tags :'), 1, 0)
+        layout.addWidget(QLabel('comment :'), 2, 0)
+
+    def setup_project_manager(self):
+        """Setup the widget to manage projects."""
+        project_manager = ProjectManager()
+
+        # Relay signals.
+        project_manager.sig_project_added.connect(self.sig_project_added.emit)
+        project_manager.sig_project_changed.connect(
+            self.sig_project_changed.emit)
+        project_manager.sig_project_removed.connect(
+            self.sig_project_removed.emit)
+        project_manager.sig_project_renamed.connect(
+            self.sig_project_renamed.emit)
+
+        return project_manager
+
+    @property
+    def comment(self):
+        """Return the text of the comment line edit."""
+        return self.msg_textedit.text()
 
     @property
     def tags(self):
-        """Return the list of tags entered in the tag edit line."""
-        return self.tag_edit.tags
-
-    def set_tags(self, tags):
-        """Add a the tag list to the tag edit line."""
-        self.tag_edit.set_tags(tags)
-
-
-class TagLineEdit(QLineEdit):
-    def __init__(self, parent=None):
-        super(TagLineEdit, self).__init__(parent)
+        """Return the tags listed in the tag line edit."""
+        return self.tag_lineedit.tags
 
     @property
-    def tags(self):
-        """Return the list of tags."""
-        tags = self.text().split(',')
-        return sorted(set(tag.strip() for tag in tags))
+    def project(self):
+        """Return the currently selected project in the project manager."""
+        return self.project_manager.current_project
+
+    def set_current_project(self, project):
+        """Set the current project of the project manager."""
+        self.project_manager.set_current_project(project)
 
     def set_tags(self, tags):
-        """Add a the tag list."""
-        self.setText(', '.join(tags))
+        """Set the tag list shown in the tag line edit."""
+        self.tag_lineedit.set_tags(tags)
+
+    def set_comment(self, comment):
+        """Set the comment shown in the comment line edit."""
+        self.msg_textedit.setText(comment)
+
+    def set_projects(self, project):
+        """Set the list of project in the project manager."""
+        self.project_manager.set_project_list(project)
 
 
 class ProjectManager(QWidget):
@@ -76,7 +114,7 @@ class ProjectManager(QWidget):
     sig_project_changed = QSignal(int)
     sig_project_removed = QSignal(str)
 
-    def __init__(self, projects, parent=None):
+    def __init__(self, projects=[], parent=None):
         super(ProjectManager, self).__init__(parent)
 
         self.setup()
@@ -90,9 +128,8 @@ class ProjectManager(QWidget):
 
         layout = QGridLayout(self)
 
-        layout.addWidget(QLabel('Project :'), 0, 0)
-        layout.addWidget(self.project_cbox, 0, 1)
-        layout.addWidget(self.toolbar, 0, 2)
+        layout.addWidget(self.project_cbox, 0, 0)
+        layout.addWidget(self.toolbar, 0, 1)
 
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setColumnStretch(0, 100)
@@ -118,7 +155,7 @@ class ProjectManager(QWidget):
 
         self.btn_add = QToolButtonSmall('plus')
         self.btn_add.clicked.connect(self.btn_add_isclicked)
-        self.btn_add.setToolTip("Create a new project")
+        self.btn_add.setToolTip("Add a new project")
 
         self.btn_rename = QToolButtonSmall('edit')
         self.btn_rename.clicked.connect(self.btn_rename_isclicked)
@@ -186,6 +223,6 @@ class ProjectManager(QWidget):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    date_range_nav = ProjectManager(['proj1', 'proj2', 'proj3'])
-    date_range_nav.show()
+    activity_input_dialog = ActivityInputDialog()
+    activity_input_dialog.show()
     app.exec_()
