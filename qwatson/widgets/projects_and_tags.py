@@ -50,24 +50,3 @@ class TagManager(QWidget):
         """Add a the tag list to the tag edit line."""
         self.tag_edit.set_tags(tags)
 
-
-class TagLineEdit(QLineEdit):
-    def __init__(self, parent=None):
-        super(TagLineEdit, self).__init__(parent)
-
-    @property
-    def tags(self):
-        """Return the list of tags."""
-        tags = self.text().split(',')
-        return sorted(set(tag.strip() for tag in tags))
-
-    def set_tags(self, tags):
-        """Add a the tag list."""
-        self.setText(', '.join(tags))
-
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    date_range_nav = ProjectManager(['proj1', 'proj2', 'proj3'])
-    date_range_nav.show()
-    app.exec_()
