@@ -22,15 +22,17 @@ from PyQt5.QtCore import (QAbstractTableModel, QModelIndex,
 # ---- Local imports
 
 from qwatson.utils.dates import qdatetime_from_str
+from qwatson.utils.strformating import list_to_str
 
 
 class WatsonTableModel(QAbstractTableModel):
 
-    HEADER = ['start', 'end', 'duration', 'project', 'comment', 'id', '']
+    HEADER = ['start', 'end', 'duration', 'project',
+              'tags', 'comment', 'id', '']
     COLUMNS = {'start': 0, 'end': 1, 'duration': 2, 'project': 3,
-               'comment': 4, 'id': 5, 'icons': 6}
+               'tags': 4, 'comment': 5, 'id': 6, 'icons': 7}
     EDIT_COLUMNS = [COLUMNS['start'], COLUMNS['end'], COLUMNS['project'],
-                    COLUMNS['comment']]
+                    COLUMNS['comment'], COLUMNS['tags']]
     sig_btn_delrow_clicked = QSignal(QModelIndex)
     sig_model_changed = QSignal()
     sig_total_seconds_changed = QSignal(float)
@@ -75,6 +77,8 @@ class WatsonTableModel(QAbstractTableModel):
                 return '' if msg is None else msg
             elif index.column() == self.COLUMNS['id']:
                 return self.frames[index.row()].id
+            elif index.column() == self.COLUMNS['tags']:
+                return list_to_str(self.frames[index.row()].tags)
             else:
                 return ''
         elif role == Qt.ToolTipRole:
@@ -85,8 +89,14 @@ class WatsonTableModel(QAbstractTableModel):
                 return self.frames[index.row()].id
             elif index.column() == self.COLUMNS['icons']:
                 return "Delete frame"
+            elif index.column() == self.COLUMNS['project']:
+                return self.frames[index.row()].project
+            elif index.column() == self.COLUMNS['tags']:
+                return list_to_str(self.frames[index.row()].tags)
         elif role == Qt.TextAlignmentRole:
             if index.column() == self.COLUMNS['comment']:
+                return Qt.AlignLeft | Qt.AlignVCenter
+            if index.column() == self.COLUMNS['tags']:
                 return Qt.AlignLeft | Qt.AlignVCenter
             else:
                 return Qt.AlignCenter
@@ -114,6 +124,10 @@ class WatsonTableModel(QAbstractTableModel):
     @property
     def projects(self):
         return self.client.projects
+
+    def get_tags_from_index(self, index):
+        """Return a list of tags for the frame from a table index."""
+        return self.frames[index.row()].tags
 
     def get_frameid_from_index(self, index):
         """Return the frame id from a table index."""
@@ -157,7 +171,7 @@ class WatsonTableModel(QAbstractTableModel):
         self.endRemoveRows()
 
     def editFrame(self, index, start=None, stop=None, project=None,
-                  message=None):
+                  message=None, tags=None):
         """
         Edit Frame stored at index in the model from the provided
         arguments
@@ -175,10 +189,11 @@ class WatsonTableModel(QAbstractTableModel):
 
         project = frame.project if project is None else project
         message = frame.message if message is None else message
+        tags = frame.tags if tags is None else tags
         updated_at = arrow.utcnow().format(datetime_format)
 
         self.frames[frame.id] = [
-            project, start, stop, frame.tags, frame.id, updated_at, message]
+            project, start, stop, tags, frame.id, updated_at, message]
         self.client.save()
         self.dataChanged.emit(index, index)
 
@@ -267,6 +282,11 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
     def projects(self):
         return self.sourceModel().client.projects
 
+    def get_tags_from_index(self, proxy_index):
+        """Return a list of tags for the frame from a table index."""
+        return self.sourceModel().get_tags_from_index(
+                   self.mapToSource(proxy_index))
+
     def get_frameid_from_index(self, proxy_index):
         """Return the frame id from a table index."""
         return self.sourceModel().get_frameid_from_index(
@@ -287,10 +307,11 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
         self.sourceModel().removeRows(self.mapToSource(proxy_index))
 
     def editFrame(self, proxy_index, start=None, stop=None, project=None,
-                  message=None):
+                  message=None, tags=None):
         """Map proxy method to source."""
         self.sourceModel().editFrame(
-            self.mapToSource(proxy_index), start, stop, project, message)
+            self.mapToSource(proxy_index), start=start, stop=stop,
+            project=project, message=message, tags=tags)
 
     def editDateTime(self, proxy_index, date_time):
         """Map proxy method to source."""

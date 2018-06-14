@@ -26,7 +26,7 @@ from qwatson.utils.dates import arrowspan_to_str, total_seconds_to_hour_min
 from qwatson.models.tablemodels import WatsonSortFilterProxyModel
 from qwatson.models.delegates import (
     ToolButtonDelegate, ComboBoxDelegate, LineEditDelegate, StartDelegate,
-    StopDelegate)
+    StopDelegate, TagEditDelegate)
 
 
 # ---- TableWidget
@@ -74,7 +74,7 @@ class WatsonDailyTableWidget(QFrame):
         self.scene.setSpacing(5)
         self.scene.setContentsMargins(10, 5, 10, 5)
 
-        scrollarea.setMinimumWidth(750)
+        scrollarea.setMinimumWidth(900)
         scrollarea.setMinimumHeight(500)
         scrollarea.setWidget(self.view)
         scrollarea.setWidgetResizable(True)
@@ -213,11 +213,14 @@ class BasicWatsonTableView(QTableView):
             columns['comment'], LineEditDelegate(self))
         self.setItemDelegateForColumn(columns['start'], StartDelegate(self))
         self.setItemDelegateForColumn(columns['end'], StopDelegate(self))
+        self.setItemDelegateForColumn(columns['tags'], TagEditDelegate(self))
 
         # ---- Setup column size
 
-        self.setColumnWidth(
-            columns['icons'], icons.get_iconsize('small').width() + 12)
+        self.setColumnWidth(columns['tags'],
+                            2 * self.horizontalHeader().defaultSectionSize())
+        self.setColumnWidth(columns['icons'],
+                            icons.get_iconsize('small').width() + 12)
         self.horizontalHeader().setSectionResizeMode(QHeaderView.Fixed)
         self.horizontalHeader().setSectionResizeMode(
             columns['comment'], QHeaderView.Stretch)
