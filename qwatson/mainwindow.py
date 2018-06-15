@@ -21,6 +21,7 @@ from PyQt5.QtWidgets import (QApplication, QGridLayout, QSizePolicy, QWidget)
 
 from qwatson.watson.watson import Watson
 from qwatson.utils import icons
+from qwatson.utils.dates import round_watson_frame
 from qwatson.widgets.clock import ElapsedTimeLCDNumber
 from qwatson.widgets.dates import DateRangeNavigator
 from qwatson.widgets.tableviews import WatsonDailyTableWidget
@@ -218,6 +219,12 @@ class QWatson(QWidget):
         self.model.beginInsertRows(
             QModelIndex(), len(self.client.frames), len(self.client.frames))
         self.client.stop()
+
+        # Round the start and stop times of the last added frame.
+        self.client.frames[-1] = round_watson_frame(
+            self.client.frames[-1],
+            self.round_minutes[self.round_time_btn.text()])
+
         self.client.save()
         self.model.endInsertRows()
 
