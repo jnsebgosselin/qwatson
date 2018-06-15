@@ -15,7 +15,7 @@ import os.path as osp
 # ---- Third parties imports
 
 from PyQt5.QtCore import (Qt, QModelIndex)
-from PyQt5.QtWidgets import (QApplication, QGridLayout, QWidget)
+from PyQt5.QtWidgets import (QApplication, QGridLayout, QSizePolicy, QWidget)
 
 # ---- Local imports
 
@@ -24,7 +24,8 @@ from qwatson.utils import icons
 from qwatson.widgets.clock import ElapsedTimeLCDNumber
 from qwatson.widgets.dates import DateRangeNavigator
 from qwatson.widgets.tableviews import WatsonDailyTableWidget
-from qwatson.widgets.toolbar import OnOffToolButton, QToolButtonSmall
+from qwatson.widgets.toolbar import (
+    OnOffToolButton, QToolButtonSmall, DropDownToolButton)
 from qwatson import __namever__
 from qwatson.models.tablemodels import WatsonTableModel
 from qwatson.views.activitydialog import ActivityInputDialog
@@ -137,6 +138,17 @@ class QWatson(QWidget):
         self.btn_report = QToolButtonSmall('note')
         self.btn_report.clicked.connect(self.overview_widg.show)
         self.btn_report.setToolTip("Open the activity overview window")
+        self.round_minutes = {
+            'round to 1min': 1, 'round to 5min': 5, 'round to 10min': 10}
+        self.round_time_btn = DropDownToolButton(style='text_only')
+        self.round_time_btn.setSizePolicy(
+            QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred))
+        self.round_time_btn.addItems(list(self.round_minutes.keys()))
+        self.round_time_btn.setCurrentIndex(1)
+        self.round_time_btn.setToolTip(
+            "<b>Round Start and Stop</b><br><br>"
+            "Round start and stop times to the nearest"
+            " multiple of the selected factor.")
 
         # Setup the layout of the statusbar
 
@@ -145,6 +157,7 @@ class QWatson(QWidget):
 
         layout = QGridLayout(statusbar)
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.round_time_btn, 0, 0)
         layout.addWidget(self.btn_report, 0, 2)
         layout.setColumnStretch(1, 100)
 
