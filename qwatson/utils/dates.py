@@ -64,6 +64,10 @@ def arrowspan_to_str(span):
 
 
 def round_arrow_to(arrow, base):
+    """
+    Round a time arrow to the nearest multiple of the specified base in
+    minutes.
+    """
     deltat = arrow - arrow.floor('hour')
     total_seconds = deltat.total_seconds()
     multiple, residual = divmod(total_seconds, base*60)
