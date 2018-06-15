@@ -87,7 +87,6 @@ def round_watson_frame(frame, base):
     start = arrow.get(start, datetime_format).replace(
         tzinfo=dateutil.tz.tzlocal()).to('utc')
     start = round_arrow_to(start, base)
-    print(start)
 
     stop = frame.stop.format(datetime_format)
     stop = arrow.get(stop, datetime_format).replace(
@@ -95,8 +94,6 @@ def round_watson_frame(frame, base):
     stop = round_arrow_to(stop, base)
 
     updated_at = arrow.utcnow().format(datetime_format)
-
-    print(stop)
 
     return [frame.project, start, stop, frame.tags,
             frame.id, updated_at, frame.message]
