@@ -159,6 +159,7 @@ class DropDownList(QListWidget):
         super(DropDownList, self).__init__(parent)
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)
         self.hide()
+        self.itemClicked.connect(self.item_is_clicked)
 
     def show(self):
         """
@@ -187,6 +188,11 @@ class DropDownList(QListWidget):
             h += self.sizeHintForRow(i)
         self.setFixedHeight(h)
 
+    def item_is_clicked(self, item):
+        """Handle when an item is clicked with the mouse."""
+        self.sig_item_selected.emit(self.currentItem().text())
+        self.hide()
+
     def keyPressEvent(self, event):
         """
         Qt method override to select the highlighted item and hide the list
@@ -194,16 +200,6 @@ class DropDownList(QListWidget):
         """
         super(DropDownList, self).keyPressEvent(event)
         if event.key() == Qt.Key_Return:
-            self.sig_item_selected.emit(self.currentItem().text())
-            self.hide()
-
-    def mousePressEvent(self, event):
-        """
-        Qt method override to select and hide the list if an item is clicked
-        with the left button of the mouse.
-        """
-        super(DropDownList, self).mousePressEvent(event)
-        if event.button() == 1:
             self.sig_item_selected.emit(self.currentItem().text())
             self.hide()
 
