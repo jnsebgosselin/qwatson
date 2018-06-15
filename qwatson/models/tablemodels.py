@@ -76,7 +76,7 @@ class WatsonTableModel(QAbstractTableModel):
                 msg = self.frames[index.row()].message
                 return '' if msg is None else msg
             elif index.column() == self.COLUMNS['id']:
-                return self.frames[index.row()].id
+                return self.frames[index.row()].id[:7]
             elif index.column() == self.COLUMNS['tags']:
                 return list_to_str(self.frames[index.row()].tags)
             else:
