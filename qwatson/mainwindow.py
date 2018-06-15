@@ -32,6 +32,8 @@ from qwatson.models.tablemodels import WatsonTableModel
 from qwatson.views.activitydialog import ActivityInputDialog
 from qwatson.widgets.layout import ColoredFrame
 
+ROUNDMIN = {'round to 1min': 1, 'round to 5min': 5, 'round to 10min': 10}
+
 
 class QWatson(QWidget):
 
@@ -142,12 +144,10 @@ class QWatson(QWidget):
             "<b>Activity Overview</b><br><br>"
             "Open the activity overview window.")
 
-        self.round_minutes = {
-            'round to 1min': 1, 'round to 5min': 5, 'round to 10min': 10}
         self.round_time_btn = DropDownToolButton(style='text_only')
         self.round_time_btn.setSizePolicy(
             QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred))
-        self.round_time_btn.addItems(list(self.round_minutes.keys()))
+        self.round_time_btn.addItems(list(ROUNDMIN.keys()))
         self.round_time_btn.setCurrentIndex(1)
         self.round_time_btn.setToolTip(
             "<b>Round Start and Stop</b><br><br>"
@@ -222,8 +222,7 @@ class QWatson(QWidget):
 
         # Round the start and stop times of the last added frame.
         self.client.frames[-1] = round_watson_frame(
-            self.client.frames[-1],
-            self.round_minutes[self.round_time_btn.text()])
+            self.client.frames[-1], ROUNDMIN[self.round_time_btn.text()])
 
         self.client.save()
         self.model.endInsertRows()
