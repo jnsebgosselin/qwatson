@@ -61,3 +61,25 @@ def arrowspan_to_str(span):
             start.day, start.year)
 
     return date_range_text
+
+
+def round_arrow_to(arrow, base):
+    deltat = arrow - arrow.floor('hour')
+    total_seconds = deltat.total_seconds()
+    multiple, residual = divmod(total_seconds, base*60)
+    if residual/60 >= base/2:
+        multiple += 1
+    rounded_arrow = arrow.floor('hour').shift(minutes=multiple*base)
+
+    return rounded_arrow
+
+
+if __name__ == '__main__':
+    from datetime import datetime
+    datetime_fmt = 'YYYY-MM-DD HH:mm:ss'
+    arr1 = arrow.get(datetime(2018, 6, 14, 23, 57, 45))
+    print(arr1.format(datetime_fmt))
+    print(round_arrow_to(arr1, 1).format(datetime_fmt))
+    print(round_arrow_to(arr1, 5).format(datetime_fmt))
+    print(round_arrow_to(arr1, 10).format(datetime_fmt))
+    print(round_arrow_to(arr1, 30).format(datetime_fmt))
