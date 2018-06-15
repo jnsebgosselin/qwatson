@@ -9,6 +9,7 @@
 # ---- Imports: standard libraries
 
 from time import strptime
+import dateutil
 
 # ---- Imports: third parties
 
@@ -61,3 +62,49 @@ def arrowspan_to_str(span):
             start.day, start.year)
 
     return date_range_text
+
+
+def round_arrow_to(arrow, base):
+    """
+    Round a time arrow to the nearest multiple of the specified base in
+    minutes.
+    """
+    deltat = arrow - arrow.floor('hour')
+    total_seconds = deltat.total_seconds()
+    multiple, residual = divmod(total_seconds, base*60)
+    if residual/60 >= base/2:
+        multiple += 1
+    rounded_arrow = arrow.floor('hour').shift(minutes=multiple*base)
+
+    return rounded_arrow
+
+
+def round_watson_frame(frame, base):
+    """Round the start and stop time of a Watson frame."""
+    datetime_format = '{} {}'.format('YYYY-MM-DD', 'HH:mm:ss')
+
+    start = frame.start.format(datetime_format)
+    start = arrow.get(start, datetime_format).replace(
+        tzinfo=dateutil.tz.tzlocal()).to('utc')
+    start = round_arrow_to(start, base)
+
+    stop = frame.stop.format(datetime_format)
+    stop = arrow.get(stop, datetime_format).replace(
+        tzinfo=dateutil.tz.tzlocal()).to('utc')
+    stop = round_arrow_to(stop, base)
+
+    updated_at = arrow.utcnow().format(datetime_format)
+
+    return [frame.project, start, stop, frame.tags,
+            frame.id, updated_at, frame.message]
+
+
+if __name__ == '__main__':
+    from datetime import datetime
+    datetime_fmt = 'YYYY-MM-DD HH:mm:ss'
+    arr1 = arrow.get(datetime(2018, 6, 14, 23, 57, 45))
+    print(arr1.format(datetime_fmt))
+    print(round_arrow_to(arr1, 1).format(datetime_fmt))
+    print(round_arrow_to(arr1, 5).format(datetime_fmt))
+    print(round_arrow_to(arr1, 10).format(datetime_fmt))
+    print(round_arrow_to(arr1, 30).format(datetime_fmt))

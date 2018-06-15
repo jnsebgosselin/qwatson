@@ -15,20 +15,24 @@ import os.path as osp
 # ---- Third parties imports
 
 from PyQt5.QtCore import (Qt, QModelIndex)
-from PyQt5.QtWidgets import (QApplication, QGridLayout, QWidget)
+from PyQt5.QtWidgets import (QApplication, QGridLayout, QSizePolicy, QWidget)
 
 # ---- Local imports
 
 from qwatson.watson.watson import Watson
 from qwatson.utils import icons
+from qwatson.utils.dates import round_watson_frame
 from qwatson.widgets.clock import ElapsedTimeLCDNumber
 from qwatson.widgets.dates import DateRangeNavigator
 from qwatson.widgets.tableviews import WatsonDailyTableWidget
-from qwatson.widgets.toolbar import OnOffToolButton, QToolButtonSmall
+from qwatson.widgets.toolbar import (
+    OnOffToolButton, QToolButtonSmall, DropDownToolButton)
 from qwatson import __namever__
 from qwatson.models.tablemodels import WatsonTableModel
 from qwatson.views.activitydialog import ActivityInputDialog
 from qwatson.widgets.layout import ColoredFrame
+
+ROUNDMIN = {'round to 1min': 1, 'round to 5min': 5, 'round to 10min': 10}
 
 
 class QWatson(QWidget):
@@ -136,7 +140,19 @@ class QWatson(QWidget):
         """Setup the toolbar located at the bottom of the main widget."""
         self.btn_report = QToolButtonSmall('note')
         self.btn_report.clicked.connect(self.overview_widg.show)
-        self.btn_report.setToolTip("Open the activity overview window")
+        self.btn_report.setToolTip(
+            "<b>Activity Overview</b><br><br>"
+            "Open the activity overview window.")
+
+        self.round_time_btn = DropDownToolButton(style='text_only')
+        self.round_time_btn.setSizePolicy(
+            QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred))
+        self.round_time_btn.addItems(list(ROUNDMIN.keys()))
+        self.round_time_btn.setCurrentIndex(1)
+        self.round_time_btn.setToolTip(
+            "<b>Round Start and Stop</b><br><br>"
+            "Round start and stop times to the nearest"
+            " multiple of the selected factor.")
 
         # Setup the layout of the statusbar
 
@@ -145,6 +161,7 @@ class QWatson(QWidget):
 
         layout = QGridLayout(statusbar)
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.round_time_btn, 0, 0)
         layout.addWidget(self.btn_report, 0, 2)
         layout.setColumnStretch(1, 100)
 
@@ -202,6 +219,11 @@ class QWatson(QWidget):
         self.model.beginInsertRows(
             QModelIndex(), len(self.client.frames), len(self.client.frames))
         self.client.stop()
+
+        # Round the start and stop times of the last added frame.
+        self.client.frames[-1] = round_watson_frame(
+            self.client.frames[-1], ROUNDMIN[self.round_time_btn.text()])
+
         self.client.save()
         self.model.endInsertRows()
 
