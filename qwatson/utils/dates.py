@@ -9,6 +9,7 @@
 # ---- Imports: standard libraries
 
 from time import strptime
+import dateutil
 
 # ---- Imports: third parties
 
@@ -76,6 +77,29 @@ def round_arrow_to(arrow, base):
     rounded_arrow = arrow.floor('hour').shift(minutes=multiple*base)
 
     return rounded_arrow
+
+
+def round_watson_frame(frame, base):
+    """Round the start and stop time of a Watson frame."""
+    datetime_format = '{} {}'.format('YYYY-MM-DD', 'HH:mm:ss')
+
+    start = frame.start.format(datetime_format)
+    start = arrow.get(start, datetime_format).replace(
+        tzinfo=dateutil.tz.tzlocal()).to('utc')
+    start = round_arrow_to(start, base)
+    print(start)
+
+    stop = frame.stop.format(datetime_format)
+    stop = arrow.get(stop, datetime_format).replace(
+        tzinfo=dateutil.tz.tzlocal()).to('utc')
+    stop = round_arrow_to(stop, base)
+
+    updated_at = arrow.utcnow().format(datetime_format)
+
+    print(stop)
+
+    return [frame.project, start, stop, frame.tags,
+            frame.id, updated_at, frame.message]
 
 
 if __name__ == '__main__':
