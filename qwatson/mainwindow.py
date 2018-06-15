@@ -137,7 +137,10 @@ class QWatson(QWidget):
         """Setup the toolbar located at the bottom of the main widget."""
         self.btn_report = QToolButtonSmall('note')
         self.btn_report.clicked.connect(self.overview_widg.show)
-        self.btn_report.setToolTip("Open the activity overview window")
+        self.btn_report.setToolTip(
+            "<b>Activity Overview</b><br><br>"
+            "Open the activity overview window.")
+
         self.round_minutes = {
             'round to 1min': 1, 'round to 5min': 5, 'round to 10min': 10}
         self.round_time_btn = DropDownToolButton(style='text_only')
