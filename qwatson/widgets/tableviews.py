@@ -181,8 +181,6 @@ class WatsonTableWidget(QWidget):
         Setup the time count for the activities of the table in the titlebar.
         """
         self.timecount.setText(total_seconds_to_hour_min(total_seconds))
-        self.table.setVisible(
-            self.table.proxy_model.get_accepted_row_count() > 0)
 
 
 # ---- TableView
