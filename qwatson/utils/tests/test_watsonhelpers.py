@@ -20,7 +20,7 @@ import arrow
 
 from qwatson.watson.watson import Watson
 from qwatson.utils.watsonhelpers import insert_new_frame
-from qwatson.utils.filesio import delete_file_safely
+from qwatson.utils.fileio import delete_file_safely
 
 WORKDIR = osp.dirname(__file__)
 
