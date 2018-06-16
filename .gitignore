@@ -1,5 +1,7 @@
 releases/
 /qwatson/tests/watson/
+/qwatson/utils/tests/frames
+/qwatson/utils/tests/frames.bak
 desktop.ini
 
 # Byte-compiled / optimized / DLL files
