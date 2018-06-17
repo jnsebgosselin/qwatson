@@ -37,7 +37,7 @@ ROUNDMIN = {'round to 1min': 1, 'round to 5min': 5, 'round to 10min': 10}
 
 class QWatson(QWidget):
 
-    def __init__(self, debug=False, parent=None):
+    def __init__(self, config_dir=None, parent=None):
         super(QWatson, self).__init__(parent)
         self.setWindowIcon(icons.get_icon('master'))
         self.setWindowTitle(__namever__)
@@ -45,11 +45,6 @@ class QWatson(QWidget):
         self.setWindowFlags(Qt.Window |
                             Qt.WindowMinimizeButtonHint |
                             Qt.WindowCloseButtonHint)
-
-        if debug is True:
-            config_dir = osp.join(osp.dirname(__file__), 'tests', 'watson')
-        else:
-            config_dir = None
 
         if platform.system() == 'Windows':
             import ctypes
