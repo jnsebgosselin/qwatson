@@ -2,3 +2,4 @@ sip
 pyqt5
 arrow
 requests
+click
