@@ -117,6 +117,21 @@ def test_add_first_project(qtbot, mocker):
     assert frame.project == 'project1'
 
 
+def test_load_config(qtbot, mocker):
+    """
+    Test that the activity fields are set correctly when starting QWatson and
+    a frames file already exists.
+    """
+    mainwindow = QWatson(WORKDIR)
+    qtbot.addWidget(mainwindow)
+    assert len(mainwindow.client.frames) == 1
+
+    activity_input_dial = mainwindow.activity_input_dial
+    assert activity_input_dial.project == 'project1'
+    assert activity_input_dial.tags == ['tag1', 'tag2', 'tag3']
+    assert activity_input_dial.comment == 'First activity'
+    assert mainwindow.round_time_btn.text() == 'round to 5min'
+
 if __name__ == "__main__":
     pytest.main(['-x', os.path.basename(__file__), '-v', '-rw'])
 #     pytest.main()
