@@ -11,41 +11,104 @@
 import sys
 import os
 import os.path as osp
+from datetime import datetime
 
 # ---- Third party imports
 
 import pytest
 from PyQt5.QtCore import Qt
+import arrow
 
 # ---- Local imports
 
 from qwatson.mainwindow import QWatson
+from qwatson.utils.fileio import delete_file_safely
 
-
-# ---- Qt Test Fixtures
 
 WORKDIR = osp.dirname(__file__)
-
-
-@pytest.fixture
-def qwatson_bot(qtbot):
-    qwatson = QWatson(WORKDIR)
-    qtbot.addWidget(qwatson)
-
-    return qwatson, qtbot
 
 
 # Test MainWindow
 # -------------------------------
 
-@pytest.mark.run(order=11)
-def test_mainwindow_init(qwatson_bot):
+def test_mainwindow_init(qtbot):
+    """Test that the QWatson main widget starts correctly."""
+    mainwindow = QWatson(WORKDIR)
+    qtbot.addWidget(mainwindow)
+
+    assert mainwindow
+    assert mainwindow.client.frames_file == osp.join(WORKDIR, 'frames')
+
+
+def test_add_project_and_startstop(qtbot, mocker):
     """
-    Tests that the QWatson main widget starts correctly.
+    Test adding a new project and starting/stopping the timer to add an
+    activity to the database.
     """
-    qwatson, qtbot = qwatson_bot
-    assert qwatson
-    assert qwatson.client.frames_file == osp.join(WORKDIR, 'frames')
+    frames_file = osp.join(WORKDIR, 'frames')
+    delete_file_safely(frames_file)
+    delete_file_safely(frames_file + '.bak')
+    qtbot.waitUntil(lambda: not osp.exists(frames_file))
+
+    mainwindow = QWatson(WORKDIR)
+    qtbot.addWidget(mainwindow)
+    assert mainwindow
+    assert mainwindow.client.frames_file == frames_file
+
+    # ---- Check default
+
+    activity_input_dial = mainwindow.activity_input_dial
+    assert activity_input_dial.project == ''
+    assert activity_input_dial.tags == []
+    assert activity_input_dial.comment == ''
+    assert mainwindow.round_time_btn.text() == 'round to 5min'
+
+    # ---- Setup the activity input dialog
+
+    # Setup the tags
+    qtbot.keyClicks(activity_input_dial.tag_lineedit, 'tag1, tag2, tag3')
+    qtbot.keyPress(activity_input_dial.tag_lineedit, Qt.Key_Enter)
+    assert activity_input_dial.tags == ['tag1', 'tag2', 'tag3']
+
+    # Setup the comment
+    qtbot.keyClicks(activity_input_dial.msg_textedit, 'First activity')
+    qtbot.keyPress(activity_input_dial.msg_textedit, Qt.Key_Enter)
+    assert activity_input_dial.comment == 'First activity'
+
+    # Add a new project
+    qtbot.mouseClick(
+        activity_input_dial.project_manager.btn_add, Qt.LeftButton)
+    qtbot.keyClicks(
+        activity_input_dial.project_manager.project_cbox.linedit, 'project1')
+    qtbot.keyPress(
+        activity_input_dial.project_manager.project_cbox.linedit, Qt.Key_Enter)
+    assert activity_input_dial.project == 'project1'
+
+    # ---- Add first activity
+
+    assert len(mainwindow.client.frames) == 0
+
+    # Start the activity timer
+    start = arrow.get(datetime(2018, 6, 14, 15, 59, 54))
+    mocker.patch('arrow.now', return_value=start)
+    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
+    assert mainwindow.elap_timer.is_started
+
+    # Stop the activity timer
+    stop = arrow.get(datetime(2018, 6, 14, 17, 12, 35))
+    mocker.patch('arrow.now', return_value=stop)
+    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
+    assert not mainwindow.elap_timer.is_started
+
+    # Assert frame logged data
+
+    assert len(mainwindow.client.frames) == 1
+    frame = mainwindow.client.frames[0]
+    assert frame.start == arrow.get(datetime(2018, 6, 14, 16, 0))
+    assert frame.stop == arrow.get(datetime(2018, 6, 14, 17, 15))
+    assert frame.tags == ['tag1', 'tag2', 'tag3']
+    assert frame.message == 'First activity'
+    assert frame.project == 'project1'
 
 
 if __name__ == "__main__":
