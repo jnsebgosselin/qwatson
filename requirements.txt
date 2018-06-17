@@ -1,0 +1,4 @@
+sip
+pyqt
+arrow
+requests
