@@ -32,18 +32,24 @@ WORKDIR = osp.dirname(__file__)
 # -------------------------------
 
 def test_mainwindow_init(qtbot):
-    """Test that the QWatson main widget starts correctly."""
+    """
+    Test that the QWatson main widget and avtivity overview widgets are
+    started correctly.
+    """
     mainwindow = QWatson(WORKDIR)
     qtbot.addWidget(mainwindow)
 
     assert mainwindow
     assert mainwindow.client.frames_file == osp.join(WORKDIR, 'frames')
 
+    qtbot.mouseClick(mainwindow.btn_report, Qt.LeftButton)
+    assert mainwindow.overview_widg.isVisible()
 
-def test_add_project_and_startstop(qtbot, mocker):
+
+def test_add_first_project(qtbot, mocker):
     """
     Test adding a new project and starting/stopping the timer to add an
-    activity to the database.
+    activity to the database for the first time.
     """
     frames_file = osp.join(WORKDIR, 'frames')
     delete_file_safely(frames_file)
