@@ -17,6 +17,9 @@ import arrow
 
 # ---- Local imports
 
+from qwatson.utils.dates import round_arrow_to
+
+
 def edit_frame_at(client, index, start=None, stop=None, project=None,
                   message=None, tags=None):
     """
@@ -48,6 +51,15 @@ def edit_frame_at(client, index, start=None, stop=None, project=None,
     client.frames[frame.id] = [
         project, start, stop, tags, frame.id, updated_at, message]
 
+
+def round_frame_at(client, index, base):
+    """Round the start and stop time of the Watson frame at index."""
+    frame = client.frames[index]
+
+    start = round_arrow_to(frame.start, base)
+    stop = round_arrow_to(frame.stop, base)
+
+    edit_frame_at(client, index, start=start, stop=stop)
 
 
 def insert_new_frame(client, data, index):
