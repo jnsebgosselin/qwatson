@@ -132,6 +132,40 @@ def test_load_config(qtbot, mocker):
     assert activity_input_dial.comment == 'First activity'
     assert mainwindow.round_time_btn.text() == 'round to 5min'
 
+
+def test_rename_project(qtbot, mocker):
+    """Test that renaming a project works as expected."""
+    mainwindow = QWatson(WORKDIR)
+    qtbot.addWidget(mainwindow)
+    mainwindow.show()
+    project_manager = mainwindow.activity_input_dial.project_manager
+
+    # Enter edit mode, but do not change the project name.
+    qtbot.mouseClick(project_manager.btn_rename, Qt.LeftButton)
+
+    assert project_manager.project_cbox.linedit.isVisible()
+    assert not project_manager.project_cbox.combobox.isVisible()
+    qtbot.keyPress(project_manager.project_cbox.linedit, Qt.Key_Enter)
+    assert not project_manager.project_cbox.linedit.isVisible()
+    assert project_manager.project_cbox.combobox.isVisible()
+
+    assert mainwindow.activity_input_dial.project == 'project1'
+    assert mainwindow.client.frames[0].project == 'project1'
+
+    # Enter edit mode and change the project name.
+    qtbot.mouseClick(project_manager.btn_rename, Qt.LeftButton)
+
+    assert project_manager.project_cbox.linedit.isVisible()
+    assert not project_manager.project_cbox.combobox.isVisible()
+    qtbot.keyClicks(project_manager.project_cbox.linedit, '_renamed')
+    qtbot.keyPress(project_manager.project_cbox.linedit, Qt.Key_Enter)
+    assert not project_manager.project_cbox.linedit.isVisible()
+    assert project_manager.project_cbox.combobox.isVisible()
+
+    assert mainwindow.activity_input_dial.project == 'project1_renamed'
+    assert mainwindow.client.frames[0].project == 'project1_renamed'
+
+
 if __name__ == "__main__":
     pytest.main(['-x', os.path.basename(__file__), '-v', '-rw'])
 #     pytest.main()
