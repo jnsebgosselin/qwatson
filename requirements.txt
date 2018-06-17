@@ -1,4 +1,4 @@
 sip
-pyqt
+pyqt5
 arrow
 requests
