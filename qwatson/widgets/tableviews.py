@@ -134,16 +134,16 @@ class WatsonTableWidget(QWidget):
 
     def __init__(self, model, parent=None):
         super(WatsonTableWidget, self).__init__(parent)
-        self.table = FormatedWatsonTableView(model)
+        self.view = FormatedWatsonTableView(model)
         titlebar = self.setup_titlebar()
 
         layout = QGridLayout(self)
         layout.addWidget(titlebar, 0, 0)
-        layout.addWidget(self.table, 1, 0)
+        layout.addWidget(self.view, 1, 0)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        self.table.proxy_model.sig_total_seconds_changed.connect(
+        self.view.proxy_model.sig_total_seconds_changed.connect(
             self.setup_timecount)
 
     def setup_titlebar(self):
@@ -171,9 +171,14 @@ class WatsonTableWidget(QWidget):
 
         return titlebar
 
+    @property
+    def date_span(self):
+        """Return the arrow span of the filter proxy model."""
+        return self.view.proxy_model.date_span
+
     def set_date_span(self, date_span):
         """Set the date span in the table and title."""
-        self.table.set_date_span(date_span)
+        self.view.set_date_span(date_span)
         self.title.setText(arrowspan_to_str(date_span))
 
     def setup_timecount(self, total_seconds):
