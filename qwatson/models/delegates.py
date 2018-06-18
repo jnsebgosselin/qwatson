@@ -144,7 +144,7 @@ class DateTimeDelegate(QStyledItemDelegate):
 
     def createEditor(self, parent, option, index):
         """Qt method override."""
-        date_time_edit = QDateTimeEdit(parent)
+        self.editor = date_time_edit = QDateTimeEdit(parent)
         date_time_edit.setCalendarPopup(True)
         date_time_edit.setDisplayFormat("yyyy-MM-dd hh:mm")
         return date_time_edit
