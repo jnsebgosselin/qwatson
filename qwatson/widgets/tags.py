@@ -20,8 +20,11 @@ class TagLineEdit(QLineEdit):
     @property
     def tags(self):
         """Return the list of tags."""
-        tags = self.text().split(',')
-        return sorted(set(tag.strip() for tag in tags))
+        if self.text() == '':
+            return []
+        else:
+            tags = self.text().split(',')
+            return sorted(set(tag.strip() for tag in tags))
 
     def set_tags(self, tags):
         """Add a the tag list."""

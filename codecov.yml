@@ -24,5 +24,8 @@ parsers:
       loop: yes
       method: no
       macro: no
+
+ignore:
+  qwatson/watson
    
 comment: false

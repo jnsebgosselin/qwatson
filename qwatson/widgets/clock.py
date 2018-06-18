@@ -32,15 +32,18 @@ class ElapsedTimeLCDNumber(QLCDNumber):
         self.setSegmentStyle(QLCDNumber.Flat)
         self.display(time.strftime("%H:%M:%S", time.gmtime(0)))
         self.setFrameStyle(0)
+        self.is_started = False
 
     def start(self):
         """Start the elapsed time counter."""
         self._start_time = time.time()
         self.timer.start(10)
+        self.is_started = True
 
     def stop(self):
         """Stop the elapsed time counter."""
         self.timer.stop()
+        self.is_started = False
 
     def update_elapsed_time(self):
         """Update elapsed time in the widget."""

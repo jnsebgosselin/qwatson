@@ -1,8 +1,8 @@
 releases/
 /qwatson/tests/watson/
-/qwatson/utils/tests/frames
-/qwatson/utils/tests/frames.bak
 desktop.ini
+frames
+frames.bak
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
