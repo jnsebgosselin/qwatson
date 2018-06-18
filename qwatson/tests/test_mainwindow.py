@@ -36,21 +36,6 @@ def test_mainwindow_init(qtbot):
     Test that the QWatson main widget and avtivity overview widgets are
     started correctly.
     """
-    mainwindow = QWatson(WORKDIR)
-    qtbot.addWidget(mainwindow)
-
-    assert mainwindow
-    assert mainwindow.client.frames_file == osp.join(WORKDIR, 'frames')
-
-    qtbot.mouseClick(mainwindow.btn_report, Qt.LeftButton)
-    assert mainwindow.overview_widg.isVisible()
-
-
-def test_add_first_project(qtbot, mocker):
-    """
-    Test adding a new project and starting/stopping the timer to add an
-    activity to the database for the first time.
-    """
     frames_file = osp.join(WORKDIR, 'frames')
     delete_file_safely(frames_file)
     delete_file_safely(frames_file + '.bak')
@@ -58,8 +43,24 @@ def test_add_first_project(qtbot, mocker):
 
     mainwindow = QWatson(WORKDIR)
     qtbot.addWidget(mainwindow)
+    mainwindow.show()
+
     assert mainwindow
     assert mainwindow.client.frames_file == frames_file
+
+    qtbot.mouseClick(mainwindow.btn_report, Qt.LeftButton)
+    assert mainwindow.overview_widg.isVisible()
+    mainwindow.close()
+
+
+def test_add_first_project(qtbot, mocker):
+    """
+    Test adding a new project and starting/stopping the timer to add an
+    activity to the database for the first time.
+    """
+    mainwindow = QWatson(WORKDIR)
+    qtbot.addWidget(mainwindow)
+    mainwindow.show()
 
     # ---- Check default
 
@@ -115,6 +116,7 @@ def test_add_first_project(qtbot, mocker):
     assert frame.tags == ['tag1', 'tag2', 'tag3']
     assert frame.message == 'First activity'
     assert frame.project == 'project1'
+    mainwindow.close()
 
 
 def test_load_config(qtbot, mocker):
@@ -125,12 +127,14 @@ def test_load_config(qtbot, mocker):
     mainwindow = QWatson(WORKDIR)
     qtbot.addWidget(mainwindow)
     assert len(mainwindow.client.frames) == 1
+    mainwindow.show()
 
     activity_input_dial = mainwindow.activity_input_dial
     assert activity_input_dial.project == 'project1'
     assert activity_input_dial.tags == ['tag1', 'tag2', 'tag3']
     assert activity_input_dial.comment == 'First activity'
     assert mainwindow.round_time_btn.text() == 'round to 5min'
+    mainwindow.close()
 
 
 def test_rename_project(qtbot, mocker):
@@ -164,8 +168,8 @@ def test_rename_project(qtbot, mocker):
 
     assert mainwindow.activity_input_dial.project == 'project1_renamed'
     assert mainwindow.client.frames[0].project == 'project1_renamed'
+    mainwindow.close()
 
 
 if __name__ == "__main__":
     pytest.main(['-x', os.path.basename(__file__), '-v', '-rw'])
-#     pytest.main()
