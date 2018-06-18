@@ -7,17 +7,13 @@
 # This file is part of QWatson.
 # Licensed under the terms of the GNU General Public License.
 
-# ---- Standard imports
-
-import dateutil
-
 # ---- Third party imports
 
 import arrow
 
 # ---- Local imports
 
-from qwatson.utils.dates import round_arrow_to
+from qwatson.utils.dates import round_arrow_to, local_arrow_from_str
 
 
 def edit_frame_at(client, index, start=None, stop=None, project=None,
@@ -28,20 +24,14 @@ def edit_frame_at(client, index, start=None, stop=None, project=None,
     frame = client.frames[index]
 
     if isinstance(start, str):
-        start = arrow.get(start, 'YYYY-MM-DD HH:mm:ss').replace(
-            tzinfo=dateutil.tz.tzlocal()).to('utc')
-    elif isinstance(start, arrow.Arrow):
-        start = start.to('utc')
-    else:
-        start = frame.start.to('utc')
+    elif start is None:
+        start = frame.start
+    start = start.to('utc')
 
     if isinstance(stop, str):
-        stop = arrow.get(stop, 'YYYY-MM-DD HH:mm:ss').replace(
-            tzinfo=dateutil.tz.tzlocal()).to('utc')
-    elif isinstance(stop, arrow.Arrow):
-        stop = stop.to('utc')
-    else:
-        stop = frame.stop.to('utc')
+    elif stop is None:
+        stop = frame.stop
+    stop = stop.to('utc')
 
     project = frame.project if project is None else project
     message = frame.message if message is None else message
