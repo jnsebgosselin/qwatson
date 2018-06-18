@@ -10,7 +10,6 @@
 
 import os
 import os.path as osp
-from datetime import datetime
 
 # ---- Third party imports
 
@@ -19,6 +18,7 @@ import arrow
 
 # ---- Local imports
 
+from qwatson.utils.dates import local_arrow_from_tuple
 from qwatson.watson.watson import Watson
 from qwatson.utils.watsonhelpers import (insert_new_frame, round_frame_at,
                                          edit_frame_at)
@@ -77,25 +77,35 @@ def test_client_loading_frames():
 
 def test_edit_frame_at():
     client = Watson(config_dir=WORKDIR)
-    start0 = arrow.get(datetime(2018, 6, 14, 15, 59, 54))
-    stop0 = arrow.get(datetime(2018, 6, 14, 16, 34, 25))
+
+    # Edit first frame.
+    start0 = local_arrow_from_tuple((2018, 6, 14, 15, 59, 54))
+    stop0 = local_arrow_from_tuple((2018, 6, 14, 16, 34, 25))
     edit_frame_at(client, 0, start=start0, stop=stop0, tags=['edited'])
-    assert client.frames[0].start == start0
-    assert client.frames[0].stop == stop0
+
+    frame = client.frames[0]
+    assert frame.start.format('YYYY-MM-DD HH:mm:ss') == '2018-06-14 15:59:54'
+    assert frame.stop.format('YYYY-MM-DD HH:mm:ss') == '2018-06-14 16:34:25'
     assert client.frames[0].tags == ['edited']
 
-    start1 = arrow.get(datetime(2018, 6, 14, 16, 48, 5))
-    stop1 = arrow.get(datetime(2018, 6, 14, 17, 0, 0))
+    # Edit second frame.
+    start1 = '2018-06-14 16:48:05'
+    stop1 = '2018-06-14 17:00:00'
     edit_frame_at(client, 1, start=start1, stop=stop1, tags=['edited'])
-    assert client.frames[1].start == start1
-    assert client.frames[1].stop == stop1
+
+    frame = client.frames[1]
+    assert frame.start.format('YYYY-MM-DD HH:mm:ss') == start1
+    assert frame.stop.format('YYYY-MM-DD HH:mm:ss') == stop1
     assert client.frames[1].tags == ['edited']
 
-    start2 = arrow.get(datetime(2018, 6, 14, 18, 2, 57))
-    stop2 = arrow.get(datetime(2018, 6, 14, 23, 34, 25))
+    # Edit third frame.
+    start2 = '2018-06-14 18:02:57'
+    stop2 = '2018-06-14 23:34:25'
     edit_frame_at(client, 2, start=start2, stop=stop2, tags=['edited'])
-    assert client.frames[2].start == start2
-    assert client.frames[2].stop == stop2
+
+    frame = client.frames[2]
+    assert frame.start.format('YYYY-MM-DD HH:mm:ss') == start2
+    assert frame.stop.format('YYYY-MM-DD HH:mm:ss') == stop2
     assert client.frames[2].tags == ['edited']
 
     client.save()
@@ -104,17 +114,23 @@ def test_edit_frame_at():
 def test_round_frame_at():
     client = Watson(config_dir=WORKDIR)
 
+    # Round first frame to 1min.
     round_frame_at(client, 0, 1)
-    assert client.frames[0].start == arrow.get(datetime(2018, 6, 14, 16, 0))
-    assert client.frames[0].stop == arrow.get(datetime(2018, 6, 14, 16, 34))
+    frame = client.frames[0]
+    assert frame.start.format('YYYY-MM-DD HH:mm') == '2018-06-14 16:00'
+    assert frame.stop.format('YYYY-MM-DD HH:mm') == '2018-06-14 16:34'
 
+    # Round second frame to 5min.
     round_frame_at(client, 1, 5)
-    assert client.frames[1].start == arrow.get(datetime(2018, 6, 14, 16, 50))
-    assert client.frames[1].stop == arrow.get(datetime(2018, 6, 14, 17, 0))
+    frame = client.frames[1]
+    assert frame.start.format('YYYY-MM-DD HH:mm') == '2018-06-14 16:50'
+    assert frame.stop.format('YYYY-MM-DD HH:mm') == '2018-06-14 17:00'
 
+    # Round third frame to 10min.
     round_frame_at(client, 2, 10)
-    assert client.frames[2].start == arrow.get(datetime(2018, 6, 14, 18, 0))
-    assert client.frames[2].stop == arrow.get(datetime(2018, 6, 14, 23, 30))
+    frame = client.frames[2]
+    assert frame.start.format('YYYY-MM-DD HH:mm') == '2018-06-14 18:00'
+    assert frame.stop.format('YYYY-MM-DD HH:mm') == '2018-06-14 23:30'
 
     client.save()
 
