@@ -261,4 +261,4 @@ if __name__ == '__main__':
     watson_gui = QWatson()
     watson_gui.show()
     watson_gui.setFixedSize(watson_gui.size())
-    app.exec_()
+    sys.exit(app.exec_())
