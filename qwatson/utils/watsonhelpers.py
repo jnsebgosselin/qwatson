@@ -38,7 +38,7 @@ def edit_frame_at(client, index, start=None, stop=None, project=None,
     if isinstance(stop, str):
         stop = arrow.get(stop, 'YYYY-MM-DD HH:mm:ss').replace(
             tzinfo=dateutil.tz.tzlocal()).to('utc')
-    elif isinstance(start, arrow.Arrow):
+    elif isinstance(stop, arrow.Arrow):
         stop = stop.to('utc')
     else:
         stop = frame.stop.to('utc')
