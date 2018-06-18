@@ -24,11 +24,13 @@ def edit_frame_at(client, index, start=None, stop=None, project=None,
     frame = client.frames[index]
 
     if isinstance(start, str):
+        start = local_arrow_from_str(start, 'YYYY-MM-DD HH:mm:ss')
     elif start is None:
         start = frame.start
     start = start.to('utc')
 
     if isinstance(stop, str):
+        stop = local_arrow_from_str(stop, 'YYYY-MM-DD HH:mm:ss')
     elif stop is None:
         stop = frame.stop
     stop = stop.to('utc')
