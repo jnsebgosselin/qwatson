@@ -9,6 +9,7 @@
 # ---- Imports: standard libraries
 
 from time import strptime
+import dateutil
 
 # ---- Imports: third parties
 
@@ -76,6 +77,21 @@ def round_arrow_to(arrow, base):
     rounded_arrow = arrow.floor('hour').shift(minutes=multiple*base)
 
     return rounded_arrow
+
+
+def local_arrow_from_tuple(datetime_tuple):
+    """
+    Return an arrow object from a datetime tuple formatted for local timezone.
+    """
+    return arrow.get(datetime(*datetime_tuple)
+                     ).replace(tzinfo=dateutil.tz.tzlocal())
+
+
+def local_arrow_from_str(datetime_str, fmt='YYYY-MM-DD HH:mm:ss'):
+    """
+    Return an arrow object from a string formatted for local timezone.
+    """
+    return arrow.get(datetime_str, fmt).replace(tzinfo=dateutil.tz.tzlocal())
 
 
 if __name__ == '__main__':
