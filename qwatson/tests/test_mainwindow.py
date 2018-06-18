@@ -11,7 +11,6 @@
 import sys
 import os
 import os.path as osp
-from datetime import datetime
 
 # ---- Third party imports
 
@@ -23,12 +22,13 @@ import arrow
 
 from qwatson.mainwindow import QWatson
 from qwatson.utils.fileio import delete_file_safely
+from qwatson.utils.dates import local_arrow_from_tuple
 
 
 WORKDIR = osp.dirname(__file__)
 
 
-# Test MainWindow
+# Test QWatson central widget
 # -------------------------------
 
 def test_mainwindow_init(qtbot):
@@ -96,26 +96,26 @@ def test_add_first_project(qtbot, mocker):
     assert len(mainwindow.client.frames) == 0
 
     # Start the activity timer
-    start = arrow.get(datetime(2018, 6, 14, 15, 59, 54))
+    start = local_arrow_from_tuple((2018, 6, 14, 15, 59, 54))
     mocker.patch('arrow.now', return_value=start)
     qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
     assert mainwindow.elap_timer.is_started
 
     # Stop the activity timer
-    stop = arrow.get(datetime(2018, 6, 14, 17, 12, 35))
+    stop = local_arrow_from_tuple((2018, 6, 14, 17, 12, 35))
     mocker.patch('arrow.now', return_value=stop)
     qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
     assert not mainwindow.elap_timer.is_started
 
     # Assert frame logged data
-
     assert len(mainwindow.client.frames) == 1
     frame = mainwindow.client.frames[0]
-    assert frame.start == arrow.get(datetime(2018, 6, 14, 16, 0))
-    assert frame.stop == arrow.get(datetime(2018, 6, 14, 17, 15))
+    assert frame.start.format('YYYY-MM-DD HH:mm') == '2018-06-14 16:00'
+    assert frame.stop.format('YYYY-MM-DD HH:mm') == '2018-06-14 17:15'
     assert frame.tags == ['tag1', 'tag2', 'tag3']
     assert frame.message == 'First activity'
     assert frame.project == 'project1'
+
     mainwindow.close()
 
 
