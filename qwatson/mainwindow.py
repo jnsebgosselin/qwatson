@@ -15,7 +15,8 @@ import os.path as osp
 # ---- Third parties imports
 
 from PyQt5.QtCore import (Qt, QModelIndex)
-from PyQt5.QtWidgets import (QApplication, QGridLayout, QSizePolicy, QWidget)
+from PyQt5.QtWidgets import (QApplication, QGridLayout, QHBoxLayout,
+                             QSizePolicy, QWidget)
 
 # ---- Local imports
 
@@ -149,16 +150,30 @@ class QWatson(QWidget):
             "Round start and stop times to the nearest"
             " multiple of the selected factor.")
 
+        self.start_from = DropDownToolButton(style='text_only')
+        self.start_from.setSizePolicy(
+            QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred))
+        self.start_from.addItems(
+            ['start from now', 'start from last', 'start from other'])
+        self.start_from.setCurrentIndex(0)
+        self.start_from.setToolTip(
+            "<b>Start From</b><br><br>"
+            "Set whether the current activity starts"
+            " from the current time (now),"
+            " from the stop time of the last logged activity (last),"
+            " or from a user defined time (other).")
+
         # Setup the layout of the statusbar
 
         statusbar = ColoredFrame()
         statusbar.set_background_color('window')
 
-        layout = QGridLayout(statusbar)
+        layout = QHBoxLayout(statusbar)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.round_time_btn, 0, 0)
-        layout.addWidget(self.btn_report, 0, 2)
-        layout.setColumnStretch(1, 100)
+        layout.addWidget(self.round_time_btn)
+        layout.addWidget(self.start_from)
+        layout.addStretch(100)
+        layout.addWidget(self.btn_report)
 
         return statusbar
 
