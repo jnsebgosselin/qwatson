@@ -19,7 +19,7 @@ https://tailordev.fr/blog/2017/06/07/le-lab-5-crick-a-backend-for-watson-time-tr
 
 ## Installation
 
-QWatson is still in an early stage of development, so use at your own risk! A binary for the Windows platform is available for download [here](https://github.com/jnsebgosselin/qwatson/releases/latest) or you can run it directly from source by cloning the repository and installing the required dependencies ([arrow](https://arrow.readthedocs.io/en/latest/), [click](http://click.pocoo.org/5/), [requests](http://docs.python-requests.org/en/master/), and [pyqt5](https://www.riverbankcomputing.com/software/pyqt/intro)).
+QWatson is still in an early stage of development, so use at your own risk! An installer and a binary for the Windows platform are available for download [here](https://github.com/jnsebgosselin/qwatson/releases/latest) or you can run it directly from source by cloning the repository and installing the required dependencies ([arrow](https://arrow.readthedocs.io/en/latest/), [click](http://click.pocoo.org/5/), [requests](http://docs.python-requests.org/en/master/), and [pyqt5](https://www.riverbankcomputing.com/software/pyqt/intro)).
 
 ## License
 

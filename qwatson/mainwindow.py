@@ -55,6 +55,7 @@ class QWatson(QWidget):
 
         self.client = Watson(config_dir=config_dir)
         self.model = WatsonTableModel(self.client)
+
         if self.client.is_started:
             self.stop_watson(message="last session not closed correctly.",
                              tags=['error'])
@@ -215,9 +216,11 @@ class QWatson(QWidget):
             self.elap_timer.stop()
             self.stop_watson(message=self.activity_input_dial.comment,
                              project=self.activity_input_dial.project,
-                             tags=self.activity_input_dial.tags)
+                             tags=self.activity_input_dial.tags,
+                             round_to=ROUNDMIN[self.round_time_btn.text()])
 
-    def stop_watson(self, message=None, project=None, tags=None):
+    def stop_watson(self, message=None, project=None, tags=None,
+                    round_to=5):
         """Stop Watson and update the table model."""
         if message is not None:
             self.client._current['message'] = message
@@ -231,7 +234,7 @@ class QWatson(QWidget):
         self.client.stop()
 
         # Round the start and stop times of the last added frame.
-        round_frame_at(self.client, -1, ROUNDMIN[self.round_time_btn.text()])
+        round_frame_at(self.client, -1, round_to)
 
         self.client.save()
         self.model.endInsertRows()

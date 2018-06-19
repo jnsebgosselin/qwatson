@@ -3,6 +3,8 @@ releases/
 desktop.ini
 frames
 frames.bak
+state
+state.bak
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
