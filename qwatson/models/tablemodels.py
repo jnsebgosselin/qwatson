@@ -168,6 +168,7 @@ class WatsonTableModel(QAbstractTableModel):
         self.beginRemoveRows(index.parent(), index.row(), index.row())
         frame_id = self.frames[index.row()].id
         del self.client.frames[frame_id]
+        self.client.save()
         self.endRemoveRows()
 
     def editFrame(self, index, start=None, stop=None, project=None,
