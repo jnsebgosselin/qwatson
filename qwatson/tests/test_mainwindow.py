@@ -8,25 +8,29 @@
 
 # ---- Standard imports
 
-import sys
 import os
 import os.path as osp
+import json
 
 # ---- Third party imports
 
 import pytest
-from PyQt5.QtCore import Qt
-import arrow
+from PyQt5.QtCore import Qt, QEvent
+from PyQt5.QtGui import QMouseEvent
 
 # ---- Local imports
 
+from qwatson.widgets.tableviews import QMessageBox
 from qwatson.mainwindow import QWatson
 from qwatson.utils.fileio import delete_file_safely
 from qwatson.utils.dates import local_arrow_from_tuple, qdatetime_from_str
-from qwatson.models.delegates import StartDelegate, StopDelegate
+from qwatson.models.delegates import (StartDelegate, StopDelegate,
+                                      ToolButtonDelegate)
 
 
 WORKDIR = osp.dirname(__file__)
+FRAMEFILE = osp.join(WORKDIR, 'frames')
+STATEFILE = osp.join(WORKDIR, 'state')
 
 
 # Test QWatson central widget
@@ -38,8 +42,10 @@ def test_mainwindow_init(qtbot):
     started correctly.
     """
     frames_file = osp.join(WORKDIR, 'frames')
-    delete_file_safely(frames_file)
-    delete_file_safely(frames_file + '.bak')
+    delete_file_safely(FRAMEFILE)
+    delete_file_safely(FRAMEFILE + '.bak')
+    delete_file_safely(STATEFILE)
+    delete_file_safely(STATEFILE + '.bak')
     qtbot.waitUntil(lambda: not osp.exists(frames_file))
 
     mainwindow = QWatson(WORKDIR)
@@ -146,6 +152,7 @@ def test_rename_project(qtbot, mocker):
     project_manager = mainwindow.activity_input_dial.project_manager
 
     # Enter edit mode, but do not change the project name.
+
     qtbot.mouseClick(project_manager.btn_rename, Qt.LeftButton)
 
     assert project_manager.project_cbox.linedit.isVisible()
@@ -158,6 +165,7 @@ def test_rename_project(qtbot, mocker):
     assert mainwindow.client.frames[0].project == 'project1'
 
     # Enter edit mode and change the project name.
+
     qtbot.mouseClick(project_manager.btn_rename, Qt.LeftButton)
 
     assert project_manager.project_cbox.linedit.isVisible()
@@ -172,8 +180,106 @@ def test_rename_project(qtbot, mocker):
     mainwindow.close()
 
 
+def test_last_closed_error(qtbot, mocker):
+    """
+    Test that QWatson opens correctly when the last session was not closed
+    properly
+    """
+    # Create a state file.
+
+    start = local_arrow_from_tuple((2018, 6, 14, 17, 12, 35))
+    state = {'project': 'test_error',
+             'start': start.to('utc').timestamp,
+             'tags': ['test'],
+             'message': 'test error last close'}
+    content = json.dumps(state)
+    state_filename = osp.join(WORKDIR, 'state')
+    with open(state_filename, 'w') as f:
+        f.write(content)
+
+    now = local_arrow_from_tuple((2018, 6, 14, 19, 45, 17))
+    mocker.patch('arrow.now', return_value=now)
+
+    # Open QWatson and assert an error frame is added correctly to
+    # the database
+
+    mainwindow = QWatson(WORKDIR)
+    qtbot.addWidget(mainwindow)
+    mainwindow.show()
+
+    frame = mainwindow.client.frames[-1]
+    assert frame.start.format('YYYY-MM-DD HH:mm') == '2018-06-14 17:15'
+    assert frame.stop.format('YYYY-MM-DD HH:mm') == '2018-06-14 19:45'
+
+    assert mainwindow.activity_input_dial.project == 'test_error'
+    assert frame.project == 'test_error'
+
+    assert mainwindow.activity_input_dial.tags == ['error']
+    assert frame.tags == ['error']
+
+    expected_comment = "last session not closed correctly."
+    assert mainwindow.activity_input_dial.comment == expected_comment
+    assert frame.message == expected_comment
+
+
 # Test QWatson overview table
 # -------------------------------
+
+def test_delete_frame(qtbot, mocker):
+    """
+    Test that deleting a frame from the activity overview table work correctly.
+    """
+    now = local_arrow_from_tuple((2018, 6, 14, 23, 59, 0))
+    mocker.patch('arrow.now', return_value=now)
+
+    mainwindow = QWatson(WORKDIR)
+    qtbot.addWidget(mainwindow)
+    mainwindow.show()
+
+    qtbot.mouseClick(mainwindow.btn_report, Qt.LeftButton)
+    qtbot.waitForWindowShown(mainwindow.overview_widg)
+    assert mainwindow.overview_widg.isVisible()
+
+    # Find the table where the last frame is stored.
+
+    table_widg = mainwindow.overview_widg.table_widg
+    fstart_day = mainwindow.client.frames[-1].start.floor('day')
+    for i, table in enumerate(table_widg.tables):
+        if table.date_span[0] == fstart_day:
+            break
+    assert i == 3
+    assert table.view.proxy_model.get_accepted_row_count() == 2
+
+    col = table.view.proxy_model.sourceModel().COLUMNS['icons']
+    index = table.view.proxy_model.index(1, col)
+    delegate = table.view.itemDelegate(index)
+    assert isinstance(delegate, ToolButtonDelegate)
+
+    # Create an event to simulate a mouss press because it is not working
+    # when using qtbot.mousePress.
+
+    visual_rect = table.view.visualRect(index)
+    event = QMouseEvent(QEvent.MouseButtonPress, visual_rect.center(),
+                        Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
+
+    # Click to delete last frame and click No.
+
+    mocker.patch.object(QMessageBox, 'question', return_value=QMessageBox.No)
+    delegate.editorEvent(event, table.view.proxy_model, None, index)
+
+    assert table.view.proxy_model.get_accepted_row_count() == 2
+    assert len(mainwindow.client.frames) == 2
+
+    # Click to delete last frame and click Yes.
+
+    mocker.patch.object(QMessageBox, 'question', return_value=QMessageBox.Yes)
+    delegate.editorEvent(event, table.view.proxy_model, None, index)
+
+    assert table.view.proxy_model.get_accepted_row_count() == 1
+    assert len(mainwindow.client.frames) == 1
+
+    mainwindow.close()
+
 
 def test_edit_start_stop(qtbot, mocker):
     """
@@ -187,10 +293,11 @@ def test_edit_start_stop(qtbot, mocker):
     mainwindow.show()
 
     qtbot.mouseClick(mainwindow.btn_report, Qt.LeftButton)
-    assert mainwindow.overview_widg.isVisible()
+    qtbot.waitForWindowShown(mainwindow.overview_widg)
     table_widg = mainwindow.overview_widg.table_widg
 
     # Find the table where the first frame is stored.
+
     fstart_day = mainwindow.client.frames[0].start.floor('day')
     for i, table in enumerate(table_widg.tables):
         if table.date_span[0] == fstart_day:
@@ -248,4 +355,4 @@ def test_edit_start_stop(qtbot, mocker):
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', os.path.basename(__file__), '-v', '-rw'])
+    pytest.main(['-x', os.path.basename(__file__), '-v', '-rw', '-s'])
