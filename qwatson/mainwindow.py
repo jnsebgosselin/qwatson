@@ -219,8 +219,20 @@ class QWatson(QWidget):
                              tags=self.activity_input_dial.tags,
                              round_to=ROUNDMIN[self.round_time_btn.text()])
 
-    def stop_watson(self, message=None, project=None, tags=None,
-                    round_to=5):
+    def start_watson(self, start_time=None):
+        """Start monitoring a new activity with the Watson client."""
+        self.client.start(self.activity_input_dial.project)
+        if start_time is not None:
+            self.client._current['start'] = start_time
+            self.elap_timer.start(start_time.timestamp)
+
+    def cancel_watson(self):
+        """Cancel the Watson client if it is running and reset the UI."""
+        if self.client.is_started:
+            self.client.cancel()
+        self.btn_startstop.setValue(False, silent=True)
+
+    def stop_watson(self, message=None, project=None, tags=None, round_to=5):
         """Stop Watson and update the table model."""
         if message is not None:
             self.client._current['message'] = message
