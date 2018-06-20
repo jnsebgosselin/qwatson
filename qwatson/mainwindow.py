@@ -261,6 +261,8 @@ class QWatson(QStackedWidget):
         if start_time is not None:
             self.client._current['start'] = start_time
             self.elap_timer.start(start_time.timestamp)
+        else:
+            self.elap_timer.start()
 
     def cancel_watson(self):
         """Cancel the Watson client if it is running and reset the UI."""
