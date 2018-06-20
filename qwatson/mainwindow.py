@@ -31,10 +31,13 @@ from qwatson.widgets.toolbar import (
     OnOffToolButton, QToolButtonSmall, DropDownToolButton)
 from qwatson import __namever__
 from qwatson.models.tablemodels import WatsonTableModel
-from qwatson.views.activitydialog import ActivityInputDialog
+from qwatson.dialogs.activitydialog import ActivityInputDialog
+from qwatson.dialogs.datetimedialog import DateTimeInputDialog
 from qwatson.widgets.layout import ColoredFrame
 
 ROUNDMIN = {'round to 1min': 1, 'round to 5min': 5, 'round to 10min': 10}
+STARTFROM = {'start from now': 'now', 'start from last': 'last',
+             'start from other': 'other'}
 
 
 class QWatson(QStackedWidget):
@@ -63,6 +66,7 @@ class QWatson(QStackedWidget):
 
         self.overview_widg = WatsonOverviewWidget(self.client, self.model)
         self.setup_mainwidget()
+        self.datetime_input_dial = self.setup_datetime_input_dial()
         self.setCurrentIndex(0)
 
     def setup_mainwidget(self):
@@ -182,6 +186,21 @@ class QWatson(QStackedWidget):
         layout.addWidget(self.btn_report)
 
         return statusbar
+
+    def setup_datetime_input_dial(self):
+        """
+        Setup and register the dialog to input a custom start date for
+        a new activity.
+        """
+        dialog = DateTimeInputDialog(parent=self)
+
+        dialog.sig_accepted.connect(self.start_watson)
+        dialog.sig_rejected.connect(self.cancel_watson)
+        dialog.sig_closed.connect(lambda: self.setCurrentIndex(0))
+
+        self.addWidget(dialog)
+
+        return dialog
 
     # ---- Project handlers
 
