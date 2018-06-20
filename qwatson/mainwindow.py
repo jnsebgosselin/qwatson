@@ -243,6 +243,7 @@ class QWatson(QWidget):
         """Qt method override."""
         self.client.save()
         event.accept()
+        print("QWatson is closed.\n")
 
 
 class WatsonOverviewWidget(QWidget):
@@ -279,4 +280,5 @@ if __name__ == '__main__':
     watson_gui = QWatson()
     watson_gui.show()
     watson_gui.setFixedSize(watson_gui.size())
+    print("QWatson is running...")
     sys.exit(app.exec_())
