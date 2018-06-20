@@ -234,8 +234,20 @@ class QWatson(QStackedWidget):
     def btn_startstop_isclicked(self):
         """Handle when the button to start and stop Watson is clicked."""
         if self.btn_startstop.value():
-            self.client.start(self.activity_input_dial.project)
-            self.elap_timer.start()
+            frames = self.client.frames
+            start_from = STARTFROM[self.start_from.text()]
+            if start_from == 'now':
+                self.start_watson()
+            elif start_from == 'last' and len(frames) > 0:
+                self.start_watson(start_time=frames[-1].stop)
+            else:
+                # Show a dialog for the user to input a start value for the
+                # activity. The dialog's accepted and rejected signals
+                # are connected to start_watson and cancel_watson methods.
+                self.datetime_input_dial.set_datetime_to_now()
+                self.datetime_input_dial.set_datetime_minimum(
+                    None if len(frames) == 0 else frames[-1].stop)
+                self.setCurrentIndex(1)
         else:
             self.elap_timer.stop()
             self.stop_watson(message=self.activity_input_dial.comment,
