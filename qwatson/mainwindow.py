@@ -14,9 +14,10 @@ import os.path as osp
 
 # ---- Third parties imports
 
-from PyQt5.QtCore import (Qt, QModelIndex)
+from PyQt5.QtCore import Qt, QModelIndex
 from PyQt5.QtWidgets import (QApplication, QGridLayout, QHBoxLayout,
-                             QSizePolicy, QWidget)
+                             QSizePolicy, QWidget, QStackedWidget,
+                             QDialogButtonBox)
 
 # ---- Local imports
 
@@ -36,7 +37,7 @@ from qwatson.widgets.layout import ColoredFrame
 ROUNDMIN = {'round to 1min': 1, 'round to 5min': 5, 'round to 10min': 10}
 
 
-class QWatson(QWidget):
+class QWatson(QStackedWidget):
 
     def __init__(self, config_dir=None, parent=None):
         super(QWatson, self).__init__(parent)
@@ -61,22 +62,26 @@ class QWatson(QWidget):
                              tags=['error'])
 
         self.overview_widg = WatsonOverviewWidget(self.client, self.model)
-        self.setup()
+        self.setup_mainwidget()
+        self.setCurrentIndex(0)
 
-    def setup(self):
-        """Setup the widget with the provided arguments."""
+    def setup_mainwidget(self):
+        """Setup the main widget with the provided arguments."""
         timebar = self.setup_timebar()
-        self.activity_input_dial = self.setup_activity_input_dial()
         statusbar = self.setup_statusbar()
+        self.activity_input_dial = self.setup_activity_input_dial()
 
-        # ---- Setup layout
+        # ---- Setup the layout of the main widget
 
-        mainlayout = QGridLayout(self)
+        mainwidget = QWidget()
+        mainlayout = QGridLayout(mainwidget)
         mainlayout.setContentsMargins(0, 0, 0, 0)
         mainlayout.setSpacing(0)
         mainlayout.addWidget(self.activity_input_dial, 1, 0)
         mainlayout.addWidget(timebar, 0, 0)
         mainlayout.addWidget(statusbar, 2, 0)
+
+        self.addWidget(mainwidget)
 
     def setup_activity_input_dial(self):
         """
