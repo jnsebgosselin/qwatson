@@ -68,6 +68,7 @@ def test_add_first_project(qtbot, mocker):
     mainwindow = QWatson(WORKDIR)
     qtbot.addWidget(mainwindow)
     mainwindow.show()
+    qtbot.waitForWindowShown(mainwindow)
 
     # ---- Check default
 
@@ -76,6 +77,7 @@ def test_add_first_project(qtbot, mocker):
     assert activity_input_dial.tags == []
     assert activity_input_dial.comment == ''
     assert mainwindow.round_time_btn.text() == 'round to 5min'
+    assert mainwindow.start_from.text() == 'start from now'
 
     # ---- Setup the activity input dialog
 
@@ -294,6 +296,8 @@ def test_edit_start_stop(qtbot, mocker):
 
     qtbot.mouseClick(mainwindow.btn_report, Qt.LeftButton)
     qtbot.waitForWindowShown(mainwindow.overview_widg)
+    qtbot.addWidget(mainwindow.overview_widg)
+
     table_widg = mainwindow.overview_widg.table_widg
 
     # Find the table where the first frame is stored.
@@ -355,4 +359,4 @@ def test_edit_start_stop(qtbot, mocker):
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', os.path.basename(__file__), '-v', '-rw', '-s'])
+    pytest.main(['-x', os.path.basename(__file__), '-v', '-rw'])
