@@ -34,9 +34,9 @@ class ElapsedTimeLCDNumber(QLCDNumber):
         self.setFrameStyle(0)
         self.is_started = False
 
-    def start(self):
+    def start(self, start_time=None):
         """Start the elapsed time counter."""
-        self._start_time = time.time()
+        self._start_time = time.time() if start_time is None else start_time
         self.timer.start(10)
         self.is_started = True
 
