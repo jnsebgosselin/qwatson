@@ -30,7 +30,8 @@ ICON_NAMES = {'master': 'qwatson',
               'erase-right': 'erase_right',
               'home': 'home',
               'go-next': 'go-next',
-              'go-previous': 'go-previous'}
+              'go-previous': 'go-previous',
+              'info': 'info'}
 
 ICON_SIZES = {'large': (32, 32),
               'normal': (28, 28),
