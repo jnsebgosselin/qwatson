@@ -17,7 +17,7 @@ import os.path as osp
 from PyQt5.QtCore import Qt, QModelIndex
 from PyQt5.QtWidgets import (QApplication, QGridLayout, QHBoxLayout,
                              QSizePolicy, QWidget, QStackedWidget,
-                             QDialogButtonBox)
+                             QVBoxLayout)
 
 # ---- Local imports
 
