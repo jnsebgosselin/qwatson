@@ -28,6 +28,13 @@ def total_seconds_to_hour_min(total_seconds):
     return "%dh %dmin" % (hours, minutes)
 
 
+def qdatetime_from_arrow(arrow_datetime):
+    """Conver an arrow date time object to a QDateTime object"""
+    return QDateTime(arrow_datetime.year, arrow_datetime.month,
+                     arrow_datetime.day, arrow_datetime.hour,
+                     arrow_datetime.minute)
+
+
 def qdatetime_from_str(str_date_time, datetime_format="%Y-%m-%d %H:%M"):
     """Convert a date time str to a QDateTime object."""
     struct_time = strptime(str_date_time, datetime_format)

@@ -9,7 +9,12 @@
 
 # ---- Third party imports
 
-from PyQt5.QtWidgets import QFrame, QStyleOption
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QFrame, QGridLayout, QLabel, QStyleOption, QWidget
+
+# ---- Local imports
+
+from qwatson.utils import icons
 
 
 class HSep(QFrame):
@@ -46,3 +51,37 @@ class ColoredFrame(QFrame):
         palette = self.palette()
         palette.setColor(self.backgroundRole(), color)
         self.setPalette(palette)
+
+
+class InfoBox(ColoredFrame):
+    """
+    A simple widget with an icon and a text area to display info to the user.
+    """
+    def __init__(self,  text='', icon='info', iconsize='small', parent=None):
+        super(InfoBox, self).__init__(parent)
+        icon = icons.get_icon(icon) if isinstance(icon, str) else icon
+        iconsize = (icons.get_iconsize(iconsize) if
+                    isinstance(iconsize, str) else iconsize)
+
+        info_icon = QLabel()
+        info_icon.setScaledContents(False)
+        info_icon.setPixmap(icon.pixmap(iconsize))
+
+        info_label = QLabel(text)
+        info_label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+
+        # Setup the layout of the info box
+
+        layout = QGridLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(10)
+
+        layout.addWidget(info_icon, 0, 0)
+        layout.addWidget(info_label, 0, 1, 2, 1)
+
+        layout.setRowStretch(1, 100)
+        layout.setColumnStretch(1, 100)
+
+    def setContentsMargins(self, left, top, right, bottom):
+        """Set the content margins values of the info box layout."""
+        self.layout().setContentsMargins(left, top, right, bottom)

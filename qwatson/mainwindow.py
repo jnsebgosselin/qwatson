@@ -14,8 +14,10 @@ import os.path as osp
 
 # ---- Third parties imports
 
-from PyQt5.QtCore import (Qt, QModelIndex)
-from PyQt5.QtWidgets import (QApplication, QGridLayout, QSizePolicy, QWidget)
+from PyQt5.QtCore import Qt, QModelIndex
+from PyQt5.QtWidgets import (QApplication, QGridLayout, QHBoxLayout,
+                             QSizePolicy, QWidget, QStackedWidget,
+                             QVBoxLayout)
 
 # ---- Local imports
 
@@ -29,10 +31,13 @@ from qwatson.widgets.toolbar import (
     OnOffToolButton, QToolButtonSmall, DropDownToolButton)
 from qwatson import __namever__
 from qwatson.models.tablemodels import WatsonTableModel
-from qwatson.views.activitydialog import ActivityInputDialog
+from qwatson.dialogs.activitydialog import ActivityInputDialog
+from qwatson.dialogs.datetimedialog import DateTimeInputDialog
 from qwatson.widgets.layout import ColoredFrame
 
 ROUNDMIN = {'round to 1min': 1, 'round to 5min': 5, 'round to 10min': 10}
+STARTFROM = {'start from now': 'now', 'start from last': 'last',
+             'start from other': 'other'}
 
 
 class QWatson(QWidget):
@@ -62,20 +67,52 @@ class QWatson(QWidget):
         self.overview_widg = WatsonOverviewWidget(self.client, self.model)
         self.setup()
 
+    # ---- Setup layout
+
     def setup(self):
-        """Setup the widget with the provided arguments."""
-        timebar = self.setup_timebar()
-        self.activity_input_dial = self.setup_activity_input_dial()
+        """Setup the main widget."""
+
+        # Setup the stack widget.
+        self.stackwidget = QStackedWidget()
+        self.setup_activity_tracker()
+        self.setup_datetime_input_dial()
+
+        self.stackwidget.setCurrentIndex(0)
+
+        # Setup the statusbar
         statusbar = self.setup_statusbar()
 
-        # ---- Setup layout
+        # Setup the main layout of the widget
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(self.stackwidget)
+        layout.addWidget(statusbar)
+        layout.setStretch(0, 100)
 
-        mainlayout = QGridLayout(self)
-        mainlayout.setContentsMargins(0, 0, 0, 0)
-        mainlayout.setSpacing(0)
-        mainlayout.addWidget(self.activity_input_dial, 1, 0)
-        mainlayout.addWidget(timebar, 0, 0)
-        mainlayout.addWidget(statusbar, 2, 0)
+    def setup_activity_tracker(self):
+        """Setup the widget used to start, track, and stop new activity."""
+        timebar = self.setup_timebar()
+        self.activity_input_dial = self.setup_activity_input_dial()
+
+        # ---- Setup the layout of the main widget
+
+        tracker = QWidget()
+        layout = QGridLayout(tracker)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(self.activity_input_dial, 1, 0)
+        layout.addWidget(timebar, 0, 0)
+
+        self.stackwidget.addWidget(tracker)
+
+    def setup_datetime_input_dial(self):
+        """
+        Setup the dialog to ask the user to enter a datetime value for
+        the starting time of the activity.
+        """
+        self.datetime_input_dial = DateTimeInputDialog(parent=self)
+        self.datetime_input_dial.register_dialog_to(self)
 
     def setup_activity_input_dial(self):
         """
@@ -130,8 +167,6 @@ class QWatson(QWidget):
 
         return timebar
 
-    # ---- Bottom toolbar
-
     def setup_statusbar(self):
         """Setup the toolbar located at the bottom of the main widget."""
         self.btn_report = QToolButtonSmall('note')
@@ -150,18 +185,46 @@ class QWatson(QWidget):
             "Round start and stop times to the nearest"
             " multiple of the selected factor.")
 
+        self.start_from = DropDownToolButton(style='text_only')
+        self.start_from.setSizePolicy(
+            QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred))
+        self.start_from.addItems(
+            ['start from now', 'start from last', 'start from other'])
+        self.start_from.setCurrentIndex(0)
+        self.start_from.setToolTip(
+            "<b>Start From</b><br><br>"
+            "Set whether the current activity starts"
+            " from the current time (now),"
+            " from the stop time of the last logged activity (last),"
+            " or from a user defined time (other).")
+
         # Setup the layout of the statusbar
 
         statusbar = ColoredFrame()
         statusbar.set_background_color('window')
 
-        layout = QGridLayout(statusbar)
+        layout = QHBoxLayout(statusbar)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.round_time_btn, 0, 0)
-        layout.addWidget(self.btn_report, 0, 2)
-        layout.setColumnStretch(1, 100)
+        layout.addWidget(self.round_time_btn)
+        layout.addWidget(self.start_from)
+        layout.addStretch(100)
+        layout.addWidget(self.btn_report)
 
         return statusbar
+
+    # ---- Layout handlers
+
+    def addWidget(self, widget):
+        """
+        Add a widget to the stackwidget and return the index where the
+        widget was added.
+        """
+        self.stackwidget.addWidget(widget)
+        return self.stackwidget.count() - 1
+
+    def setCurrentIndex(self, index):
+        """Set the current index of the stackwidget."""
+        self.stackwidget.setCurrentIndex(index)
 
     # ---- Project handlers
 
@@ -195,8 +258,14 @@ class QWatson(QWidget):
     def btn_startstop_isclicked(self):
         """Handle when the button to start and stop Watson is clicked."""
         if self.btn_startstop.value():
-            self.client.start(self.activity_input_dial.project)
-            self.elap_timer.start()
+            frames = self.client.frames
+            start_from = STARTFROM[self.start_from.text()]
+            if start_from == 'now':
+                self.start_watson()
+            elif start_from == 'last' and len(frames) > 0:
+                self.start_watson(start_time=frames[-1].stop)
+            else:
+                self.datetime_input_dial.show()
         else:
             self.elap_timer.stop()
             self.stop_watson(message=self.activity_input_dial.comment,
@@ -204,8 +273,22 @@ class QWatson(QWidget):
                              tags=self.activity_input_dial.tags,
                              round_to=ROUNDMIN[self.round_time_btn.text()])
 
-    def stop_watson(self, message=None, project=None, tags=None,
-                    round_to=5):
+    def start_watson(self, start_time=None):
+        """Start monitoring a new activity with the Watson client."""
+        self.client.start(self.activity_input_dial.project)
+        if start_time is not None:
+            self.client._current['start'] = start_time
+            self.elap_timer.start(start_time.timestamp)
+        else:
+            self.elap_timer.start()
+
+    def cancel_watson(self):
+        """Cancel the Watson client if it is running and reset the UI."""
+        if self.client.is_started:
+            self.client.cancel()
+        self.btn_startstop.setValue(False, silent=True)
+
+    def stop_watson(self, message=None, project=None, tags=None, round_to=5):
         """Stop Watson and update the table model."""
         if message is not None:
             self.client._current['message'] = message
@@ -228,6 +311,7 @@ class QWatson(QWidget):
         """Qt method override."""
         self.client.save()
         event.accept()
+        print("QWatson is closed.\n")
 
 
 class WatsonOverviewWidget(QWidget):
@@ -264,4 +348,5 @@ if __name__ == '__main__':
     watson_gui = QWatson()
     watson_gui.show()
     watson_gui.setFixedSize(watson_gui.size())
+    print("QWatson is running...")
     sys.exit(app.exec_())

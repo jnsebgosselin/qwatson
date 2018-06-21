@@ -82,7 +82,9 @@ class OnOffToolButton(QToolButtonBase):
         self.installEventFilter(self)
 
     def eventFilter(self, widget, event):
-        if event.type() == QEvent.MouseButtonPress and self.isEnabled():
+        if (event.type() == QEvent.MouseButtonRelease and
+                self.isEnabled() and
+                self.rect().contains(event.pos())):
             self.setValue(not self.value())
         return super(OnOffToolButton, self).eventFilter(widget, event)
 
