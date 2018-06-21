@@ -137,11 +137,19 @@ class DropDownToolButton(QToolButtonBase):
         self.droplist.addItems(items)
         self.setCurrentIndex(0)
 
+    def currentIndex(self):
+        """Return the index of the current item in the dropdown button."""
+        return self.droplist.currentRow()
+
     def setCurrentIndex(self, index):
-        self.droplist.setCurrentRow(index)
-        current_item = self.droplist.currentItem()
-        if current_item is not None:
-            self.setText(current_item.text())
+        """Set the index of the current item in the dropdown button."""
+        if index != self.currentIndex():
+            self.droplist.setCurrentRow(index)
+            current_item = self.droplist.currentItem()
+            if current_item is not None:
+                self.new_item_selected(current_item.text())
+            else:
+                self.new_item_selected('')
 
     def show_dropdown(self):
         """Show and set focus on the dropdown list."""
@@ -201,7 +209,7 @@ class DropDownList(QListWidget):
         if the Enter key is pressed.
         """
         super(DropDownList, self).keyPressEvent(event)
-        if event.key() == Qt.Key_Return:
+        if event.key() in [Qt.Key_Return, Qt.Key_Enter]:
             self.sig_item_selected.emit(self.currentItem().text())
             self.hide()
 
