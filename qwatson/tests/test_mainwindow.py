@@ -50,6 +50,7 @@ def test_mainwindow_init(qtbot):
 
     mainwindow = QWatson(WORKDIR)
     qtbot.addWidget(mainwindow)
+    qtbot.addWidget(mainwindow.overview_widg)
     mainwindow.show()
 
     assert mainwindow
@@ -182,6 +183,103 @@ def test_rename_project(qtbot, mocker):
     mainwindow.close()
 
 
+def test_start_from_last(qtbot, mocker):
+    """
+    Test that starting an activity with the option 'start from' set to 'last'
+    works as expected.
+    """
+    now = local_arrow_from_tuple((2018, 6, 14, 18, 47, 23))
+    mocker.patch('arrow.now', return_value=now)
+
+    mainwindow = QWatson(WORKDIR)
+    qtbot.addWidget(mainwindow)
+    mainwindow.show()
+
+    mainwindow.start_from.setCurrentIndex(1)
+    assert mainwindow.start_from.text() == 'start from last'
+
+    # Start and stop the activity timer
+    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
+    assert mainwindow.elap_timer.is_started
+    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
+    assert not mainwindow.elap_timer.is_started
+
+    frame = mainwindow.client.frames[-1]
+    assert frame.start.format('YYYY-MM-DD HH:mm') == '2018-06-14 17:15'
+    assert frame.stop.format('YYYY-MM-DD HH:mm') == '2018-06-14 18:45'
+
+
+def test_start_from_other(qtbot, mocker):
+    """
+    Test that starting an activity with the option 'start from' set to 'other'
+    works as expected.
+    """
+    now = local_arrow_from_tuple((2018, 6, 14, 19, 12, 36))
+    mocker.patch('arrow.now', return_value=now)
+
+    mainwindow = QWatson(WORKDIR)
+    qtbot.addWidget(mainwindow)
+    mainwindow.show()
+
+    initial_frames_len = len(mainwindow.client.frames)
+    datetime_dial = mainwindow.datetime_input_dial
+
+    mainwindow.start_from.setCurrentIndex(2)
+    assert mainwindow.start_from.text() == 'start from other'
+    assert not datetime_dial.isVisible()
+
+    # Start the activity timer and assert the datetime dialog is shown
+    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
+    assert not mainwindow.elap_timer.is_started
+    assert datetime_dial.isVisible()
+    datetime_arrow = datetime_dial.get_datetime_arrow()
+    assert datetime_arrow.format('YYYY-MM-DD HH:mm') == '2018-06-14 19:12'
+    minimum_datetime = datetime_dial.minimum_datetime
+    assert minimum_datetime.format('YYYY-MM-DD HH:mm') == '2018-06-14 18:45'
+
+    # Cancel the dialog and assert it is working as expected.
+    qtbot.mouseClick(datetime_dial.button_box.buttons()[1], Qt.LeftButton)
+    assert not mainwindow.elap_timer.is_started
+    assert not datetime_dial.isVisible()
+    assert not mainwindow.client.is_started
+    assert len(mainwindow.client.frames) == initial_frames_len
+
+    # Start the activity timer again and assert the datetime dialog is shown
+    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
+    assert not mainwindow.elap_timer.is_started
+    assert datetime_dial.isVisible()
+
+    # Change the datetime below the minimum value.
+    datetime_dial.datetime_edit.setDateTime(
+        qdatetime_from_str('2018-06-14 18:25'))
+    datetime_arrow = datetime_dial.get_datetime_arrow()
+    assert datetime_arrow.format('YYYY-MM-DD HH:mm') == '2018-06-14 18:45'
+
+    # Change the datetime above now.
+    datetime_dial.datetime_edit.setDateTime(
+        qdatetime_from_str('2018-06-14 21:35'))
+    datetime_arrow = datetime_dial.get_datetime_arrow()
+    assert datetime_arrow.format('YYYY-MM-DD HH:mm') == '2018-06-14 19:12'
+
+    # Change the datetime and accept and assert he dialog is not visible
+    # and the activity is correctly started.
+    datetime_dial.datetime_edit.setDateTime(
+        qdatetime_from_str('2018-06-14 19:01'))
+    qtbot.mouseClick(datetime_dial.button_box.buttons()[0], Qt.LeftButton)
+    assert mainwindow.elap_timer.is_started
+    assert not datetime_dial.isVisible()
+    assert mainwindow.client.is_started
+
+    # Stop the activity and assert it was saved correctly.
+    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
+    assert not mainwindow.elap_timer.is_started
+    assert not mainwindow.client.is_started
+    assert len(mainwindow.client.frames) == initial_frames_len + 1
+    frame = mainwindow.client.frames[-1]
+    assert frame.start.format('YYYY-MM-DD HH:mm') == '2018-06-14 19:00'
+    assert frame.stop.format('YYYY-MM-DD HH:mm') == '2018-06-14 19:15'
+
+
 def test_last_closed_error(qtbot, mocker):
     """
     Test that QWatson opens correctly when the last session was not closed
@@ -236,7 +334,9 @@ def test_delete_frame(qtbot, mocker):
 
     mainwindow = QWatson(WORKDIR)
     qtbot.addWidget(mainwindow)
+    qtbot.addWidget(mainwindow.overview_widg)
     mainwindow.show()
+    expected_rowcount = len(mainwindow.client.frames)
 
     qtbot.mouseClick(mainwindow.btn_report, Qt.LeftButton)
     qtbot.waitForWindowShown(mainwindow.overview_widg)
@@ -250,10 +350,12 @@ def test_delete_frame(qtbot, mocker):
         if table.date_span[0] == fstart_day:
             break
     assert i == 3
-    assert table.view.proxy_model.get_accepted_row_count() == 2
+    assert table.view.proxy_model.get_accepted_row_count() == expected_rowcount
+    assert 'error' in mainwindow.client.tags
 
+    row = expected_rowcount - 1
     col = table.view.proxy_model.sourceModel().COLUMNS['icons']
-    index = table.view.proxy_model.index(1, col)
+    index = table.view.proxy_model.index(row, col)
     delegate = table.view.itemDelegate(index)
     assert isinstance(delegate, ToolButtonDelegate)
 
@@ -269,16 +371,18 @@ def test_delete_frame(qtbot, mocker):
     mocker.patch.object(QMessageBox, 'question', return_value=QMessageBox.No)
     delegate.editorEvent(event, table.view.proxy_model, None, index)
 
-    assert table.view.proxy_model.get_accepted_row_count() == 2
-    assert len(mainwindow.client.frames) == 2
+    assert table.view.proxy_model.get_accepted_row_count() == expected_rowcount
+    assert len(mainwindow.client.frames) == expected_rowcount
+    assert 'error' in mainwindow.client.tags
 
     # Click to delete last frame and click Yes.
-
+    expected_rowcount += -1
     mocker.patch.object(QMessageBox, 'question', return_value=QMessageBox.Yes)
     delegate.editorEvent(event, table.view.proxy_model, None, index)
 
-    assert table.view.proxy_model.get_accepted_row_count() == 1
-    assert len(mainwindow.client.frames) == 1
+    assert table.view.proxy_model.get_accepted_row_count() == expected_rowcount
+    assert len(mainwindow.client.frames) == expected_rowcount
+    assert 'error' not in mainwindow.client.tags
 
     mainwindow.close()
 
@@ -292,11 +396,11 @@ def test_edit_start_stop(qtbot, mocker):
 
     mainwindow = QWatson(WORKDIR)
     qtbot.addWidget(mainwindow)
+    qtbot.addWidget(mainwindow.overview_widg)
     mainwindow.show()
 
     qtbot.mouseClick(mainwindow.btn_report, Qt.LeftButton)
     qtbot.waitForWindowShown(mainwindow.overview_widg)
-    qtbot.addWidget(mainwindow.overview_widg)
 
     table_widg = mainwindow.overview_widg.table_widg
 
@@ -346,8 +450,9 @@ def test_edit_start_stop(qtbot, mocker):
     table.view.edit(index)
     assert old_stop == delegate.editor.dateTime().toString("yyyy-MM-dd hh:mm")
 
-    # The new stop must not be later than the mocked arrow.now time
-    new_stop = '2018-06-14 21:32'
+    # The new stop must not be later than the start time of the activity
+    # added in test_start_from_last.
+    new_stop = '2018-06-14 16:43'
     delegate.editor.setDateTime(qdatetime_from_str(new_stop))
     with qtbot.waitSignal(table.view.proxy_model.sig_sourcemodel_changed):
         qtbot.keyPress(delegate.editor, Qt.Key_Enter)
