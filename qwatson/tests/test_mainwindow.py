@@ -15,8 +15,7 @@ import json
 # ---- Third party imports
 
 import pytest
-from PyQt5.QtCore import Qt, QEvent
-from PyQt5.QtGui import QMouseEvent
+from PyQt5.QtCore import Qt
 
 # ---- Local imports
 
@@ -363,22 +362,25 @@ def test_delete_frame(qtbot, mocker):
     # when using qtbot.mousePress.
 
     visual_rect = table.view.visualRect(index)
-    event = QMouseEvent(QEvent.MouseButtonPress, visual_rect.center(),
-                        Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
 
-    # Click to delete last frame and click No.
+    # Click to delete last frame and answer No.
 
     mocker.patch.object(QMessageBox, 'question', return_value=QMessageBox.No)
-    delegate.editorEvent(event, table.view.proxy_model, None, index)
+    with qtbot.waitSignal(table.view.proxy_model.sig_btn_delrow_clicked):
+        qtbot.mouseClick(table.view.viewport(), Qt.LeftButton,
+                         pos=visual_rect.center())
 
     assert table.view.proxy_model.get_accepted_row_count() == expected_rowcount
     assert len(mainwindow.client.frames) == expected_rowcount
     assert 'error' in mainwindow.client.tags
 
-    # Click to delete last frame and click Yes.
+    # Click to delete last frame and answer Yes.
+
     expected_rowcount += -1
     mocker.patch.object(QMessageBox, 'question', return_value=QMessageBox.Yes)
-    delegate.editorEvent(event, table.view.proxy_model, None, index)
+    with qtbot.waitSignal(table.view.proxy_model.sig_btn_delrow_clicked):
+        qtbot.mouseClick(table.view.viewport(), Qt.LeftButton,
+                         pos=visual_rect.center())
 
     assert table.view.proxy_model.get_accepted_row_count() == expected_rowcount
     assert len(mainwindow.client.frames) == expected_rowcount
