@@ -2,6 +2,7 @@
 ./qwatson/ressources/qwatson_banner.png)
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](./LICENSE)
+[![Latest release](https://img.shields.io/github/release/jnsebgosselin/qwatson.svg)](https://github.com/jnsebgosselin/qwatson/releases)
 [![Build status](https://ci.appveyor.com/api/projects/status/f6hdeg9fyp1huxab?svg=true)](https://ci.appveyor.com/project/jnsebgosselin/qwatson)
 [![codecov](https://codecov.io/gh/jnsebgosselin/qwatson/branch/master/graph/badge.svg)](https://codecov.io/gh/jnsebgosselin/qwatson)
 
