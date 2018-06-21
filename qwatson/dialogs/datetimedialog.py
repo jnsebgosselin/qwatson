@@ -25,7 +25,7 @@ from qwatson.utils.dates import (local_arrow_from_str,  qdatetime_from_arrow,
 from qwatson.widgets.layout import InfoBox, ColoredFrame
 
 
-class DateTimeInputDialog(QWidget):
+class DateTimeInputDialog(ColoredFrame):
     """
     A dialog to select a datetime value that is built to be enclosed in
     a layout, and not used as a child window.
@@ -38,43 +38,62 @@ class DateTimeInputDialog(QWidget):
 
     def __init__(self, parent=None):
         super(DateTimeInputDialog, self).__init__(parent)
+        self.set_background_color('light')
         self._minimum_datetime = None
         self.setup()
 
+    # ---- Setup layout
+
     def setup(self):
         """Setup the dialog widgets and layout."""
-        self.datetime_edit = self.setup_datetime_edit()
+        datetime_box = self.setup_datetime_box()
         self.button_box = self.setup_dialog_button_box()
         info_text = ("The start time cannot be sooner than the stop\n"
                      " time of the last saved activity and later than\n"
                      " the current time")
         info_box = InfoBox(info_text, 'info', 'small')
+        info_box.set_background_color('light')
+        info_box.setContentsMargins(5, 5, 5, 5)
 
         # Setup the layout of the dialog
 
-        layout = QGridLayout(self)
-        layout.addWidget(
-            QLabel('Enter the start time for the activity :'), 0, 0)
-        layout.addWidget(self.datetime_edit, 1, 0)
-        layout.addWidget(info_box, 3, 0)
-        layout.addWidget(self.button_box, 5, 0)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
-        layout.setRowStretch(2, 100)
-        layout.setRowStretch(4, 100)
+        layout.addWidget(datetime_box)
+        layout.addWidget(self.button_box)
+        layout.addWidget(info_box)
+        layout.addStretch(100)
 
-    def setup_datetime_edit(self):
-        """Setup the datetune edit widget."""
-        datetime_edit = QDateTimeEdit()
+    def setup_datetime_box(self):
+        """Setup the datetime edit widget and a label."""
+        self.datetime_edit = datetime_edit = QDateTimeEdit()
         datetime_edit.setCalendarPopup(True)
         datetime_edit.setDisplayFormat("yyyy-MM-dd  hh:mm")
         datetime_edit.setKeyboardTracking(False)
         datetime_edit.dateTimeChanged.connect(self.validate_datetime)
+        datetime_edit.setAlignment(Qt.AlignLeft)
 
         ft = datetime_edit.font()
-        ft.setPointSize(ft.pointSize() + 2)
+        ft.setPointSize(ft.pointSize() + 4)
         datetime_edit.setFont(ft)
 
-        return datetime_edit
+        label = QLabel('Start time :')
+        label.setFont(ft)
+
+        # Setup the layout
+
+        datetime_box = ColoredFrame()
+        datetime_box.set_background_color('window')
+        layout = QHBoxLayout(datetime_box)
+        layout.setContentsMargins(5, 10, 5, 5)
+        layout.setSpacing(15)
+        layout.addWidget(label)
+        layout.addWidget(datetime_edit)
+        layout.setStretch(1, 100)
+
+        return datetime_box
 
     def setup_dialog_button_box(self):
         """Setup the buttons of the dialog."""
@@ -86,6 +105,13 @@ class DateTimeInputDialog(QWidget):
             lambda: self.sig_rejected.emit(self.get_datetime_arrow()))
         button_box.accepted.connect(lambda: self.sig_closed.emit())
         button_box.rejected.connect(lambda: self.sig_closed.emit())
+        button_box.layout().setContentsMargins(5, 5, 5, 10)
+        button_box.setAutoFillBackground(True)
+
+        color = QStyleOption().palette.window().color()
+        palette = button_box.palette()
+        palette.setColor(button_box.backgroundRole(), color)
+        button_box.setPalette(palette)
 
         return button_box
 
