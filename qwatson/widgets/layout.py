@@ -9,6 +9,7 @@
 
 # ---- Third party imports
 
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QFrame, QGridLayout, QLabel, QStyleOption, QWidget
 
 # ---- Local imports
@@ -52,7 +53,7 @@ class ColoredFrame(QFrame):
         self.setPalette(palette)
 
 
-class InfoBox(QWidget):
+class InfoBox(ColoredFrame):
     """
     A simple widget with an icon and a text area to display info to the user.
     """
@@ -67,6 +68,7 @@ class InfoBox(QWidget):
         info_icon.setPixmap(icon.pixmap(iconsize))
 
         info_label = QLabel(text)
+        info_label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
 
         # Setup the layout of the info box
 
@@ -79,3 +81,7 @@ class InfoBox(QWidget):
 
         layout.setRowStretch(1, 100)
         layout.setColumnStretch(1, 100)
+
+    def setContentsMargins(self, left, top, right, bottom):
+        """Set the content margins values of the info box layout."""
+        self.layout().setContentsMargins(left, top, right, bottom)
