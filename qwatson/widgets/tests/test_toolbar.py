@@ -14,8 +14,7 @@ import os.path as osp
 # ---- Third party imports
 
 import pytest
-from PyQt5.QtCore import Qt, QEvent
-from PyQt5.QtGui import QMouseEvent
+from PyQt5.QtCore import Qt
 
 # ---- Local imports
 
