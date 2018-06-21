@@ -30,15 +30,12 @@ class DateTimeInputDialog(ColoredFrame):
     A dialog to select a datetime value that is built to be enclosed in
     a layout, and not used as a child window.
     """
-    sig_accepted = QSignal(arrow.Arrow)
-    sig_rejected = QSignal(arrow.Arrow)
-    sig_closed = QSignal()
-
     DEFAULT_MIN_DATETIME = local_arrow_from_tuple((2000, 1, 1))
 
     def __init__(self, parent=None):
         super(DateTimeInputDialog, self).__init__(parent)
         self.set_background_color('light')
+        self.main = None
         self._minimum_datetime = None
         self.setup()
 
@@ -100,11 +97,9 @@ class DateTimeInputDialog(ColoredFrame):
         button_box = QDialogButtonBox(
             QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         button_box.accepted.connect(
-            lambda: self.sig_accepted.emit(self.get_datetime_arrow()))
+            lambda: self.receive_answer(QDialogButtonBox.Ok))
         button_box.rejected.connect(
-            lambda: self.sig_rejected.emit(self.get_datetime_arrow()))
-        button_box.accepted.connect(lambda: self.sig_closed.emit())
-        button_box.rejected.connect(lambda: self.sig_closed.emit())
+            lambda: self.receive_answer(QDialogButtonBox.Cancel))
         button_box.layout().setContentsMargins(5, 5, 5, 10)
         button_box.setAutoFillBackground(True)
 
@@ -114,6 +109,40 @@ class DateTimeInputDialog(ColoredFrame):
         button_box.setPalette(palette)
 
         return button_box
+
+    # ---- Bind dialog with main
+
+    def register_dialog_to(self, main):
+        """Register the dialog to the main application."""
+        if main is not None:
+            self.main = main
+            self.dialog_index = self.main.addWidget(self)
+
+    def show(self):
+        """Qt method override."""
+        self.set_datetime_to_now()
+        if self.main is not None:
+            self.main.start_from.setEnabled(False)
+            frames = self.main.client.frames
+            self.main.setCurrentIndex(self.dialog_index)
+            self.set_datetime_minimum(
+                None if len(frames) == 0 else frames[-1].stop)
+        super(DateTimeInputDialog, self).show()
+
+    def receive_answer(self, button):
+        """
+        Handle when the value displayed in the datetime widget is accepted
+        or canceled by the user.
+        """
+        if self.main is not None:
+            if button == QDialogButtonBox.Ok:
+                self.main.start_watson(start_time=self.get_datetime_arrow())
+            elif button == QDialogButtonBox.Cancel:
+                self.main.cancel_watson()
+            self.main.start_from.setEnabled(True)
+            self.main.setCurrentIndex(0)
+
+    # ---- Utility
 
     @property
     def minimum_datetime(self):

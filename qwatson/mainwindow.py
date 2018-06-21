@@ -40,7 +40,7 @@ STARTFROM = {'start from now': 'now', 'start from last': 'last',
              'start from other': 'other'}
 
 
-class QWatson(QStackedWidget):
+class QWatson(QWidget):
 
     def __init__(self, config_dir=None, parent=None):
         super(QWatson, self).__init__(parent)
@@ -65,27 +65,54 @@ class QWatson(QStackedWidget):
                              tags=['error'])
 
         self.overview_widg = WatsonOverviewWidget(self.client, self.model)
-        self.setup_mainwidget()
-        self.datetime_input_dial = self.setup_datetime_input_dial()
-        self.setCurrentIndex(0)
+        self.setup()
 
-    def setup_mainwidget(self):
-        """Setup the main widget with the provided arguments."""
-        timebar = self.setup_timebar()
+    # ---- Setup layout
+
+    def setup(self):
+        """Setup the main widget."""
+
+        # Setup the stack widget.
+        self.stackwidget = QStackedWidget()
+        self.setup_activity_tracker()
+        self.setup_datetime_input_dial()
+
+        self.stackwidget.setCurrentIndex(0)
+
+        # Setup the statusbar
         statusbar = self.setup_statusbar()
+
+        # Setup the main layout of the widget
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(self.stackwidget)
+        layout.addWidget(statusbar)
+        layout.setStretch(0, 100)
+
+    def setup_activity_tracker(self):
+        """Setup the widget used to start, track, and stop new activity."""
+        timebar = self.setup_timebar()
         self.activity_input_dial = self.setup_activity_input_dial()
 
         # ---- Setup the layout of the main widget
 
-        mainwidget = QWidget()
-        mainlayout = QGridLayout(mainwidget)
-        mainlayout.setContentsMargins(0, 0, 0, 0)
-        mainlayout.setSpacing(0)
-        mainlayout.addWidget(self.activity_input_dial, 1, 0)
-        mainlayout.addWidget(timebar, 0, 0)
-        mainlayout.addWidget(statusbar, 2, 0)
+        tracker = QWidget()
+        layout = QGridLayout(tracker)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(self.activity_input_dial, 1, 0)
+        layout.addWidget(timebar, 0, 0)
 
-        self.addWidget(mainwidget)
+        self.stackwidget.addWidget(tracker)
+
+    def setup_datetime_input_dial(self):
+        """
+        Setup the dialog to ask the user to enter a datetime value for
+        the starting time of the activity.
+        """
+        self.datetime_input_dial = DateTimeInputDialog(parent=self)
+        self.datetime_input_dial.register_dialog_to(self)
 
     def setup_activity_input_dial(self):
         """
@@ -140,8 +167,6 @@ class QWatson(QStackedWidget):
 
         return timebar
 
-    # ---- Bottom toolbar
-
     def setup_statusbar(self):
         """Setup the toolbar located at the bottom of the main widget."""
         self.btn_report = QToolButtonSmall('note')
@@ -187,20 +212,19 @@ class QWatson(QStackedWidget):
 
         return statusbar
 
-    def setup_datetime_input_dial(self):
+    # ---- Layout handlers
+
+    def addWidget(self, widget):
         """
-        Setup and register the dialog to input a custom start date for
-        a new activity.
+        Add a widget to the stackwidget and return the index where the
+        widget was added.
         """
-        dialog = DateTimeInputDialog(parent=self)
+        self.stackwidget.addWidget(widget)
+        return self.stackwidget.count() - 1
 
-        dialog.sig_accepted.connect(self.start_watson)
-        dialog.sig_rejected.connect(self.cancel_watson)
-        dialog.sig_closed.connect(lambda: self.setCurrentIndex(0))
-
-        self.addWidget(dialog)
-
-        return dialog
+    def setCurrentIndex(self, index):
+        """Set the current index of the stackwidget."""
+        self.stackwidget.setCurrentIndex(index)
 
     # ---- Project handlers
 
@@ -241,13 +265,7 @@ class QWatson(QStackedWidget):
             elif start_from == 'last' and len(frames) > 0:
                 self.start_watson(start_time=frames[-1].stop)
             else:
-                # Show a dialog for the user to input a start value for the
-                # activity. The dialog's accepted and rejected signals
-                # are connected to start_watson and cancel_watson methods.
-                self.datetime_input_dial.set_datetime_to_now()
-                self.datetime_input_dial.set_datetime_minimum(
-                    None if len(frames) == 0 else frames[-1].stop)
-                self.setCurrentIndex(1)
+                self.datetime_input_dial.show()
         else:
             self.elap_timer.stop()
             self.stop_watson(message=self.activity_input_dial.comment,
