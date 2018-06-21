@@ -13,17 +13,16 @@ import sys
 # ---- Third party imports
 
 import arrow
-from PyQt5.QtCore import pyqtSignal as QSignal
 from PyQt5.QtCore import pyqtSlot as QSlot
-from PyQt5.QtCore import QDateTime
+from PyQt5.QtCore import QDateTime, Qt
 from PyQt5.QtWidgets import (QApplication, QDateTimeEdit, QDialogButtonBox,
-                             QGridLayout, QLabel, QWidget)
+                             QLabel, QVBoxLayout, QStyleOption, QHBoxLayout)
 
 # ---- Local imports
 
 from qwatson.utils.dates import (local_arrow_from_str,  qdatetime_from_arrow,
                                  local_arrow_from_tuple)
-from qwatson.widgets.layout import InfoBox
+from qwatson.widgets.layout import InfoBox, ColoredFrame
 
 
 class DateTimeInputDialog(QWidget):
