@@ -15,10 +15,8 @@ import sys
 import arrow
 from PyQt5.QtCore import pyqtSlot as QSlot
 from PyQt5.QtCore import QDateTime, Qt
-from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QApplication, QDateTimeEdit, QDialogButtonBox,
-                             QLabel, QVBoxLayout, QStyleOption, QHBoxLayout,
-                             QMessageBox, QStyle)
+                             QLabel, QVBoxLayout, QStyleOption, QHBoxLayout)
 
 # ---- Local imports
 
@@ -50,9 +48,10 @@ class DateTimeInputDialog(ColoredFrame):
         info_text = ("The start time cannot be sooner than the stop\n"
                      " time of the last saved activity and later than\n"
                      " the current time")
-        info_box = InfoBox(info_text, 'info', 'small')
-        info_box.set_background_color('light')
+
+        info_box = InfoBox(info_text, 'information', 'small')
         info_box.setContentsMargins(5, 10, 5, 10)
+        info_box.setSpacing(10)
 
         # Setup the layout of the dialog
 
@@ -61,9 +60,9 @@ class DateTimeInputDialog(ColoredFrame):
         layout.setSpacing(0)
 
         layout.addWidget(datetime_box)
-        layout.addWidget(info_box)
         layout.addWidget(self.button_box)
-        layout.setStretch(1, 100)
+        layout.addWidget(info_box)
+        layout.setStretch(2, 100)
 
     def setup_datetime_box(self):
         """Setup the datetime edit widget and a label."""
