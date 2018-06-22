@@ -260,7 +260,7 @@ def test_start_from_other(qtbot, mocker):
     datetime_arrow = datetime_dial.get_datetime_arrow()
     assert datetime_arrow.format('YYYY-MM-DD HH:mm') == '2018-06-14 19:12'
 
-    # Change the datetime and accept and assert he dialog is not visible
+    # Change the datetime and accept and assert the dialog is not visible
     # and the activity is correctly started.
     datetime_dial.datetime_edit.setDateTime(
         qdatetime_from_str('2018-06-14 19:01'))
@@ -277,6 +277,78 @@ def test_start_from_other(qtbot, mocker):
     frame = mainwindow.client.frames[-1]
     assert frame.start.format('YYYY-MM-DD HH:mm') == '2018-06-14 19:00'
     assert frame.stop.format('YYYY-MM-DD HH:mm') == '2018-06-14 19:15'
+
+
+def test_close_when_running(qtbot, mocker):
+    """
+    Test that the dialog that ask the user what to do when closing QWatson
+    while an activity is running is working as expected.
+    """
+    now = local_arrow_from_tuple((2018, 6, 14, 19, 36, 23))
+    mocker.patch('arrow.now', return_value=now)
+
+    mainwindow = QWatson(WORKDIR)
+    qtbot.addWidget(mainwindow)
+    mainwindow.show()
+    qtbot.waitForWindowShown(mainwindow)
+    expected_framelen = len(mainwindow.client.frames)
+
+    # Start tracking the activity from last
+
+    mainwindow.start_from.setCurrentIndex(1)
+    assert mainwindow.start_from.text() == 'start from last'
+
+    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
+    assert mainwindow.currentIndex() == 0
+    assert mainwindow.client.is_started
+
+    # Close QWatson and answer Cancel in the dialog.
+
+    mainwindow.close()
+    assert mainwindow.currentIndex() == 2
+    assert mainwindow.close_dial.isVisible()
+
+    qtbot.mouseClick(mainwindow.close_dial.cancel_btn, Qt.LeftButton)
+    assert mainwindow.client.is_started
+    assert mainwindow.currentIndex() == 0
+    assert mainwindow.isVisible()
+    assert not mainwindow.close_dial.isVisible()
+    assert len(mainwindow.client.frames) == expected_framelen
+
+    # Close QWatson and answer No in the dialog.
+
+    mainwindow.close()
+    assert mainwindow.currentIndex() == 2
+    assert mainwindow.close_dial.isVisible()
+
+    qtbot.mouseClick(mainwindow.close_dial.no_btn, Qt.LeftButton)
+    assert not mainwindow.client.is_started
+    assert not mainwindow.isVisible()
+    assert len(mainwindow.client.frames) == expected_framelen
+
+    # Restart QWatson and start the tracker.
+
+    mainwindow.show()
+    qtbot.waitForWindowShown(mainwindow)
+    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
+    assert mainwindow.currentIndex() == 0
+    assert mainwindow.client.is_started
+
+    # Close QWatson and answer Yes in the dialog.
+
+    mainwindow.close()
+    assert mainwindow.currentIndex() == 2
+    assert mainwindow.close_dial.isVisible()
+
+    qtbot.mouseClick(mainwindow.close_dial.yes_btn, Qt.LeftButton)
+    assert not mainwindow.client.is_started
+    assert mainwindow.currentIndex() == 0
+    assert not mainwindow.isVisible()
+
+    frame = mainwindow.client.frames[-1]
+    assert len(mainwindow.client.frames) == expected_framelen + 1
+    assert frame.start.format('YYYY-MM-DD HH:mm') == '2018-06-14 19:15'
+    assert frame.stop.format('YYYY-MM-DD HH:mm') == '2018-06-14 19:35'
 
 
 def test_last_closed_error(qtbot, mocker):

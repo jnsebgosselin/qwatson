@@ -113,7 +113,8 @@ class CloseDialog(ColoredFrame):
                 self.main.client.save()
                 self.main.close()
             elif button == self.cancel_btn:
-                self.main.setCurrentIndex(0)
+                pass
+            self.main.setCurrentIndex(0)
 
 
 if __name__ == '__main__':

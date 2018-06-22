@@ -230,6 +230,10 @@ class QWatson(QWidget):
         self.stackwidget.addWidget(widget)
         return self.stackwidget.count() - 1
 
+    def currentIndex(self):
+        """Return the current index of the stackwidget."""
+        return self.stackwidget.currentIndex()
+
     def setCurrentIndex(self, index):
         """Set the current index of the stackwidget."""
         self.stackwidget.setCurrentIndex(index)
