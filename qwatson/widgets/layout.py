@@ -15,6 +15,7 @@ from PyQt5.QtWidgets import QFrame, QGridLayout, QLabel, QStyleOption, QWidget
 # ---- Local imports
 
 from qwatson.utils import icons
+from qwatson.utils.icons import get_standard_icon, get_standard_iconsize
 
 
 class HSep(QFrame):
@@ -57,10 +58,11 @@ class InfoBox(ColoredFrame):
     """
     A simple widget with an icon and a text area to display info to the user.
     """
-    def __init__(self,  text='', icon='info', iconsize='small', parent=None):
+    def __init__(self,  text, icon, iconsize, color='light', parent=None):
         super(InfoBox, self).__init__(parent)
-        icon = icons.get_icon(icon) if isinstance(icon, str) else icon
-        iconsize = (icons.get_iconsize(iconsize) if
+        self.set_background_color(color)
+        icon = icons.get_standard_icon(icon) if isinstance(icon, str) else icon
+        iconsize = (icons.get_standard_iconsize(iconsize) if
                     isinstance(iconsize, str) else iconsize)
 
         info_icon = QLabel()
@@ -73,14 +75,18 @@ class InfoBox(ColoredFrame):
         # Setup the layout of the info box
 
         layout = QGridLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(10)
+        self.setContentsMargins(0, 0, 0, 0)
+        self.setSpacing(15)
 
         layout.addWidget(info_icon, 0, 0)
         layout.addWidget(info_label, 0, 1, 2, 1)
 
         layout.setRowStretch(1, 100)
         layout.setColumnStretch(1, 100)
+
+    def setSpacing(self, x):
+        """Set the spacing between the icon and the text."""
+        self.layout().setSpacing(x)
 
     def setContentsMargins(self, left, top, right, bottom):
         """Set the content margins values of the info box layout."""

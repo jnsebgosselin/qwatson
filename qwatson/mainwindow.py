@@ -17,7 +17,7 @@ import os.path as osp
 from PyQt5.QtCore import Qt, QModelIndex
 from PyQt5.QtWidgets import (QApplication, QGridLayout, QHBoxLayout,
                              QSizePolicy, QWidget, QStackedWidget,
-                             QVBoxLayout)
+                             QVBoxLayout, QMessageBox)
 
 # ---- Local imports
 
@@ -33,6 +33,7 @@ from qwatson import __namever__
 from qwatson.models.tablemodels import WatsonTableModel
 from qwatson.dialogs.activitydialog import ActivityInputDialog
 from qwatson.dialogs.datetimedialog import DateTimeInputDialog
+from qwatson.dialogs.closedialog import CloseDialog
 from qwatson.widgets.layout import ColoredFrame
 
 ROUNDMIN = {'round to 1min': 1, 'round to 5min': 5, 'round to 10min': 10}
@@ -76,35 +77,41 @@ class QWatson(QWidget):
         self.stackwidget = QStackedWidget()
         self.setup_activity_tracker()
         self.setup_datetime_input_dial()
-
+        self.setup_close_dial()
         self.stackwidget.setCurrentIndex(0)
 
-        # Setup the statusbar
-        statusbar = self.setup_statusbar()
-
         # Setup the main layout of the widget
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
         layout.addWidget(self.stackwidget)
-        layout.addWidget(statusbar)
-        layout.setStretch(0, 100)
 
     def setup_activity_tracker(self):
         """Setup the widget used to start, track, and stop new activity."""
         timebar = self.setup_timebar()
         self.activity_input_dial = self.setup_activity_input_dial()
+        statusbar = self.setup_statusbar()
 
         # ---- Setup the layout of the main widget
 
         tracker = QWidget()
-        layout = QGridLayout(tracker)
+        layout = QVBoxLayout(tracker)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
-        layout.addWidget(self.activity_input_dial, 1, 0)
-        layout.addWidget(timebar, 0, 0)
+        layout.addWidget(timebar)
+        layout.addWidget(self.activity_input_dial)
+        layout.addWidget(statusbar)
+        layout.setStretch(1, 100)
 
         self.stackwidget.addWidget(tracker)
+
+    def setup_close_dial(self):
+        """
+        Setup a dialog that is shown when closing QWatson while and activity
+        is being tracked.
+        """
+        self.close_dial = CloseDialog(parent=self)
+        self.close_dial.register_dialog_to(self)
 
     def setup_datetime_input_dial(self):
         """
@@ -204,6 +211,7 @@ class QWatson(QWidget):
         statusbar.set_background_color('window')
 
         layout = QHBoxLayout(statusbar)
+        layout.setSpacing(0)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.round_time_btn)
         layout.addWidget(self.start_from)
@@ -221,6 +229,10 @@ class QWatson(QWidget):
         """
         self.stackwidget.addWidget(widget)
         return self.stackwidget.count() - 1
+
+    def currentIndex(self):
+        """Return the current index of the stackwidget."""
+        return self.stackwidget.currentIndex()
 
     def setCurrentIndex(self, index):
         """Set the current index of the stackwidget."""
@@ -309,9 +321,13 @@ class QWatson(QWidget):
 
     def closeEvent(self, event):
         """Qt method override."""
-        self.client.save()
-        event.accept()
-        print("QWatson is closed.\n")
+        if self.client.is_started:
+            self.close_dial.show()
+            event.ignore()
+        else:
+            self.overview_widg.close()
+            event.accept()
+            print("QWatson is closed.\n")
 
 
 class WatsonOverviewWidget(QWidget):

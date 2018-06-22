@@ -14,6 +14,7 @@ import os
 
 from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QApplication, QStyle
 
 from qwatson import __rootdir__
 
@@ -44,3 +45,25 @@ def get_icon(name):
 
 def get_iconsize(size):
     return QSize(*ICON_SIZES[size])
+
+
+def get_standard_icon(constant):
+    """Return a QIcon of a standard pixmap."""
+    style = QApplication.instance().style()
+    if constant == 'question':
+        return style.standardIcon(QStyle.SP_MessageBoxQuestion)
+    if constant == 'information':
+        return style.standardIcon(QStyle.SP_MessageBoxInformation)
+
+
+def get_standard_iconsize(constant):
+    """
+    Return the standard size of various component of the gui.
+
+    https://srinikom.github.io/pyside-docs/PySide/QtGui/QStyle
+    """
+    style = QApplication.instance().style()
+    if constant == 'messagebox':
+        return style.pixelMetric(QStyle.PM_MessageBoxIconSize)
+    elif constant == 'small':
+        return style.pixelMetric(QStyle.PM_SmallIconSize)

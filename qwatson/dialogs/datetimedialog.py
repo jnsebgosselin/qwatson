@@ -48,9 +48,10 @@ class DateTimeInputDialog(ColoredFrame):
         info_text = ("The start time cannot be sooner than the stop\n"
                      " time of the last saved activity and later than\n"
                      " the current time")
-        info_box = InfoBox(info_text, 'info', 'small')
-        info_box.set_background_color('light')
-        info_box.setContentsMargins(5, 5, 5, 5)
+
+        info_box = InfoBox(info_text, 'information', 'small')
+        info_box.setContentsMargins(5, 10, 5, 10)
+        info_box.setSpacing(10)
 
         # Setup the layout of the dialog
 
@@ -61,7 +62,7 @@ class DateTimeInputDialog(ColoredFrame):
         layout.addWidget(datetime_box)
         layout.addWidget(self.button_box)
         layout.addWidget(info_box)
-        layout.addStretch(100)
+        layout.setStretch(2, 100)
 
     def setup_datetime_box(self):
         """Setup the datetime edit widget and a label."""
@@ -84,7 +85,7 @@ class DateTimeInputDialog(ColoredFrame):
         datetime_box = ColoredFrame()
         datetime_box.set_background_color('window')
         layout = QHBoxLayout(datetime_box)
-        layout.setContentsMargins(5, 10, 5, 5)
+        layout.setContentsMargins(5, 10, 5, 10)
         layout.setSpacing(15)
         layout.addWidget(label)
         layout.addWidget(datetime_edit)
@@ -100,7 +101,7 @@ class DateTimeInputDialog(ColoredFrame):
             lambda: self.receive_answer(QDialogButtonBox.Ok))
         button_box.rejected.connect(
             lambda: self.receive_answer(QDialogButtonBox.Cancel))
-        button_box.layout().setContentsMargins(5, 5, 5, 10)
+        button_box.layout().setContentsMargins(5, 10, 5, 10)
         button_box.setAutoFillBackground(True)
 
         color = QStyleOption().palette.window().color()
@@ -122,7 +123,6 @@ class DateTimeInputDialog(ColoredFrame):
         """Qt method override."""
         self.set_datetime_to_now()
         if self.main is not None:
-            self.main.start_from.setEnabled(False)
             frames = self.main.client.frames
             self.main.setCurrentIndex(self.dialog_index)
             self.set_datetime_minimum(
@@ -139,7 +139,6 @@ class DateTimeInputDialog(ColoredFrame):
                 self.main.start_watson(start_time=self.get_datetime_arrow())
             elif button == QDialogButtonBox.Cancel:
                 self.main.cancel_watson()
-            self.main.start_from.setEnabled(True)
             self.main.setCurrentIndex(0)
 
     # ---- Utility
