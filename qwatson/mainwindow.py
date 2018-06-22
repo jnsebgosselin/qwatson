@@ -33,6 +33,7 @@ from qwatson import __namever__
 from qwatson.models.tablemodels import WatsonTableModel
 from qwatson.dialogs.activitydialog import ActivityInputDialog
 from qwatson.dialogs.datetimedialog import DateTimeInputDialog
+from qwatson.dialogs.closedialog import CloseDialog
 from qwatson.widgets.layout import ColoredFrame
 
 ROUNDMIN = {'round to 1min': 1, 'round to 5min': 5, 'round to 10min': 10}
@@ -76,6 +77,7 @@ class QWatson(QWidget):
         self.stackwidget = QStackedWidget()
         self.setup_activity_tracker()
         self.setup_datetime_input_dial()
+        self.setup_close_dial()
         self.stackwidget.setCurrentIndex(0)
 
         # Setup the main layout of the widget
@@ -102,6 +104,14 @@ class QWatson(QWidget):
         layout.setStretch(1, 100)
 
         self.stackwidget.addWidget(tracker)
+
+    def setup_close_dial(self):
+        """
+        Setup a dialog that is shown when closing QWatson while and activity
+        is being tracked.
+        """
+        self.close_dial = CloseDialog(parent=self)
+        self.close_dial.register_dialog_to(self)
 
     def setup_datetime_input_dial(self):
         """
@@ -307,9 +317,13 @@ class QWatson(QWidget):
 
     def closeEvent(self, event):
         """Qt method override."""
-        self.client.save()
-        event.accept()
-        print("QWatson is closed.\n")
+        if self.client.is_started:
+            self.close_dial.show()
+            event.ignore()
+        else:
+            self.overview_widg.close()
+            event.accept()
+            print("QWatson is closed.\n")
 
 
 class WatsonOverviewWidget(QWidget):
