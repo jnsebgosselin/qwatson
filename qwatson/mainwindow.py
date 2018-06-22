@@ -17,7 +17,7 @@ import os.path as osp
 from PyQt5.QtCore import Qt, QModelIndex
 from PyQt5.QtWidgets import (QApplication, QGridLayout, QHBoxLayout,
                              QSizePolicy, QWidget, QStackedWidget,
-                             QVBoxLayout)
+                             QVBoxLayout, QMessageBox)
 
 # ---- Local imports
 
@@ -76,33 +76,30 @@ class QWatson(QWidget):
         self.stackwidget = QStackedWidget()
         self.setup_activity_tracker()
         self.setup_datetime_input_dial()
-
         self.stackwidget.setCurrentIndex(0)
 
-        # Setup the statusbar
-        statusbar = self.setup_statusbar()
-
         # Setup the main layout of the widget
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
         layout.addWidget(self.stackwidget)
-        layout.addWidget(statusbar)
-        layout.setStretch(0, 100)
 
     def setup_activity_tracker(self):
         """Setup the widget used to start, track, and stop new activity."""
         timebar = self.setup_timebar()
         self.activity_input_dial = self.setup_activity_input_dial()
+        statusbar = self.setup_statusbar()
 
         # ---- Setup the layout of the main widget
 
         tracker = QWidget()
-        layout = QGridLayout(tracker)
+        layout = QVBoxLayout(tracker)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
-        layout.addWidget(self.activity_input_dial, 1, 0)
-        layout.addWidget(timebar, 0, 0)
+        layout.addWidget(timebar)
+        layout.addWidget(self.activity_input_dial)
+        layout.addWidget(statusbar)
+        layout.setStretch(1, 100)
 
         self.stackwidget.addWidget(tracker)
 
@@ -204,6 +201,7 @@ class QWatson(QWidget):
         statusbar.set_background_color('window')
 
         layout = QHBoxLayout(statusbar)
+        layout.setSpacing(0)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.round_time_btn)
         layout.addWidget(self.start_from)
