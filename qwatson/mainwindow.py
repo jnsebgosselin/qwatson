@@ -14,6 +14,7 @@ import os.path as osp
 
 # ---- Third parties imports
 
+import click
 from PyQt5.QtCore import Qt, QModelIndex
 from PyQt5.QtWidgets import (QApplication, QGridLayout, QHBoxLayout,
                              QSizePolicy, QWidget, QStackedWidget,
@@ -58,6 +59,7 @@ class QWatson(QWidget):
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
                 myappid)
 
+        config_dir = config_dir or click.get_app_dir('QWatson')
         self.client = Watson(config_dir=config_dir)
         self.model = WatsonTableModel(self.client)
 
