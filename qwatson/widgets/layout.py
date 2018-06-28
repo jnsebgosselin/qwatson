@@ -10,12 +10,12 @@
 # ---- Third party imports
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QFrame, QGridLayout, QLabel, QStyleOption, QWidget
+from PyQt5.QtWidgets import (QApplication, QFrame, QGridLayout, QLabel,
+                             QScrollArea, QStyleOption, QVBoxLayout)
 
 # ---- Local imports
 
 from qwatson.utils import icons
-from qwatson.utils.icons import get_standard_icon, get_standard_iconsize
 
 
 class HSep(QFrame):
@@ -52,6 +52,34 @@ class ColoredFrame(QFrame):
         palette = self.palette()
         palette.setColor(self.backgroundRole(), color)
         self.setPalette(palette)
+
+
+class CollapsableScrollArea(QScrollArea):
+    """
+    A QScrollArea in which the minimumSizeHint and sizeHint methods have beed
+    overriden in order to force the sie hint to respect the minimumHeight
+    set by the user.
+    """
+    def __init__(self, main=None, parent=None):
+        super(CollapsableScrollArea, self).__init__(parent)
+
+    def minimumSizeHint(self):
+        """
+        Qt method override to force the heigth of the minimumSizeHint to the
+        minimumHeight of the widget.
+        """
+        sizehint = QScrollArea.minimumSizeHint(self)
+        sizehint.setHeight(self.minimumHeight())
+        return sizehint
+
+    def sizeHint(self):
+        """
+        Qt method override to force the heigth of the sizeHint to the
+        minimumHeight of the widget.
+        """
+        sizehint = QScrollArea.minimumSizeHint(self)
+        sizehint.setHeight(self.minimumHeight())
+        return sizehint
 
 
 class InfoBox(ColoredFrame):
