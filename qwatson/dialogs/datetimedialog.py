@@ -45,11 +45,11 @@ class DateTimeInputDialog(ColoredFrame):
         """Setup the dialog widgets and layout."""
         datetime_box = self.setup_datetime_box()
         self.button_box = self.setup_dialog_button_box()
-        info_text = ("The start time cannot be sooner than the stop\n"
-                     " time of the last saved activity and later than\n"
-                     " the current time")
 
-        info_box = InfoBox(info_text, 'information', 'small')
+        info = ("The start time cannot be sooner than the stop time of the"
+                " last saved activity and later than the current time.")
+
+        info_box = InfoBox('', info, 'information', 'small')
         info_box.setContentsMargins(5, 10, 5, 10)
         info_box.setSpacing(10)
 
