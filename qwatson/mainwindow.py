@@ -10,8 +10,6 @@
 
 import sys
 import platform
-import os
-import os.path as osp
 
 # ---- Third parties imports
 
@@ -19,7 +17,7 @@ import click
 from PyQt5.QtCore import Qt, QModelIndex
 from PyQt5.QtWidgets import (QApplication, QGridLayout, QHBoxLayout,
                              QSizePolicy, QWidget, QStackedWidget,
-                             QVBoxLayout, QMessageBox)
+                             QVBoxLayout)
 
 # ---- Local imports
 
