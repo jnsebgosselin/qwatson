@@ -41,15 +41,12 @@ class CloseDialog(ColoredFrame):
     def setup(self):
         """Setup the dialog widgets and layout."""
         self.button_box = self.setup_dialog_button_box()
-        info_text = ("<b>QWatson is currently tracking an activity.</b>"
-                     "<br><br>"
-                     "Do you want to stop and save the activity<br>"
-                     "before leaving?"
-                     "<br><br>"
-                     "The activity will be cancelled otherwise."
-                     )
 
-        info_box = InfoBox(info_text, 'question', 'messagebox')
+        title = "QWatson is currently tracking an activity."
+        info = ("Do you want to stop and save the activity before leaving?"
+                "<br><br>The activity will be cancelled otherwise.")
+
+        info_box = InfoBox(title, info, 'question', 'messagebox')
         info_box.setContentsMargins(10, 10, 10, 10)
 
         # Setup the layout of the dialog
@@ -58,10 +55,9 @@ class CloseDialog(ColoredFrame):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        layout.addStretch(50)
         layout.addWidget(info_box)
-        layout.addStretch(100)
         layout.addWidget(self.button_box)
+        layout.setStretch(0, 100)
 
     def setup_dialog_button_box(self):
         """Setup the buttons of the dialog."""
@@ -120,6 +116,5 @@ class CloseDialog(ColoredFrame):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     date_time_dialog = CloseDialog()
-    date_time_dialog.setFixedSize(300, 162)
     date_time_dialog.show()
     app.exec_()
