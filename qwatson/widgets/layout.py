@@ -144,3 +144,21 @@ class InfoBox(ColoredFrame):
     def setContentsMargins(self, left, top, right, bottom):
         """Set the content margins values of the info box layout."""
         self.layout().setContentsMargins(left, top, right, bottom)
+
+
+if __name__ == '__main__':
+    import sys
+    info_text = ("Lorem ipsum dolor sit amet, consectetur adipiscing elit,"
+                 " sed do eiusmod tempor incididunt ut labore et dolore magna"
+                 " aliqua. Ut enim ad minim veniam, quis nostrud exercitation"
+                 " ullamco laboris nisi ut aliquip ex ea commodo consequat."
+                 " Duis aute irure dolor in reprehenderit in voluptate velit"
+                 " esse cillum dolore eu fugiat nulla pariatur.<br><br>"
+                 " Excepteur sint occaecat cupidatat non proident,"
+                 " sunt in culpa qui officia deserunt mollit anim id"
+                 " est laborum."
+                 )
+    app = QApplication(sys.argv)
+    date_time_dialog = InfoBox('Lorem Ipsum', info_text)
+    date_time_dialog.show()
+    app.exec_()
