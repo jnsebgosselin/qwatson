@@ -10,6 +10,7 @@
 
 import sys
 import platform
+import os
 import os.path as osp
 
 # ---- Third parties imports
@@ -78,8 +79,8 @@ class QWatson(QWidget):
         # Setup the stack widget.
         self.stackwidget = QStackedWidget()
         self.setup_activity_tracker()
-        self.setup_datetime_input_dial()
-        self.setup_close_dial()
+        self.setup_datetime_input_dialog()
+        self.setup_close_dialog()
         self.stackwidget.setCurrentIndex(0)
 
         # Setup the main layout of the widget
@@ -107,7 +108,7 @@ class QWatson(QWidget):
 
         self.stackwidget.addWidget(tracker)
 
-    def setup_close_dial(self):
+    def setup_close_dialog(self):
         """
         Setup a dialog that is shown when closing QWatson while and activity
         is being tracked.
@@ -115,7 +116,7 @@ class QWatson(QWidget):
         self.close_dial = CloseDialog(parent=self)
         self.close_dial.register_dialog_to(self)
 
-    def setup_datetime_input_dial(self):
+    def setup_datetime_input_dialog(self):
         """
         Setup the dialog to ask the user to enter a datetime value for
         the starting time of the activity.
