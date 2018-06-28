@@ -86,9 +86,13 @@ class InfoBox(ColoredFrame):
     """
     A simple widget with an icon and a text area to display info to the user.
     """
-    def __init__(self,  text, icon, iconsize, color='light', parent=None):
+    def __init__(self, title='', info='', icon='question',
+                 iconsize='messagebox', color='light', parent=None):
         super(InfoBox, self).__init__(parent)
         self.set_background_color(color)
+
+        # Setup the icon.
+
         icon = icons.get_standard_icon(icon) if isinstance(icon, str) else icon
         iconsize = (icons.get_standard_iconsize(iconsize) if
                     isinstance(iconsize, str) else iconsize)
@@ -97,17 +101,38 @@ class InfoBox(ColoredFrame):
         info_icon.setScaledContents(False)
         info_icon.setPixmap(icon.pixmap(iconsize))
 
-        info_label = QLabel(text)
-        info_label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        # Setup the layout for the text.
 
-        # Setup the layout of the info box
+        text_area = QVBoxLayout()
+        text_area.setContentsMargins(0, 0, 0, 0)
+        text_area.setSpacing(10)
+
+        if title:
+            title_label = QLabel('<b>%s</b>' % title)
+            text_area.addWidget(title_label)
+
+        info_label = QLabel(info)
+        info_label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        info_label.setWordWrap(True)
+        info_label.setOpenExternalLinks(True)
+
+        info_scrollarea = CollapsableScrollArea()
+        info_scrollarea.setWidget(info_label)
+        info_scrollarea.setWidgetResizable(True)
+        info_scrollarea.setMinimumHeight(info_label.minimumHeight())
+        info_scrollarea.setFrameStyle(info_scrollarea.NoFrame)
+
+        text_area.addWidget(info_scrollarea)
+        text_area.setStretch(text_area.count()-1, 100)
+
+        # Setup the layout of the info box.
 
         layout = QGridLayout(self)
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(15)
 
         layout.addWidget(info_icon, 0, 0)
-        layout.addWidget(info_label, 0, 1, 2, 1)
+        layout.addLayout(text_area, 0, 1, 2, 1)
 
         layout.setRowStretch(1, 100)
         layout.setColumnStretch(1, 100)
