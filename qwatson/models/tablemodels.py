@@ -40,7 +40,6 @@ class WatsonTableModel(QAbstractTableModel):
     def __init__(self, client):
         super(WatsonTableModel, self).__init__()
         self.client = client
-        self.frames = client.frames
 
         self.dataChanged.connect(self.model_changed)
         self.rowsInserted.connect(self.model_changed)
@@ -53,7 +52,7 @@ class WatsonTableModel(QAbstractTableModel):
 
     def rowCount(self, parent=QModelIndex()):
         """Qt method override. Return the number of row of the table."""
-        return len(self.frames)
+        return len(self.client.frames)
 
     def columnCount(self, parent=QModelIndex()):
         """Qt method override. Return the number of column of the table."""
@@ -61,38 +60,39 @@ class WatsonTableModel(QAbstractTableModel):
 
     def data(self, index, role=Qt.DisplayRole):
         """Qt method override."""
+        frames = self.client.frames
         if role == Qt.DisplayRole:
             if index.column() == self.COLUMNS['start']:
-                return self.frames[index.row()][0].format('YYYY-MM-DD HH:mm')
+                return frames[index.row()][0].format('YYYY-MM-DD HH:mm')
             elif index.column() == self.COLUMNS['end']:
-                return self.frames[index.row()][1].format('YYYY-MM-DD HH:mm')
+                return frames[index.row()][1].format('YYYY-MM-DD HH:mm')
             elif index.column() == self.COLUMNS['duration']:
-                total_seconds = (self.frames[index.row()][1] -
-                                 self.frames[index.row()][0]).total_seconds()
+                total_seconds = (frames[index.row()][1] -
+                                 frames[index.row()][0]).total_seconds()
                 return strftime("%Hh %Mmin", gmtime(total_seconds))
             elif index.column() == self.COLUMNS['project']:
-                return str(self.frames[index.row()].project)
+                return str(frames[index.row()].project)
             elif index.column() == self.COLUMNS['comment']:
-                msg = self.frames[index.row()].message
+                msg = frames[index.row()].message
                 return '' if msg is None else msg
             elif index.column() == self.COLUMNS['id']:
-                return self.frames[index.row()].id[:7]
+                return frames[index.row()].id[:7]
             elif index.column() == self.COLUMNS['tags']:
-                return list_to_str(self.frames[index.row()].tags)
+                return list_to_str(frames[index.row()].tags)
             else:
                 return ''
         elif role == Qt.ToolTipRole:
             if index.column() == self.COLUMNS['comment']:
-                msg = self.frames[index.row()].message
+                msg = frames[index.row()].message
                 return '' if msg is None else msg
             elif index.column() == self.COLUMNS['id']:
-                return self.frames[index.row()].id
+                return frames[index.row()].id
             elif index.column() == self.COLUMNS['icons']:
                 return "Delete frame"
             elif index.column() == self.COLUMNS['project']:
-                return self.frames[index.row()].project
+                return frames[index.row()].project
             elif index.column() == self.COLUMNS['tags']:
-                return list_to_str(self.frames[index.row()].tags)
+                return list_to_str(frames[index.row()].tags)
         elif role == Qt.TextAlignmentRole:
             if index.column() == self.COLUMNS['comment']:
                 return Qt.AlignLeft | Qt.AlignVCenter
@@ -127,11 +127,11 @@ class WatsonTableModel(QAbstractTableModel):
 
     def get_tags_from_index(self, index):
         """Return a list of tags for the frame from a table index."""
-        return self.frames[index.row()].tags
+        return self.client.frames[index.row()].tags
 
     def get_frameid_from_index(self, index):
         """Return the frame id from a table index."""
-        return self.frames[index.row()].id
+        return self.client.frames[index.row()].id
 
     def get_start_qdatetime_range(self, index):
         """
@@ -139,11 +139,12 @@ class WatsonTableModel(QAbstractTableModel):
         time of the frame located at index can be moved without creating
         any conflict.
         """
+        frames = self.client.frames
         if index.row() > 0:
-            lmin = self.frames[index.row()-1].stop.format('YYYY-MM-DD HH:mm')
+            lmin = frames[index.row()-1].stop.format('YYYY-MM-DD HH:mm')
         else:
             lmin = '1900-01-01 00:00'
-        lmax = self.frames[index.row()].stop.format('YYYY-MM-DD HH:mm')
+        lmax = frames[index.row()].stop.format('YYYY-MM-DD HH:mm')
 
         return qdatetime_from_str(lmin), qdatetime_from_str(lmax)
 
@@ -153,11 +154,12 @@ class WatsonTableModel(QAbstractTableModel):
         time of the frame located at index can be moved without creating
         any conflict.
         """
-        lmin = self.frames[index.row()].start.format('YYYY-MM-DD HH:mm')
-        if index.row() == len(self.frames)-1:
+        frames = self.client.frames
+        lmin = frames[index.row()].start.format('YYYY-MM-DD HH:mm')
+        if index.row() == len(frames)-1:
             lmax = arrow.now().format('YYYY-MM-DD HH:mm')
         else:
-            lmax = self.frames[index.row()+1].start.format('YYYY-MM-DD HH:mm')
+            lmax = frames[index.row()+1].start.format('YYYY-MM-DD HH:mm')
 
         return qdatetime_from_str(lmin), qdatetime_from_str(lmax)
 
@@ -166,7 +168,7 @@ class WatsonTableModel(QAbstractTableModel):
     def removeRows(self, index):
         """Qt method override to remove rows from the model."""
         self.beginRemoveRows(index.parent(), index.row(), index.row())
-        frame_id = self.frames[index.row()].id
+        frame_id = self.client.frames[index.row()].id
         del self.client.frames[frame_id]
         self.client.save()
         self.endRemoveRows()
@@ -233,7 +235,7 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
         Return whether the start time of the frame stored at the specified
         row of the source model is within the specified date_span.
         """
-        frame_start = self.sourceModel().frames[source_row].start
+        frame_start = self.sourceModel().client.frames[source_row].start
         return (frame_start >= date_span[0] and frame_start < date_span[1])
 
     def calcul_total_seconds(self):
@@ -244,7 +246,7 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
         timedelta = datetime.timedelta()
         for i in range(self.rowCount()):
             source_row = self.mapToSource(self.index(i, 0)).row()
-            frame = self.sourceModel().frames[source_row]
+            frame = self.sourceModel().client.frames[source_row]
             timedelta = timedelta + (frame.stop - frame.start)
 
         total_seconds_old = self.total_seconds
