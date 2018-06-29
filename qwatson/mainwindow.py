@@ -33,6 +33,7 @@ from qwatson import __namever__
 from qwatson.models.tablemodels import WatsonTableModel
 from qwatson.dialogs.activitydialog import ActivityInputDialog
 from qwatson.dialogs.datetimedialog import DateTimeInputDialog
+from qwatson.dialogs.importdialog import QWatsonImportMixin
 from qwatson.dialogs.closedialog import CloseDialog
 from qwatson.widgets.layout import ColoredFrame
 
@@ -41,7 +42,7 @@ STARTFROM = {'start from now': 'now', 'start from last': 'last',
              'start from other': 'other'}
 
 
-class QWatson(QWidget):
+class QWatson(QWidget, QWatsonImportMixin):
 
     def __init__(self, config_dir=None, parent=None):
         super(QWatson, self).__init__(parent)
@@ -79,7 +80,7 @@ class QWatson(QWidget):
         self.setup_activity_tracker()
         self.setup_datetime_input_dialog()
         self.setup_close_dialog()
-        self.stackwidget.setCurrentIndex(0)
+        self.setup_import_dialog()
 
         # Setup the main layout of the widget
 
