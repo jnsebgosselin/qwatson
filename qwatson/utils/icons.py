@@ -34,7 +34,9 @@ ICON_NAMES = {'master': 'qwatson',
               'go-previous': 'go-previous',
               'info': 'info'}
 
-ICON_SIZES = {'large': (32, 32),
+ICON_SIZES = {'huge': (128, 128),
+              'Large': (64, 64),
+              'large': (32, 32),
               'normal': (28, 28),
               'small': (20, 20)}
 
