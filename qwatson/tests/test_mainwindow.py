@@ -511,6 +511,62 @@ def test_last_closed_error(qtbot, mocker):
 
 # ---- Test QWatson overview table
 
+def test_show_overview_table(qtbot):
+    """
+    Test that the overview table window is shown and focused as expected when
+    clicking on the 'Activity Overview' button on the mainwindow.
+    """
+    mainwindow = QWatson(APPDIR2)
+    qtbot.addWidget(mainwindow)
+    mainwindow.show()
+
+    overview_window = mainwindow.overview_widg
+    qtbot.addWidget(overview_window)
+
+    qtbot.mouseClick(mainwindow.btn_report, Qt.LeftButton)
+    qtbot.waitForWindowShown(overview_window)
+
+    assert overview_window.hasFocus()
+
+    # Give focus to the main window, then click on the btn_report and assert
+    # that the focus is given back to the overview window.
+
+    mainwindow.activateWindow()
+    mainwindow.raise_()
+    mainwindow.setFocus()
+
+    assert not overview_window.hasFocus()
+    qtbot.mouseClick(mainwindow.btn_report, Qt.LeftButton)
+    assert overview_window.hasFocus()
+
+    # Minimize the overview window and restore it by clicking on btn_report.
+
+    overview_window.showMinimized()
+    assert overview_window.isMinimized()
+    assert not overview_window.isActiveWindow()
+    assert not overview_window.hasFocus()
+
+    qtbot.mouseClick(mainwindow.btn_report, Qt.LeftButton)
+    assert overview_window.hasFocus()
+    assert overview_window.isActiveWindow()
+
+    # Maximize and minimize the overview window to the taskbar,
+    # then restore it by clicking on btn_report.
+
+    overview_window.showMaximized()
+    overview_window.showMinimized()
+    assert overview_window.isMaximized()
+    assert overview_window.isMinimized()
+    assert not overview_window.isActiveWindow()
+    assert not overview_window.hasFocus()
+
+    qtbot.mouseClick(mainwindow.btn_report, Qt.LeftButton)
+    assert overview_window.isMaximized()
+    assert not overview_window.isMinimized()
+    assert overview_window.isActiveWindow()
+    assert overview_window.hasFocus()
+
+
 def test_delete_frame(qtbot, mocker):
     """
     Test that deleting a frame from the activity overview table work correctly.
