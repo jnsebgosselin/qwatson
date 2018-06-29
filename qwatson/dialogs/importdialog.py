@@ -111,15 +111,14 @@ class ImportDialog(ColoredFrame):
         self.button_box = self.setup_dialog_button_box()
 
         url_i = "https://github.com/jnsebgosselin/qwatson#installation"
-        title = "First time configuration wizard"
-        info = ("For compatibility reasons, QWatson uses separate settings"
-                " and data from Watson"
-                " (see the <a href=\"%s\">documentation</a> for more details)."
-                "<br><br>"
-                "Do you want to import Watson's settings and data?"
-                ) % url_i
+        info_text = (
+            "<b>Do you want to import Watson's settings and data?</b><br><br>"
+            "For compatibility reasons, QWatson uses separate settings"
+            " and data from Watson."
+            " See the <a href=\"%s\">documentation</a> for more details."
+            ) % url_i
 
-        info_box = InfoBox(title, info, icon=icons.get_icon('master'))
+        info_box = InfoBox(info_text, icon=icons.get_icon('master'))
         info_box.setContentsMargins(10, 10, 10, 10)
 
         # Setup the layout of the dialog

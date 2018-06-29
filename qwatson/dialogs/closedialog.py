@@ -42,11 +42,11 @@ class CloseDialog(ColoredFrame):
         """Setup the dialog widgets and layout."""
         self.button_box = self.setup_dialog_button_box()
 
-        title = "QWatson is currently tracking an activity."
-        info = ("Do you want to stop and save the activity before leaving?"
-                "<br><br>The activity will be cancelled otherwise.")
+        info_text = (
+            "<b>Do you want to stop and save the current activity before "
+            "leaving?</b><br><br>The activity will be cancelled otherwise.")
 
-        info_box = InfoBox(title, info, 'question', 'messagebox')
+        info_box = InfoBox(info_text, 'question', 'messagebox')
         info_box.setContentsMargins(10, 10, 10, 10)
 
         # Setup the layout of the dialog

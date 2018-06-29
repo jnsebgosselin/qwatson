@@ -86,8 +86,8 @@ class InfoBox(ColoredFrame):
     """
     A simple widget with an icon and a text area to display info to the user.
     """
-    def __init__(self, title='', info='', icon='question',
-                 iconsize='messagebox', color='light', parent=None):
+    def __init__(self, info_text='', icon='question', iconsize='messagebox',
+                 color='light', parent=None):
         super(InfoBox, self).__init__(parent)
         self.set_background_color(color)
 
@@ -103,15 +103,7 @@ class InfoBox(ColoredFrame):
 
         # Setup the layout for the text.
 
-        text_area = QVBoxLayout()
-        text_area.setContentsMargins(0, 0, 0, 0)
-        text_area.setSpacing(5)
-
-        if title:
-            title_label = QLabel('<b>%s</b>' % title)
-            text_area.addWidget(title_label)
-
-        info_label = QLabel(info)
+        info_label = QLabel(info_text)
         info_label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         info_label.setWordWrap(True)
         info_label.setOpenExternalLinks(True)
@@ -122,9 +114,6 @@ class InfoBox(ColoredFrame):
         info_scrollarea.setMinimumHeight(info_label.minimumHeight())
         info_scrollarea.setFrameStyle(info_scrollarea.NoFrame)
 
-        text_area.addWidget(info_scrollarea)
-        text_area.setStretch(text_area.count()-1, 100)
-
         # Setup the layout of the info box.
 
         layout = QGridLayout(self)
@@ -132,7 +121,7 @@ class InfoBox(ColoredFrame):
         self.setSpacing(15)
 
         layout.addWidget(info_icon, 0, 0)
-        layout.addLayout(text_area, 0, 1, 2, 1)
+        layout.addWidget(info_scrollarea, 0, 1, 2, 1)
 
         layout.setRowStretch(1, 100)
         layout.setColumnStretch(1, 100)
@@ -148,7 +137,8 @@ class InfoBox(ColoredFrame):
 
 if __name__ == '__main__':
     import sys
-    info_text = ("Lorem ipsum dolor sit amet, consectetur adipiscing elit,"
+    info_text = ("<b>Lorem Ipsum</b><br><br>"
+                 "Lorem ipsum dolor sit amet, consectetur adipiscing elit,"
                  " sed do eiusmod tempor incididunt ut labore et dolore magna"
                  " aliqua. Ut enim ad minim veniam, quis nostrud exercitation"
                  " ullamco laboris nisi ut aliquip ex ea commodo consequat."
@@ -159,6 +149,6 @@ if __name__ == '__main__':
                  " est laborum."
                  )
     app = QApplication(sys.argv)
-    date_time_dialog = InfoBox('Lorem Ipsum', info_text)
+    date_time_dialog = InfoBox(info_text)
     date_time_dialog.show()
     app.exec_()
