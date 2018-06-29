@@ -364,6 +364,17 @@ class WatsonOverviewWidget(QWidget):
         """Handle when the range of the date range navigator widget change."""
         self.table_widg.set_date_span(self.date_range_nav.current)
 
+    def show(self):
+        """Qt method override."""
+        super(WatsonOverviewWidget, self).show()
+        if self.windowState() & Qt.WindowMaximized:
+            self.setWindowState(Qt.WindowActive | Qt.WindowMaximized)
+        else:
+            self.setWindowState(Qt.WindowActive)
+        self.activateWindow()
+        self.raise_()
+        self.setFocus()
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
