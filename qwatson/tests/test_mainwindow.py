@@ -653,7 +653,7 @@ def test_edit_tags(qtbot, mocker):
     now = local_arrow_from_tuple((2018, 6, 14, 23, 59, 0))
     mocker.patch('arrow.now', return_value=now)
 
-    mainwindow = QWatson(WORKDIR)
+    mainwindow = QWatson(APPDIR2)
     qtbot.addWidget(mainwindow)
     qtbot.addWidget(mainwindow.overview_widg)
     mainwindow.show()
@@ -700,7 +700,7 @@ def test_edit_comment(qtbot, mocker):
     now = local_arrow_from_tuple((2018, 6, 14, 23, 59, 0))
     mocker.patch('arrow.now', return_value=now)
 
-    mainwindow = QWatson(WORKDIR)
+    mainwindow = QWatson(APPDIR2)
     qtbot.addWidget(mainwindow)
     qtbot.addWidget(mainwindow.overview_widg)
     mainwindow.show()
