@@ -135,7 +135,7 @@ class QWatson(QWidget):
         activity_input_dial.sig_project_added.connect(self.new_project_added)
         activity_input_dial.sig_project_changed.connect(self.project_changed)
 
-        # Set current activity inputs to the last ones savec in the database.
+        # Set current activity inputs to the last ones saved in the database.
         if len(self.client.frames) > 0:
             activity_input_dial.set_current_project(self.client.frames[-1][2])
             activity_input_dial.set_tags(self.client.frames[-1].tags)
@@ -230,6 +230,10 @@ class QWatson(QWidget):
         """
         self.stackwidget.addWidget(widget)
         return self.stackwidget.count() - 1
+
+    def removeWidget(self, widget):
+        """Remove a widget from the stackwidget."""
+        self.stackwidget.removeWidget(widget)
 
     def currentIndex(self):
         """Return the current index of the stackwidget."""
