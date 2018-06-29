@@ -415,7 +415,10 @@ def test_import_from_watson_noshow(qtbot, mocker):
     assert mainwindow.import_dialog is None
     assert mainwindow.currentIndex() == 0
 
+    table = mainwindow.overview_widg.table_widg.tables[3]
     assert len(mainwindow.client.frames) == 0
+    assert table.view.proxy_model.get_accepted_row_count() == 0
+
     assert mainwindow.activity_input_dial.project == ''
     assert mainwindow.activity_input_dial.comment == ''
     assert mainwindow.activity_input_dial.tags == []
@@ -453,7 +456,10 @@ def test_accept_import_from_watson_cancel(qtbot, mocker):
     assert mainwindow.import_dialog is None
     assert mainwindow.currentIndex() == 0
 
+    table = mainwindow.overview_widg.table_widg.tables[3]
     assert len(mainwindow.client.frames) == 4
+    assert table.view.proxy_model.get_accepted_row_count() == 4
+
     assert mainwindow.activity_input_dial.project == 'project1_renamed'
     assert mainwindow.activity_input_dial.comment == 'First activity'
     assert mainwindow.activity_input_dial.tags == ['tag1', 'tag2', 'tag3']
