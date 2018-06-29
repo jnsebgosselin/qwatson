@@ -10,14 +10,14 @@
 
 import sys
 import platform
-import os.path as osp
 
 # ---- Third parties imports
 
+import click
 from PyQt5.QtCore import Qt, QModelIndex
 from PyQt5.QtWidgets import (QApplication, QGridLayout, QHBoxLayout,
                              QSizePolicy, QWidget, QStackedWidget,
-                             QVBoxLayout, QMessageBox)
+                             QVBoxLayout)
 
 # ---- Local imports
 
@@ -33,6 +33,7 @@ from qwatson import __namever__
 from qwatson.models.tablemodels import WatsonTableModel
 from qwatson.dialogs.activitydialog import ActivityInputDialog
 from qwatson.dialogs.datetimedialog import DateTimeInputDialog
+from qwatson.dialogs.importdialog import QWatsonImportMixin
 from qwatson.dialogs.closedialog import CloseDialog
 from qwatson.widgets.layout import ColoredFrame
 
@@ -41,7 +42,7 @@ STARTFROM = {'start from now': 'now', 'start from last': 'last',
              'start from other': 'other'}
 
 
-class QWatson(QWidget):
+class QWatson(QWidget, QWatsonImportMixin):
 
     def __init__(self, config_dir=None, parent=None):
         super(QWatson, self).__init__(parent)
@@ -58,6 +59,7 @@ class QWatson(QWidget):
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
                 myappid)
 
+        config_dir = config_dir or click.get_app_dir('QWatson')
         self.client = Watson(config_dir=config_dir)
         self.model = WatsonTableModel(self.client)
 
@@ -76,9 +78,9 @@ class QWatson(QWidget):
         # Setup the stack widget.
         self.stackwidget = QStackedWidget()
         self.setup_activity_tracker()
-        self.setup_datetime_input_dial()
-        self.setup_close_dial()
-        self.stackwidget.setCurrentIndex(0)
+        self.setup_datetime_input_dialog()
+        self.setup_close_dialog()
+        self.setup_import_dialog()
 
         # Setup the main layout of the widget
 
@@ -105,7 +107,7 @@ class QWatson(QWidget):
 
         self.stackwidget.addWidget(tracker)
 
-    def setup_close_dial(self):
+    def setup_close_dialog(self):
         """
         Setup a dialog that is shown when closing QWatson while and activity
         is being tracked.
@@ -113,7 +115,7 @@ class QWatson(QWidget):
         self.close_dial = CloseDialog(parent=self)
         self.close_dial.register_dialog_to(self)
 
-    def setup_datetime_input_dial(self):
+    def setup_datetime_input_dialog(self):
         """
         Setup the dialog to ask the user to enter a datetime value for
         the starting time of the activity.
@@ -134,7 +136,7 @@ class QWatson(QWidget):
         activity_input_dial.sig_project_added.connect(self.new_project_added)
         activity_input_dial.sig_project_changed.connect(self.project_changed)
 
-        # Set current activity inputs to the last ones savec in the database.
+        # Set current activity inputs to the last ones saved in the database.
         if len(self.client.frames) > 0:
             activity_input_dial.set_current_project(self.client.frames[-1][2])
             activity_input_dial.set_tags(self.client.frames[-1].tags)
@@ -229,6 +231,10 @@ class QWatson(QWidget):
         """
         self.stackwidget.addWidget(widget)
         return self.stackwidget.count() - 1
+
+    def removeWidget(self, widget):
+        """Remove a widget from the stackwidget."""
+        self.stackwidget.removeWidget(widget)
 
     def currentIndex(self):
         """Return the current index of the stackwidget."""

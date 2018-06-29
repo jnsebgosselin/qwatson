@@ -10,6 +10,7 @@
 # ---- Stantard imports
 
 import os
+import os.path as osp
 from shutil import rmtree
 
 
@@ -25,9 +26,10 @@ def delete_file_safely(filename):
 
 def delete_folder_recursively(dirpath):
     """Try to delete all files and sub-folders below the given dirpath."""
-    for filename in os.listdir(dirpath):
-        filepath = os.path.join(dirpath, filename)
-        try:
-            rmtree(filepath)
-        except OSError:
-            os.remove(filepath)
+    if osp.exists(dirpath):
+        for filename in os.listdir(dirpath):
+            filepath = os.path.join(dirpath, filename)
+            try:
+                rmtree(filepath)
+            except OSError:
+                delete_file_safely(filepath)

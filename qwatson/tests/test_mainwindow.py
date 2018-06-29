@@ -21,40 +21,33 @@ from PyQt5.QtCore import Qt
 
 from qwatson.widgets.tableviews import QMessageBox
 from qwatson.mainwindow import QWatson
-from qwatson.utils.fileio import delete_file_safely
+from qwatson.utils.fileio import delete_folder_recursively
 from qwatson.utils.dates import local_arrow_from_tuple, qdatetime_from_str
 from qwatson.models.delegates import (
     StartDelegate, StopDelegate, ToolButtonDelegate, TagEditDelegate,
     LineEditDelegate)
 
 
-WORKDIR = osp.dirname(__file__)
-FRAMEFILE = osp.join(WORKDIR, 'frames')
-STATEFILE = osp.join(WORKDIR, 'state')
+APPDIR = osp.join(osp.dirname(__file__), 'appdir')
+APPDIR2 = osp.join(osp.dirname(__file__), 'appdir2')
 
 
-# Test QWatson central widget
-# -------------------------------
+# ---- Test QWatson main window
 
 def test_mainwindow_init(qtbot):
     """
     Test that the QWatson main widget and avtivity overview widgets are
     started correctly.
     """
-    frames_file = osp.join(WORKDIR, 'frames')
-    delete_file_safely(FRAMEFILE)
-    delete_file_safely(FRAMEFILE + '.bak')
-    delete_file_safely(STATEFILE)
-    delete_file_safely(STATEFILE + '.bak')
-    qtbot.waitUntil(lambda: not osp.exists(frames_file))
+    delete_folder_recursively(APPDIR)
 
-    mainwindow = QWatson(WORKDIR)
+    mainwindow = QWatson(APPDIR)
     qtbot.addWidget(mainwindow)
     qtbot.addWidget(mainwindow.overview_widg)
     mainwindow.show()
 
     assert mainwindow
-    assert mainwindow.client.frames_file == frames_file
+    assert mainwindow.client.frames_file == osp.join(APPDIR, 'frames')
 
     qtbot.mouseClick(mainwindow.btn_report, Qt.LeftButton)
     assert mainwindow.overview_widg.isVisible()
@@ -66,7 +59,7 @@ def test_add_first_project(qtbot, mocker):
     Test adding a new project and starting/stopping the timer to add an
     activity to the database for the first time.
     """
-    mainwindow = QWatson(WORKDIR)
+    mainwindow = QWatson(APPDIR)
     qtbot.addWidget(mainwindow)
     mainwindow.show()
     qtbot.waitForWindowShown(mainwindow)
@@ -134,7 +127,7 @@ def test_load_config(qtbot, mocker):
     Test that the activity fields are set correctly when starting QWatson and
     a frames file already exists.
     """
-    mainwindow = QWatson(WORKDIR)
+    mainwindow = QWatson(APPDIR)
     qtbot.addWidget(mainwindow)
     assert len(mainwindow.client.frames) == 1
     mainwindow.show()
@@ -149,7 +142,7 @@ def test_load_config(qtbot, mocker):
 
 def test_rename_project(qtbot, mocker):
     """Test that renaming a project works as expected."""
-    mainwindow = QWatson(WORKDIR)
+    mainwindow = QWatson(APPDIR)
     qtbot.addWidget(mainwindow)
     mainwindow.show()
     project_manager = mainwindow.activity_input_dial.project_manager
@@ -191,7 +184,7 @@ def test_start_from_last(qtbot, mocker):
     now = local_arrow_from_tuple((2018, 6, 14, 18, 47, 23))
     mocker.patch('arrow.now', return_value=now)
 
-    mainwindow = QWatson(WORKDIR)
+    mainwindow = QWatson(APPDIR)
     qtbot.addWidget(mainwindow)
     mainwindow.show()
 
@@ -217,7 +210,7 @@ def test_start_from_other(qtbot, mocker):
     now = local_arrow_from_tuple((2018, 6, 14, 19, 12, 36))
     mocker.patch('arrow.now', return_value=now)
 
-    mainwindow = QWatson(WORKDIR)
+    mainwindow = QWatson(APPDIR)
     qtbot.addWidget(mainwindow)
     mainwindow.show()
 
@@ -229,6 +222,7 @@ def test_start_from_other(qtbot, mocker):
     assert not datetime_dial.isVisible()
 
     # Start the activity timer and assert the datetime dialog is shown
+
     qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
     assert not mainwindow.elap_timer.is_started
     assert datetime_dial.isVisible()
@@ -238,24 +232,28 @@ def test_start_from_other(qtbot, mocker):
     assert minimum_datetime.format('YYYY-MM-DD HH:mm') == '2018-06-14 18:45'
 
     # Cancel the dialog and assert it is working as expected.
-    qtbot.mouseClick(datetime_dial.button_box.buttons()[1], Qt.LeftButton)
+
+    qtbot.mouseClick(datetime_dial.buttons['Cancel'], Qt.LeftButton)
     assert not mainwindow.elap_timer.is_started
     assert not datetime_dial.isVisible()
     assert not mainwindow.client.is_started
     assert len(mainwindow.client.frames) == initial_frames_len
 
     # Start the activity timer again and assert the datetime dialog is shown
+
     qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
     assert not mainwindow.elap_timer.is_started
     assert datetime_dial.isVisible()
 
     # Change the datetime below the minimum value.
+
     datetime_dial.datetime_edit.setDateTime(
         qdatetime_from_str('2018-06-14 18:25'))
     datetime_arrow = datetime_dial.get_datetime_arrow()
     assert datetime_arrow.format('YYYY-MM-DD HH:mm') == '2018-06-14 18:45'
 
     # Change the datetime above now.
+
     datetime_dial.datetime_edit.setDateTime(
         qdatetime_from_str('2018-06-14 21:35'))
     datetime_arrow = datetime_dial.get_datetime_arrow()
@@ -263,14 +261,16 @@ def test_start_from_other(qtbot, mocker):
 
     # Change the datetime and accept and assert the dialog is not visible
     # and the activity is correctly started.
+
     datetime_dial.datetime_edit.setDateTime(
         qdatetime_from_str('2018-06-14 19:01'))
-    qtbot.mouseClick(datetime_dial.button_box.buttons()[0], Qt.LeftButton)
+    qtbot.mouseClick(datetime_dial.buttons['Ok'], Qt.LeftButton)
     assert mainwindow.elap_timer.is_started
     assert not datetime_dial.isVisible()
     assert mainwindow.client.is_started
 
     # Stop the activity and assert it was saved correctly.
+
     qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
     assert not mainwindow.elap_timer.is_started
     assert not mainwindow.client.is_started
@@ -288,7 +288,7 @@ def test_close_when_running(qtbot, mocker):
     now = local_arrow_from_tuple((2018, 6, 14, 19, 36, 23))
     mocker.patch('arrow.now', return_value=now)
 
-    mainwindow = QWatson(WORKDIR)
+    mainwindow = QWatson(APPDIR)
     qtbot.addWidget(mainwindow)
     mainwindow.show()
     qtbot.waitForWindowShown(mainwindow)
@@ -309,7 +309,7 @@ def test_close_when_running(qtbot, mocker):
     assert mainwindow.currentIndex() == 2
     assert mainwindow.close_dial.isVisible()
 
-    qtbot.mouseClick(mainwindow.close_dial.cancel_btn, Qt.LeftButton)
+    qtbot.mouseClick(mainwindow.close_dial.buttons['Cancel'], Qt.LeftButton)
     assert mainwindow.client.is_started
     assert mainwindow.currentIndex() == 0
     assert mainwindow.isVisible()
@@ -322,7 +322,7 @@ def test_close_when_running(qtbot, mocker):
     assert mainwindow.currentIndex() == 2
     assert mainwindow.close_dial.isVisible()
 
-    qtbot.mouseClick(mainwindow.close_dial.no_btn, Qt.LeftButton)
+    qtbot.mouseClick(mainwindow.close_dial.buttons['No'], Qt.LeftButton)
     assert not mainwindow.client.is_started
     assert not mainwindow.isVisible()
     assert len(mainwindow.client.frames) == expected_framelen
@@ -341,7 +341,7 @@ def test_close_when_running(qtbot, mocker):
     assert mainwindow.currentIndex() == 2
     assert mainwindow.close_dial.isVisible()
 
-    qtbot.mouseClick(mainwindow.close_dial.yes_btn, Qt.LeftButton)
+    qtbot.mouseClick(mainwindow.close_dial.buttons['Yes'], Qt.LeftButton)
     assert not mainwindow.client.is_started
     assert mainwindow.currentIndex() == 0
     assert not mainwindow.isVisible()
@@ -350,6 +350,121 @@ def test_close_when_running(qtbot, mocker):
     assert len(mainwindow.client.frames) == expected_framelen + 1
     assert frame.start.format('YYYY-MM-DD HH:mm') == '2018-06-14 19:15'
     assert frame.stop.format('YYYY-MM-DD HH:mm') == '2018-06-14 19:35'
+
+
+# ---- Test import settings and data
+
+def test_cancel_import_from_watson(qtbot, mocker):
+    """
+    Test that the dialog to import settings and data from Watson the first
+    time QWatson is started is working as expected when the import is
+    cancelled by the user.
+    """
+    now = local_arrow_from_tuple((2018, 6, 14, 19, 36, 23))
+    mocker.patch('arrow.now', return_value=now)
+
+    delete_folder_recursively(APPDIR2)
+    os.environ['WATSON_DIR'] = APPDIR
+
+    mainwindow = QWatson(APPDIR2)
+    qtbot.addWidget(mainwindow)
+    mainwindow.show()
+    qtbot.waitForWindowShown(mainwindow)
+
+    # Assert that the import dialog it shown on first start.
+
+    assert mainwindow.import_dialog is not None
+    assert mainwindow.import_dialog.isVisible()
+
+    # Answer Cancel in the import dialog and assert that the frames and that
+    # the activity input dialog is empty.
+
+    with qtbot.waitSignal(mainwindow.import_dialog.destroyed):
+        qtbot.mouseClick(mainwindow.import_dialog.buttons['Cancel'],
+                         Qt.LeftButton)
+
+    assert mainwindow.currentIndex() == 0
+    assert mainwindow.import_dialog is None
+
+    assert len(mainwindow.client.frames) == 0
+    assert mainwindow.activity_input_dial.project == ''
+    assert mainwindow.activity_input_dial.comment == ''
+    assert mainwindow.activity_input_dial.tags == []
+
+    assert osp.exists(mainwindow.client.frames_file)
+    mainwindow.close()
+
+
+def test_import_from_watson_noshow(qtbot, mocker):
+    """
+    Test that the import from watson dialog is not shown the second time
+    QWatson is started.
+    """
+    now = local_arrow_from_tuple((2018, 6, 14, 19, 36, 23))
+    mocker.patch('arrow.now', return_value=now)
+
+    os.environ['WATSON_DIR'] = APPDIR
+
+    mainwindow = QWatson(APPDIR2)
+    qtbot.addWidget(mainwindow)
+    mainwindow.show()
+    qtbot.waitForWindowShown(mainwindow)
+
+    # Assert that the import from Watson dialog is not shown on the second run.
+
+    assert mainwindow.import_dialog is None
+    assert mainwindow.currentIndex() == 0
+
+    table = mainwindow.overview_widg.table_widg.tables[3]
+    assert len(mainwindow.client.frames) == 0
+    assert table.view.proxy_model.get_accepted_row_count() == 0
+
+    assert mainwindow.activity_input_dial.project == ''
+    assert mainwindow.activity_input_dial.comment == ''
+    assert mainwindow.activity_input_dial.tags == []
+
+
+def test_accept_import_from_watson_cancel(qtbot, mocker):
+    """
+    Test that the dialog to import settings and data from Watson the first
+    time QWatson is started is working as expected when the import is
+    accepted by the user.
+    """
+    now = local_arrow_from_tuple((2018, 6, 14, 19, 36, 23))
+    mocker.patch('arrow.now', return_value=now)
+
+    delete_folder_recursively(APPDIR2)
+    os.environ['WATSON_DIR'] = APPDIR
+
+    mainwindow = QWatson(APPDIR2)
+    qtbot.addWidget(mainwindow)
+    mainwindow.show()
+    qtbot.waitForWindowShown(mainwindow)
+
+    # Assert that the import dialog it shown.
+
+    assert mainwindow.import_dialog is not None
+    assert mainwindow.import_dialog.isVisible()
+
+    # Answer Import in the import dialog and assert that the frames and that
+    # the activity input dialog data.
+
+    with qtbot.waitSignal(mainwindow.import_dialog.destroyed):
+        qtbot.mouseClick(mainwindow.import_dialog.buttons['Import'],
+                         Qt.LeftButton)
+
+    assert mainwindow.import_dialog is None
+    assert mainwindow.currentIndex() == 0
+
+    table = mainwindow.overview_widg.table_widg.tables[3]
+    assert len(mainwindow.client.frames) == 4
+    assert table.view.proxy_model.get_accepted_row_count() == 4
+
+    assert mainwindow.activity_input_dial.project == 'project1_renamed'
+    assert mainwindow.activity_input_dial.comment == 'First activity'
+    assert mainwindow.activity_input_dial.tags == ['tag1', 'tag2', 'tag3']
+
+    mainwindow.close()
 
 
 def test_last_closed_error(qtbot, mocker):
@@ -365,7 +480,7 @@ def test_last_closed_error(qtbot, mocker):
              'tags': ['test'],
              'message': 'test error last close'}
     content = json.dumps(state)
-    state_filename = osp.join(WORKDIR, 'state')
+    state_filename = osp.join(APPDIR2, 'state')
     with open(state_filename, 'w') as f:
         f.write(content)
 
@@ -375,7 +490,7 @@ def test_last_closed_error(qtbot, mocker):
     # Open QWatson and assert an error frame is added correctly to
     # the database
 
-    mainwindow = QWatson(WORKDIR)
+    mainwindow = QWatson(APPDIR2)
     qtbot.addWidget(mainwindow)
     mainwindow.show()
 
@@ -394,8 +509,7 @@ def test_last_closed_error(qtbot, mocker):
     assert frame.message == expected_comment
 
 
-# Test QWatson overview table
-# -------------------------------
+# ---- Test QWatson overview table
 
 def test_delete_frame(qtbot, mocker):
     """
@@ -404,7 +518,7 @@ def test_delete_frame(qtbot, mocker):
     now = local_arrow_from_tuple((2018, 6, 14, 23, 59, 0))
     mocker.patch('arrow.now', return_value=now)
 
-    mainwindow = QWatson(WORKDIR)
+    mainwindow = QWatson(APPDIR2)
     qtbot.addWidget(mainwindow)
     qtbot.addWidget(mainwindow.overview_widg)
     mainwindow.show()
@@ -469,7 +583,7 @@ def test_edit_start_stop(qtbot, mocker):
     now = local_arrow_from_tuple((2018, 6, 14, 23, 59, 0))
     mocker.patch('arrow.now', return_value=now)
 
-    mainwindow = QWatson(WORKDIR)
+    mainwindow = QWatson(APPDIR2)
     qtbot.addWidget(mainwindow)
     qtbot.addWidget(mainwindow.overview_widg)
     mainwindow.show()
@@ -545,7 +659,7 @@ def test_edit_tags(qtbot, mocker):
     now = local_arrow_from_tuple((2018, 6, 14, 23, 59, 0))
     mocker.patch('arrow.now', return_value=now)
 
-    mainwindow = QWatson(WORKDIR)
+    mainwindow = QWatson(APPDIR2)
     qtbot.addWidget(mainwindow)
     qtbot.addWidget(mainwindow.overview_widg)
     mainwindow.show()
@@ -592,7 +706,7 @@ def test_edit_comment(qtbot, mocker):
     now = local_arrow_from_tuple((2018, 6, 14, 23, 59, 0))
     mocker.patch('arrow.now', return_value=now)
 
-    mainwindow = QWatson(WORKDIR)
+    mainwindow = QWatson(APPDIR2)
     qtbot.addWidget(mainwindow)
     qtbot.addWidget(mainwindow.overview_widg)
     mainwindow.show()

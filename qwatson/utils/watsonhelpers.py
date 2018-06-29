@@ -66,3 +66,16 @@ def insert_new_frame(client, data, index):
 
     client.frames.changed = True
     client.frames._rows.insert(index, new_frame)
+
+
+def reset_watson(client):
+    """
+    Reset the internal variables of the client to None to force a reloading
+    of the data from the files.
+    """
+    client._current = None
+    client._old_state = None
+    client._frames = None
+    client._last_sync = None
+    client._config = None
+    client._config_changed = False

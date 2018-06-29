@@ -16,16 +16,18 @@ import arrow
 from PyQt5.QtCore import pyqtSlot as QSlot
 from PyQt5.QtCore import QDateTime, Qt
 from PyQt5.QtWidgets import (QApplication, QDateTimeEdit, QDialogButtonBox,
-                             QLabel, QVBoxLayout, QStyleOption, QHBoxLayout)
+                             QLabel, QVBoxLayout, QStyleOption, QHBoxLayout,
+                             QPushButton)
 
 # ---- Local imports
 
+from qwatson.dialogs.basedialog import BaseDialog
 from qwatson.utils.dates import (local_arrow_from_str,  qdatetime_from_arrow,
                                  local_arrow_from_tuple)
 from qwatson.widgets.layout import InfoBox, ColoredFrame
 
 
-class DateTimeInputDialog(ColoredFrame):
+class DateTimeInputDialog(BaseDialog):
     """
     A dialog to select a datetime value that is built to be enclosed in
     a layout, and not used as a child window.
@@ -34,20 +36,24 @@ class DateTimeInputDialog(ColoredFrame):
 
     def __init__(self, parent=None):
         super(DateTimeInputDialog, self).__init__(parent)
-        self.set_background_color('light')
-        self.main = None
         self._minimum_datetime = None
-        self.setup()
 
     # ---- Setup layout
 
     def setup(self):
         """Setup the dialog widgets and layout."""
         datetime_box = self.setup_datetime_box()
-        self.button_box = self.setup_dialog_button_box()
-        info_text = ("The start time cannot be sooner than the stop\n"
-                     " time of the last saved activity and later than\n"
-                     " the current time")
+
+        # Add buttons to the dialog
+
+        self.add_dialog_button(QPushButton('Ok'), 'Ok', True)
+        self.add_dialog_button(QPushButton('Cancel'), 'Cancel')
+
+        # Setup the info box
+
+        info_text = ("The start time cannot be sooner than the stop time of"
+                     " the last saved activity and later than the current"
+                     " time.")
 
         info_box = InfoBox(info_text, 'information', 'small')
         info_box.setContentsMargins(5, 10, 5, 10)
@@ -93,51 +99,26 @@ class DateTimeInputDialog(ColoredFrame):
 
         return datetime_box
 
-    def setup_dialog_button_box(self):
-        """Setup the buttons of the dialog."""
-        button_box = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        button_box.accepted.connect(
-            lambda: self.receive_answer(QDialogButtonBox.Ok))
-        button_box.rejected.connect(
-            lambda: self.receive_answer(QDialogButtonBox.Cancel))
-        button_box.layout().setContentsMargins(5, 10, 5, 10)
-        button_box.setAutoFillBackground(True)
-
-        color = QStyleOption().palette.window().color()
-        palette = button_box.palette()
-        palette.setColor(button_box.backgroundRole(), color)
-        button_box.setPalette(palette)
-
-        return button_box
-
     # ---- Bind dialog with main
-
-    def register_dialog_to(self, main):
-        """Register the dialog to the main application."""
-        if main is not None:
-            self.main = main
-            self.dialog_index = self.main.addWidget(self)
 
     def show(self):
         """Qt method override."""
         self.set_datetime_to_now()
         if self.main is not None:
             frames = self.main.client.frames
-            self.main.setCurrentIndex(self.dialog_index)
             self.set_datetime_minimum(
                 None if len(frames) == 0 else frames[-1].stop)
         super(DateTimeInputDialog, self).show()
 
-    def receive_answer(self, button):
+    def receive_answer(self, answer):
         """
         Handle when the value displayed in the datetime widget is accepted
         or canceled by the user.
         """
         if self.main is not None:
-            if button == QDialogButtonBox.Ok:
+            if answer == 'Ok':
                 self.main.start_watson(start_time=self.get_datetime_arrow())
-            elif button == QDialogButtonBox.Cancel:
+            elif answer == 'Cancel':
                 self.main.cancel_watson()
             self.main.setCurrentIndex(0)
 
