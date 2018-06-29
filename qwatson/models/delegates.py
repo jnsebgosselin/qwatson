@@ -31,7 +31,8 @@ class TagEditDelegate(QStyledItemDelegate):
 
     def createEditor(self, parent, option, index):
         """Qt method override."""
-        return TagLineEdit(parent)
+        self.editor = TagLineEdit(parent)
+        return self.editor
 
     def setEditorData(self, editor, index):
         """Qt method override."""
@@ -97,7 +98,8 @@ class LineEditDelegate(QStyledItemDelegate):
 
     def createEditor(self, parent, option, index):
         """Qt method override."""
-        return QLineEdit(parent)
+        self.editor = QLineEdit(parent)
+        return self.editor
 
     def setEditorData(self, editor, index):
         """Qt method override."""
