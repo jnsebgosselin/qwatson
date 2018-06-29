@@ -25,6 +25,7 @@ from PyQt5.QtWidgets import (QApplication, QDialogButtonBox,
 
 # ---- Local imports
 
+from qwatson.dialogs.basedialog import BaseDialog
 from qwatson.utils import icons
 from qwatson.utils.watsonhelpers import reset_watson
 from qwatson.widgets.layout import InfoBox, ColoredFrame
@@ -91,7 +92,7 @@ class QWatsonImportMixin(object):
         self.model.modelReset.emit()
 
 
-class ImportDialog(ColoredFrame):
+class ImportDialog(BaseDialog):
     """
     A dialog to ask the user to stop the time tracker if an activity
     is running when closing.
@@ -100,15 +101,18 @@ class ImportDialog(ColoredFrame):
     def __init__(self, main=None, parent=None):
         super(ImportDialog, self).__init__(parent)
         self.setAttribute(Qt.WA_DeleteOnClose, True)
-        self.set_background_color('light')
-        self.setup()
-        self.register_dialog_to(main)
 
     # ---- Setup layout
 
     def setup(self):
         """Setup the dialog widgets and layout."""
-        self.button_box = self.setup_dialog_button_box()
+
+        # Add buttons to the dialog
+
+        self.add_dialog_button(QPushButton('Import'), 'Import', True)
+        self.add_dialog_button(QPushButton('Cancel'), 'Cancel', True)
+
+        # Setup the info box
 
         url_i = "https://github.com/jnsebgosselin/qwatson#installation"
         info_text = (
@@ -131,47 +135,14 @@ class ImportDialog(ColoredFrame):
         layout.addWidget(self.button_box)
         layout.setStretch(0, 100)
 
-    def setup_dialog_button_box(self):
-        """Setup the buttons of the dialog."""
-        self.import_btn = QPushButton("Import")
-        self.import_btn.setDefault(True)
-        self.cancel_btn = QPushButton("Cancel")
-
-        button_box = QDialogButtonBox()
-        button_box.addButton(self.import_btn, QDialogButtonBox.ActionRole)
-        button_box.addButton(self.cancel_btn, QDialogButtonBox.ActionRole)
-        button_box.clicked.connect(self.receive_answer)
-        button_box.layout().setContentsMargins(5, 10, 5, 10)
-        button_box.setAutoFillBackground(True)
-
-        color = QStyleOption().palette.window().color()
-        palette = button_box.palette()
-        palette.setColor(button_box.backgroundRole(), color)
-        button_box.setPalette(palette)
-
-        return button_box
-
     # ---- Bind dialog with main
 
-    def register_dialog_to(self, main):
-        """Register the dialog to the main application."""
-        self.main = main
-        if main is not None:
-            self.dialog_index = self.main.addWidget(self)
-
-    def show(self):
-        """Qt method override."""
-        if self.main is not None:
-            self.main.setCurrentIndex(self.dialog_index)
-        super(ImportDialog, self).show()
-
-    @QSlot(QAbstractButton)
-    def receive_answer(self, button):
+    def receive_answer(self, answer):
         """
-        Handle when the dialog question is accepted or canceled by the user.
+        Handle when an answer has been provided to the dialog by the user.
         """
         if self.main is not None:
-            if button == self.import_btn:
+            if answer == 'Import':
                 self.main.import_data_from_watson()
             else:
                 self.main.create_empty_frames_file()

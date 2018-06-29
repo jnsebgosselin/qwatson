@@ -62,7 +62,7 @@ class CloseDialog(BaseDialog):
 
     def receive_answer(self, answer):
         """
-        Handle when the dialog question is accepted or canceled by the user.
+        Handle when an answer has been provided to the dialog by the user.
         """
         if self.main is not None:
             if answer == 'Yes':
