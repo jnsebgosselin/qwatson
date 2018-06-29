@@ -17,18 +17,15 @@ import json
 # ---- Third party imports
 
 import click
-from PyQt5.QtCore import pyqtSlot as QSlot
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (QApplication, QDialogButtonBox,
-                             QVBoxLayout, QStyleOption, QPushButton,
-                             QAbstractButton)
+from PyQt5.QtWidgets import QApplication, QVBoxLayout, QPushButton
 
 # ---- Local imports
 
 from qwatson.dialogs.basedialog import BaseDialog
 from qwatson.utils import icons
 from qwatson.utils.watsonhelpers import reset_watson
-from qwatson.widgets.layout import InfoBox, ColoredFrame
+from qwatson.widgets.layout import InfoBox
 
 
 class QWatsonImportMixin(object):
@@ -110,7 +107,7 @@ class ImportDialog(BaseDialog):
         # Add buttons to the dialog
 
         self.add_dialog_button(QPushButton('Import'), 'Import', True)
-        self.add_dialog_button(QPushButton('Cancel'), 'Cancel', True)
+        self.add_dialog_button(QPushButton('Cancel'), 'Cancel')
 
         # Setup the info box
 
