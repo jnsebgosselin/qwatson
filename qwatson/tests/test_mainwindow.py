@@ -228,6 +228,7 @@ def test_start_from_other(qtbot, mocker):
     assert not datetime_dial.isVisible()
 
     # Start the activity timer and assert the datetime dialog is shown
+
     qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
     assert not mainwindow.elap_timer.is_started
     assert datetime_dial.isVisible()
@@ -237,24 +238,28 @@ def test_start_from_other(qtbot, mocker):
     assert minimum_datetime.format('YYYY-MM-DD HH:mm') == '2018-06-14 18:45'
 
     # Cancel the dialog and assert it is working as expected.
-    qtbot.mouseClick(datetime_dial.button_box.buttons()[1], Qt.LeftButton)
+
+    qtbot.mouseClick(datetime_dial.buttons['Cancel'], Qt.LeftButton)
     assert not mainwindow.elap_timer.is_started
     assert not datetime_dial.isVisible()
     assert not mainwindow.client.is_started
     assert len(mainwindow.client.frames) == initial_frames_len
 
     # Start the activity timer again and assert the datetime dialog is shown
+
     qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
     assert not mainwindow.elap_timer.is_started
     assert datetime_dial.isVisible()
 
     # Change the datetime below the minimum value.
+
     datetime_dial.datetime_edit.setDateTime(
         qdatetime_from_str('2018-06-14 18:25'))
     datetime_arrow = datetime_dial.get_datetime_arrow()
     assert datetime_arrow.format('YYYY-MM-DD HH:mm') == '2018-06-14 18:45'
 
     # Change the datetime above now.
+
     datetime_dial.datetime_edit.setDateTime(
         qdatetime_from_str('2018-06-14 21:35'))
     datetime_arrow = datetime_dial.get_datetime_arrow()
@@ -262,14 +267,16 @@ def test_start_from_other(qtbot, mocker):
 
     # Change the datetime and accept and assert the dialog is not visible
     # and the activity is correctly started.
+
     datetime_dial.datetime_edit.setDateTime(
         qdatetime_from_str('2018-06-14 19:01'))
-    qtbot.mouseClick(datetime_dial.button_box.buttons()[0], Qt.LeftButton)
+    qtbot.mouseClick(datetime_dial.buttons['Ok'], Qt.LeftButton)
     assert mainwindow.elap_timer.is_started
     assert not datetime_dial.isVisible()
     assert mainwindow.client.is_started
 
     # Stop the activity and assert it was saved correctly.
+
     qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
     assert not mainwindow.elap_timer.is_started
     assert not mainwindow.client.is_started
