@@ -34,7 +34,7 @@ class BaseDialog(ColoredFrame):
         self.set_background_color('light')
         self.register_dialog_to(main)
         self.button_box = self.setup_dialog_button_box()
-        self.dialog_buttons = {}
+        self.buttons = {}
         self.setup()
 
     # ---- Setup layout
@@ -62,7 +62,7 @@ class BaseDialog(ColoredFrame):
                           role=QDialogButtonBox.ActionRole):
         """Add a button to the dialog button box."""
         self.button_box.addButton(button, role)
-        self.dialog_buttons[name] = button
+        self.buttons[name] = button
         button.setObjectName(name)
         button.setDefault(default)
 

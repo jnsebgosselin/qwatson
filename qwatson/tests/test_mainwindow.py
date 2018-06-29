@@ -308,7 +308,7 @@ def test_close_when_running(qtbot, mocker):
     assert mainwindow.currentIndex() == 2
     assert mainwindow.close_dial.isVisible()
 
-    qtbot.mouseClick(mainwindow.close_dial.cancel_btn, Qt.LeftButton)
+    qtbot.mouseClick(mainwindow.close_dial.buttons['Cancel'], Qt.LeftButton)
     assert mainwindow.client.is_started
     assert mainwindow.currentIndex() == 0
     assert mainwindow.isVisible()
@@ -321,7 +321,7 @@ def test_close_when_running(qtbot, mocker):
     assert mainwindow.currentIndex() == 2
     assert mainwindow.close_dial.isVisible()
 
-    qtbot.mouseClick(mainwindow.close_dial.no_btn, Qt.LeftButton)
+    qtbot.mouseClick(mainwindow.close_dial.buttons['No'], Qt.LeftButton)
     assert not mainwindow.client.is_started
     assert not mainwindow.isVisible()
     assert len(mainwindow.client.frames) == expected_framelen
@@ -340,7 +340,7 @@ def test_close_when_running(qtbot, mocker):
     assert mainwindow.currentIndex() == 2
     assert mainwindow.close_dial.isVisible()
 
-    qtbot.mouseClick(mainwindow.close_dial.yes_btn, Qt.LeftButton)
+    qtbot.mouseClick(mainwindow.close_dial.buttons['Yes'], Qt.LeftButton)
     assert not mainwindow.client.is_started
     assert mainwindow.currentIndex() == 0
     assert not mainwindow.isVisible()

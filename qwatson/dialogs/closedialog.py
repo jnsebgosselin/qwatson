@@ -12,40 +12,39 @@ import sys
 
 # ---- Third party imports
 
-from PyQt5.QtCore import pyqtSlot as QSlot
-from PyQt5.QtWidgets import (QApplication, QDialogButtonBox,
-                             QVBoxLayout, QStyleOption, QPushButton,
-                             QAbstractButton)
+from PyQt5.QtWidgets import (QApplication, QVBoxLayout, QPushButton)
 
 # ---- Local imports
 
+from qwatson.dialogs.basedialog import BaseDialog
+from qwatson.widgets.layout import InfoBox
 
-from qwatson.utils.icons import get_standard_icon, get_standard_iconsize
-from qwatson.widgets.layout import InfoBox, ColoredFrame
 
-
-class CloseDialog(ColoredFrame):
+class CloseDialog(BaseDialog):
     """
     A dialog to ask the user to stop the time tracker if an activity
     is running when closing.
     """
 
-    def __init__(self, parent=None):
-        super(CloseDialog, self).__init__(parent)
-        self.set_background_color('light')
-        self.main = None
-        self.setup()
+    def __init__(self, main=None, parent=None):
+        super(CloseDialog, self).__init__(main, parent)
 
     # ---- Setup layout
 
     def setup(self):
         """Setup the dialog widgets and layout."""
-        self.button_box = self.setup_dialog_button_box()
+
+        # Add buttons to the dialog
+
+        self.add_dialog_button(QPushButton('Yes'), 'Yes', True)
+        self.add_dialog_button(QPushButton('No'), 'No')
+        self.add_dialog_button(QPushButton('Cancel'), 'Cancel')
+
+        # Setup the info box
 
         info_text = (
             "<b>Do you want to stop and save the current activity before "
             "leaving?</b><br><br>The activity will be cancelled otherwise.")
-
         info_box = InfoBox(info_text, 'question', 'messagebox')
         info_box.setContentsMargins(10, 10, 10, 10)
 
@@ -59,56 +58,21 @@ class CloseDialog(ColoredFrame):
         layout.addWidget(self.button_box)
         layout.setStretch(0, 100)
 
-    def setup_dialog_button_box(self):
-        """Setup the buttons of the dialog."""
-        self.yes_btn = QPushButton("Yes")
-        self.yes_btn.setDefault(True)
-        self.no_btn = QPushButton("No")
-        self.cancel_btn = QPushButton("Cancel")
-
-        button_box = QDialogButtonBox()
-        button_box.addButton(self.yes_btn, QDialogButtonBox.ActionRole)
-        button_box.addButton(self.no_btn, QDialogButtonBox.ActionRole)
-        button_box.addButton(self.cancel_btn, QDialogButtonBox.ActionRole)
-        button_box.clicked.connect(self.receive_answer)
-        button_box.layout().setContentsMargins(5, 10, 5, 10)
-        button_box.setAutoFillBackground(True)
-
-        color = QStyleOption().palette.window().color()
-        palette = button_box.palette()
-        palette.setColor(button_box.backgroundRole(), color)
-        button_box.setPalette(palette)
-
-        return button_box
-
     # ---- Bind dialog with main
 
-    def register_dialog_to(self, main):
-        """Register the dialog to the main application."""
-        if main is not None:
-            self.main = main
-            self.dialog_index = self.main.addWidget(self)
-
-    def show(self):
-        """Qt method override."""
-        if self.main is not None:
-            self.main.setCurrentIndex(self.dialog_index)
-        super(CloseDialog, self).show()
-
-    @QSlot(QAbstractButton)
-    def receive_answer(self, button):
+    def receive_answer(self, answer):
         """
         Handle when the dialog question is accepted or canceled by the user.
         """
         if self.main is not None:
-            if button == self.yes_btn:
+            if answer == 'Yes':
                 self.main.btn_startstop.setValue(False)
                 self.main.close()
-            elif button == self.no_btn:
+            elif answer == 'No':
                 self.main.cancel_watson()
                 self.main.client.save()
                 self.main.close()
-            elif button == self.cancel_btn:
+            elif answer == 'Cancel':
                 pass
             self.main.setCurrentIndex(0)
 
