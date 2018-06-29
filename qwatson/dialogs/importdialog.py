@@ -57,12 +57,16 @@ class QWatsonImportMixin(object):
         Copy the relevant resources files from the watson application folder
         to that of QWatson.
         """
+        if not osp.exists(self.client._dir):
+            os.makedirs(self.client._dir)
+
         filenames = ['frames', 'frames.bak', 'last_sync', 'state', 'state.bak']
         watson_dir = (os.environ.get('WATSON_DIR') or
                       click.get_app_dir('watson'))
         for filename in filenames:
-            shutil.copyfile(osp.join(watson_dir, filename),
-                            osp.join(self.client._dir, filename))
+            if osp.exists(osp.join(watson_dir, filename)):
+                shutil.copyfile(osp.join(watson_dir, filename),
+                                osp.join(self.client._dir, filename))
         self.reset_model_and_gui()
 
     def create_empty_frames_file(self):
@@ -70,6 +74,9 @@ class QWatsonImportMixin(object):
         Create an empty frame file to indicate that QWatson have been
         started at least one time.
         """
+        if not osp.exists(self.client._dir):
+            os.makedirs(self.client._dir)
+
         content = json.dumps({})
         with open(self.client.frames_file, 'w') as f:
             f.write(content)
@@ -145,6 +152,7 @@ class ImportDialog(BaseDialog):
                 self.main.create_empty_frames_file()
             self.main.setCurrentIndex(0)
             self.main.removeWidget(self)
+            self.main.import_dialog = None
             self.close()
 
 
