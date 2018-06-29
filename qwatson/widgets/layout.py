@@ -105,7 +105,7 @@ class InfoBox(ColoredFrame):
 
         text_area = QVBoxLayout()
         text_area.setContentsMargins(0, 0, 0, 0)
-        text_area.setSpacing(10)
+        text_area.setSpacing(5)
 
         if title:
             title_label = QLabel('<b>%s</b>' % title)
