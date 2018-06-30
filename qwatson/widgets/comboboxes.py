@@ -142,4 +142,7 @@ class ComboBoxEdit(QWidget):
         else:
             self._edit_mode = None
         self.linedit.setVisible(self._edit_mode is not None)
+        self.linedit.setFocus(self._edit_mode is not None)
         self.combobox.setVisible(self._edit_mode is None)
+        self.combobox.setFocus(self._edit_mode is None)
+
