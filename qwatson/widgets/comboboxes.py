@@ -53,36 +53,44 @@ class ComboBoxEdit(QWidget):
         Check for events to accept the edits and modify the content of the
         combobox accordingly.
         """
-        event_is_accepted = (
-            event.type() == QEvent.FocusOut or
-            (event.type() == QEvent.KeyPress and
-             event.key() in [Qt.Key_Enter, Qt.Key_Return])
-            )
+        is_focusout = event.type() == QEvent.FocusOut
+        is_keypress = event.type() == QEvent.KeyPress
 
-        if event_is_accepted:
-            self.linedit.setVisible(False)
-            self.combobox.setVisible(True)
+        is_canceled = (
+            is_keypress and event.key() == Qt.Key_Escape
+            ) and self._edit_mode is not None
+        is_accepted = (
+            is_focusout or
+            (is_keypress and event.key() in [Qt.Key_Enter, Qt.Key_Return])
+            ) and self._edit_mode is not None
+        is_finished = is_accepted or is_canceled
 
-            new_name = self.linedit.text()
-            self.linedit.clear()
-            if new_name:
-                new_name_exists = self.combobox.findText(new_name) != -1
-                if self._edit_mode == 'add':
+        new_name = self.linedit.text()
+        if is_accepted and new_name:
+            new_name_exists = self.combobox.findText(new_name) != -1
+            if self._edit_mode == 'add':
+                if new_name_exists is False:
+                    self.combobox.addItem(new_name)
+                    self.setCurentText(new_name)
+                    self.sig_item_added.emit(new_name)
+                else:
+                    self.setCurentText(new_name)
+            elif self._edit_mode == 'rename':
+                old_name = self.combobox.currentText()
+                if old_name != new_name:
+                    current_index = self.combobox.currentIndex()
+                    self.combobox.removeItem(current_index)
                     if new_name_exists is False:
-                        self.combobox.addItem(new_name)
-                        self.setCurentText(new_name)
-                        self.sig_item_added.emit(new_name)
-                    else:
-                        self.setCurentText(new_name)
-                elif self._edit_mode == 'rename':
-                    old_name = self.combobox.currentText()
-                    if old_name != new_name:
-                        current_index = self.combobox.currentIndex()
-                        self.combobox.removeItem(current_index)
-                        if new_name_exists is False:
-                            self.combobox.insertItem(current_index, new_name)
-                        self.setCurentText(new_name)
-                        self.sig_item_renamed.emit(old_name, new_name)
+                        self.combobox.insertItem(current_index, new_name)
+                    self.setCurentText(new_name)
+                    self.sig_item_renamed.emit(old_name, new_name)
+
+        if is_finished:
+            self._edit_mode = None
+            self.linedit.clear()
+            self.combobox.setVisible(True)
+            self.combobox.setFocus()
+            self.linedit.setVisible(False)
 
         return QWidget.eventFilter(self, widget, event)
 
