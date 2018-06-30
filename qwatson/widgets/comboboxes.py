@@ -103,6 +103,14 @@ class ComboBoxEdit(QWidget):
         """Add the items to the combobox."""
         self.combobox.addItems(items)
 
+    def count(self):
+        """Return the number of items listed in the combobox."""
+        return self.combobox.count()
+
+    def items(self):
+        """Return a list of all the items listed in the combobox."""
+        return [self.combobox.itemText(i) for i in range(self.count())]
+
     def removeItem(self, index):
         """Remove the item at the specified index in the combobox."""
         self.combobox.removeItem(index)
