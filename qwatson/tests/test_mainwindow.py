@@ -51,6 +51,16 @@ def test_mainwindow_init(qtbot):
 
     qtbot.mouseClick(mainwindow.btn_report, Qt.LeftButton)
     assert mainwindow.overview_widg.isVisible()
+
+    # Check default values
+
+    activity_input_dial = mainwindow.activity_input_dial
+    assert activity_input_dial.project == ''
+    assert activity_input_dial.tags == []
+    assert activity_input_dial.comment == ''
+    assert mainwindow.round_time_btn.text() == 'round to 5min'
+    assert mainwindow.start_from.text() == 'start from now'
+
     mainwindow.close()
 
 
@@ -64,28 +74,24 @@ def test_add_first_project(qtbot, mocker):
     mainwindow.show()
     qtbot.waitForWindowShown(mainwindow)
 
-    # ---- Check default
-
     activity_input_dial = mainwindow.activity_input_dial
-    assert activity_input_dial.project == ''
-    assert activity_input_dial.tags == []
-    assert activity_input_dial.comment == ''
-    assert mainwindow.round_time_btn.text() == 'round to 5min'
-    assert mainwindow.start_from.text() == 'start from now'
 
     # ---- Setup the activity input dialog
 
     # Setup the tags
+
     qtbot.keyClicks(activity_input_dial.tag_lineedit, 'tag1, tag2, tag3')
     qtbot.keyPress(activity_input_dial.tag_lineedit, Qt.Key_Enter)
     assert activity_input_dial.tags == ['tag1', 'tag2', 'tag3']
 
     # Setup the comment
+
     qtbot.keyClicks(activity_input_dial.msg_textedit, 'First activity')
     qtbot.keyPress(activity_input_dial.msg_textedit, Qt.Key_Enter)
     assert activity_input_dial.comment == 'First activity'
 
     # Add a new project
+
     qtbot.mouseClick(
         activity_input_dial.project_manager.btn_add, Qt.LeftButton)
     qtbot.keyClicks(
@@ -166,6 +172,7 @@ def test_rename_project(qtbot, mocker):
 
     assert project_manager.project_cbox.linedit.isVisible()
     assert not project_manager.project_cbox.combobox.isVisible()
+    qtbot.keyPress(project_manager.project_cbox.linedit, Qt.Key_End)
     qtbot.keyClicks(project_manager.project_cbox.linedit, '_renamed')
     qtbot.keyPress(project_manager.project_cbox.linedit, Qt.Key_Enter)
     assert not project_manager.project_cbox.linedit.isVisible()
@@ -173,6 +180,21 @@ def test_rename_project(qtbot, mocker):
 
     assert mainwindow.activity_input_dial.project == 'project1_renamed'
     assert mainwindow.client.frames[0].project == 'project1_renamed'
+
+    # Cancel the renaming of a project by pressing Escape
+
+    qtbot.mouseClick(project_manager.btn_rename, Qt.LeftButton)
+
+    assert project_manager.project_cbox.linedit.isVisible()
+    assert not project_manager.project_cbox.combobox.isVisible()
+    qtbot.keyClicks(project_manager.project_cbox.linedit, 'dummy')
+    qtbot.keyPress(project_manager.project_cbox.linedit, Qt.Key_Escape)
+    assert not project_manager.project_cbox.linedit.isVisible()
+    assert project_manager.project_cbox.combobox.isVisible()
+
+    assert mainwindow.activity_input_dial.project == 'project1_renamed'
+    assert mainwindow.client.frames[0].project == 'project1_renamed'
+
     mainwindow.close()
 
 
