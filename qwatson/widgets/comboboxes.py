@@ -10,7 +10,8 @@
 
 from PyQt5.QtCore import pyqtSignal as QSignal
 from PyQt5.QtCore import Qt, QEvent
-from PyQt5.QtWidgets import (QGridLayout, QLineEdit, QComboBox, QWidget)
+from PyQt5.QtWidgets import (QApplication, QGridLayout, QLineEdit, QComboBox,
+                             QWidget)
 
 
 class ComboBoxEdit(QWidget):
@@ -20,7 +21,11 @@ class ComboBoxEdit(QWidget):
 
     def __init__(self, parent=None):
         super(ComboBoxEdit, self).__init__(parent)
-        self._edit_mode = ''
+        self._edit_mode = None
+        self.setup()
+
+    def setup(self):
+        """Setup the combobox edit."""
 
         self.linedit = QLineEdit()
         self.linedit.setVisible(False)
@@ -48,36 +53,44 @@ class ComboBoxEdit(QWidget):
         Check for events to accept the edits and modify the content of the
         combobox accordingly.
         """
-        event_is_accepted = (
-            event.type() == QEvent.FocusOut or
-            (event.type() == QEvent.KeyPress and
-             event.key() in [Qt.Key_Enter, Qt.Key_Return])
-            )
+        is_focusout = event.type() == QEvent.FocusOut
+        is_keypress = event.type() == QEvent.KeyPress
 
-        if event_is_accepted:
-            self.linedit.setVisible(False)
-            self.combobox.setVisible(True)
+        is_canceled = (
+            is_keypress and event.key() == Qt.Key_Escape
+            ) and self._edit_mode is not None
+        is_accepted = (
+            is_focusout or
+            (is_keypress and event.key() in [Qt.Key_Enter, Qt.Key_Return])
+            ) and self._edit_mode is not None
+        is_finished = is_accepted or is_canceled
 
-            new_name = self.linedit.text()
-            self.linedit.clear()
-            if new_name:
-                new_name_exists = self.combobox.findText(new_name) != -1
-                if self._edit_mode == 'add':
+        new_name = self.linedit.text()
+        if is_accepted and new_name:
+            new_name_exists = self.combobox.findText(new_name) != -1
+            if self._edit_mode == 'add':
+                if new_name_exists is False:
+                    self.combobox.addItem(new_name)
+                    self.setCurentText(new_name)
+                    self.sig_item_added.emit(new_name)
+                else:
+                    self.setCurentText(new_name)
+            elif self._edit_mode == 'rename':
+                old_name = self.combobox.currentText()
+                if old_name != new_name:
+                    current_index = self.combobox.currentIndex()
+                    self.combobox.removeItem(current_index)
                     if new_name_exists is False:
-                        self.combobox.addItem(new_name)
-                        self.setCurentText(new_name)
-                        self.sig_item_added.emit(new_name)
-                    else:
-                        self.setCurentText(new_name)
-                elif self._edit_mode == 'rename':
-                    old_name = self.combobox.currentText()
-                    if old_name != new_name:
-                        current_index = self.combobox.currentIndex()
-                        self.combobox.removeItem(current_index)
-                        if new_name_exists is False:
-                            self.combobox.insertItem(current_index, new_name)
-                        self.setCurentText(new_name)
-                        self.sig_item_renamed.emit(old_name, new_name)
+                        self.combobox.insertItem(current_index, new_name)
+                    self.setCurentText(new_name)
+                    self.sig_item_renamed.emit(old_name, new_name)
+
+        if is_finished:
+            self._edit_mode = None
+            self.linedit.clear()
+            self.combobox.setVisible(True)
+            self.combobox.setFocus()
+            self.linedit.setVisible(False)
 
         return QWidget.eventFilter(self, widget, event)
 
@@ -103,6 +116,14 @@ class ComboBoxEdit(QWidget):
         """Add the items to the combobox."""
         self.combobox.addItems(items)
 
+    def count(self):
+        """Return the number of items listed in the combobox."""
+        return self.combobox.count()
+
+    def items(self):
+        """Return a list of all the items listed in the combobox."""
+        return [self.combobox.itemText(i) for i in range(self.count())]
+
     def removeItem(self, index):
         """Remove the item at the specified index in the combobox."""
         self.combobox.removeItem(index)
@@ -119,6 +140,18 @@ class ComboBoxEdit(QWidget):
             elif mode == 'add':
                 self.linedit.clear()
         else:
-            self._edit_mode_edit_mode = None
+            self._edit_mode = None
         self.linedit.setVisible(self._edit_mode is not None)
+        self.linedit.setFocus(self._edit_mode is not None)
         self.combobox.setVisible(self._edit_mode is None)
+        self.combobox.setFocus(self._edit_mode is None)
+
+
+if __name__ == '__main__':
+    import sys
+    app = QApplication(sys.argv)
+    comboboxedit = ComboBoxEdit()
+    comboboxedit.addItems(['item1', 'item2', 'item3'])
+    comboboxedit.setCurentText('item1')
+    comboboxedit.show()
+    app.exec_()
