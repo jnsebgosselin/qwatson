@@ -146,3 +146,12 @@ class ComboBoxEdit(QWidget):
         self.combobox.setVisible(self._edit_mode is None)
         self.combobox.setFocus(self._edit_mode is None)
 
+
+if __name__ == '__main__':
+    import sys
+    app = QApplication(sys.argv)
+    comboboxedit = ComboBoxEdit()
+    comboboxedit.addItems(['item1', 'item2', 'item3'])
+    comboboxedit.setCurentText('item1')
+    comboboxedit.show()
+    app.exec_()
