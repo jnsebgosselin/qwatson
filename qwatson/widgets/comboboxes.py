@@ -10,7 +10,8 @@
 
 from PyQt5.QtCore import pyqtSignal as QSignal
 from PyQt5.QtCore import Qt, QEvent
-from PyQt5.QtWidgets import (QGridLayout, QLineEdit, QComboBox, QWidget)
+from PyQt5.QtWidgets import (QApplication, QGridLayout, QLineEdit, QComboBox,
+                             QWidget)
 
 
 class ComboBoxEdit(QWidget):
@@ -20,7 +21,11 @@ class ComboBoxEdit(QWidget):
 
     def __init__(self, parent=None):
         super(ComboBoxEdit, self).__init__(parent)
-        self._edit_mode = ''
+        self._edit_mode = None
+        self.setup()
+
+    def setup(self):
+        """Setup the combobox edit."""
 
         self.linedit = QLineEdit()
         self.linedit.setVisible(False)
@@ -127,6 +132,6 @@ class ComboBoxEdit(QWidget):
             elif mode == 'add':
                 self.linedit.clear()
         else:
-            self._edit_mode_edit_mode = None
+            self._edit_mode = None
         self.linedit.setVisible(self._edit_mode is not None)
         self.combobox.setVisible(self._edit_mode is None)
