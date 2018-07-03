@@ -16,6 +16,7 @@ from PyQt5.QtWidgets import (QApplication, QFrame, QGridLayout, QLabel,
 # ---- Local imports
 
 from qwatson.utils import icons
+from qwatson.utils import colors
 
 
 class HSep(QFrame):
@@ -40,18 +41,10 @@ class ColoredFrame(QFrame):
     def __init__(self, color=None, parent=None):
         super(ColoredFrame, self).__init__(parent)
         self.setAutoFillBackground(True)
+        self.set_background_color(color)
 
     def set_background_color(self, colorname):
-        if colorname == 'light':
-            color = QStyleOption().palette.light().color()
-        elif colorname == 'window':
-            color = QStyleOption().palette.window().color()
-        else:
-            color = QStyleOption().palette.base().color()
-
-        palette = self.palette()
-        palette.setColor(self.backgroundRole(), color)
-        self.setPalette(palette)
+        colors.set_widget_palette(self, bgcolor=colorname)
 
 
 class CollapsableScrollArea(QScrollArea):
