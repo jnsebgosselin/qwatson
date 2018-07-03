@@ -8,10 +8,11 @@
 
 # ---- Third parties imports
 
-from PyQt5.QtCore import (QEvent, QRect, QPoint, Qt)
+from PyQt5.QtCore import QEvent, QRect, QPoint, Qt
+
 from PyQt5.QtWidgets import (
     QApplication, QComboBox, QDateTimeEdit, QLineEdit, QStyle,
-    QStyledItemDelegate, QStyleOptionToolButton)
+    QStyledItemDelegate, QStyleOptionToolButton, QListView)
 
 # ---- Local imports
 
@@ -22,6 +23,48 @@ from qwatson.widgets.tags import TagLineEdit
 
 
 class TagEditDelegate(QStyledItemDelegate):
+class BaseDelegate(QStyledItemDelegate):
+
+    def __init__(self, parent):
+        super(BaseDelegate, self) .__init__(parent)
+
+    def paint(self, painter, option, index):
+        widget = QListView()
+        style = widget.style()
+
+        # A row can be highlighted only if the parent tableview is selected.
+
+        if not self.parent().is_selected:
+            option.state &= ~QStyle.State_Selected
+
+        # Set the options for mouse hover highlight.
+
+        if self.parent()._hovered_row == index.row():
+            option.state |= QStyle.State_MouseOver
+        else:
+            option.state &= ~QStyle.State_MouseOver
+
+        if index.column() == 0:
+            option.viewItemPosition = 1
+        elif index.column() == self.parent().model().columnCount()-1:
+            option.viewItemPosition = 3
+        else:
+            option.viewItemPosition = 2
+
+        # Set the options for the text.
+
+        option.text = index.data()
+        if index.data(Qt.TextAlignmentRole) & Qt.AlignLeft:
+            option.displayAlignment = Qt.AlignLeft | Qt.AlignVCenter
+        else:
+            option.displayAlignment = Qt.AlignCenter | Qt.AlignVCenter
+
+        # Set the options for the focus rectangle.
+
+        option.state |= QStyle.State_KeyboardFocusChange
+
+        style.drawControl(QStyle.CE_ItemViewItem, option, painter, widget)
+
     """
     A delegate that allow to edit the tags of a frame and
     force an update of the Watson data via the model.
