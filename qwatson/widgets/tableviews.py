@@ -413,6 +413,6 @@ if __name__ == '__main__':
     model = WatsonTableModel(client)
 
     app = QApplication(sys.argv)
-    date_range_nav = WatsonDailyTableWidget(model)
-    date_range_nav.show()
+    overview_window = WatsonOverviewWidget(client, model)
+    overview_window.show()
     app.exec_()
