@@ -26,10 +26,51 @@ from PyQt5.QtWidgets import (
 from qwatson.utils import icons
 from qwatson.utils.dates import arrowspan_to_str, total_seconds_to_hour_min
 from qwatson.widgets.layout import ColoredFrame
+from qwatson.widgets.dates import DateRangeNavigator
 from qwatson.models.tablemodels import WatsonSortFilterProxyModel
 from qwatson.models.delegates import (
     BaseDelegate, ToolButtonDelegate, ComboBoxDelegate, LineEditDelegate,
     StartDelegate, StopDelegate, TagEditDelegate)
+
+
+class WatsonOverviewWidget(QWidget):
+    """A widget to show and edit activities logged with Watson."""
+    def __init__(self, client, model, parent=None):
+        super(WatsonOverviewWidget, self).__init__(parent)
+        self.setWindowIcon(icons.get_icon('master'))
+        self.setWindowTitle("Activity Overview")
+
+        self.setup(model)
+        self.date_span_changed()
+
+    def setup(self, model):
+        """Setup the widget with the provided arguments."""
+        self.table_widg = WatsonDailyTableWidget(model, parent=self)
+
+        self.date_range_nav = DateRangeNavigator()
+        self.date_range_nav.sig_date_span_changed.connect(
+            self.date_span_changed)
+
+        # ---- Setup the layout
+
+        layout = QGridLayout(self)
+        layout.addWidget(self.date_range_nav)
+        layout.addWidget(self.table_widg)
+
+    def date_span_changed(self):
+        """Handle when the range of the date range navigator widget change."""
+        self.table_widg.set_date_span(self.date_range_nav.current)
+
+    def show(self):
+        """Qt method override."""
+        super(WatsonOverviewWidget, self).show()
+        if self.windowState() & Qt.WindowMaximized:
+            self.setWindowState(Qt.WindowActive | Qt.WindowMaximized)
+        else:
+            self.setWindowState(Qt.WindowActive)
+        self.activateWindow()
+        self.raise_()
+        self.setFocus()
 
 
 # ---- TableWidget
