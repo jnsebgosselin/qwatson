@@ -14,10 +14,12 @@ from math import ceil
 # ---- Third party imports
 
 import arrow
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import pyqtSignal as QSignal
+from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtGui import QCursor
 from PyQt5.QtWidgets import (
     QApplication, QGridLayout, QHeaderView, QLabel, QMessageBox, QScrollArea,
-    QTableView, QVBoxLayout, QWidget, QFrame)
+    QTableView, QHBoxLayout, QVBoxLayout, QWidget, QFrame)
 
 # ---- Local imports
 
@@ -26,8 +28,8 @@ from qwatson.utils.dates import arrowspan_to_str, total_seconds_to_hour_min
 from qwatson.widgets.layout import ColoredFrame
 from qwatson.models.tablemodels import WatsonSortFilterProxyModel
 from qwatson.models.delegates import (
-    ToolButtonDelegate, ComboBoxDelegate, LineEditDelegate, StartDelegate,
-    StopDelegate, TagEditDelegate)
+    BaseDelegate, ToolButtonDelegate, ComboBoxDelegate, LineEditDelegate,
+    StartDelegate, StopDelegate, TagEditDelegate)
 
 
 # ---- TableWidget
@@ -47,6 +49,7 @@ class WatsonDailyTableWidget(QFrame):
         self.model = model
         self.model.sig_total_seconds_changed.connect(self.setup_time_total)
         self.tables = []
+        self.last_focused_table = None
 
         self.setup()
         self.set_date_span(date_span)
@@ -104,6 +107,8 @@ class WatsonDailyTableWidget(QFrame):
                 break
             elif len(self.tables) < ndays:
                 self.tables.append(WatsonTableWidget(self.model, parent=self))
+                self.tables[-1].sig_tableview_focused_in.connect(
+                    self.tableview_focused_in)
                 self.scene.insertWidget(self.scene.count()-1, self.tables[-1])
             else:
                 self.tables.remove(self.tables[-1])
@@ -124,6 +129,16 @@ class WatsonDailyTableWidget(QFrame):
         self.total_time_labl.setText(
             "Total : %s" % total_seconds_to_hour_min(self.total_seconds))
 
+    def tableview_focused_in(self, table):
+        if self.last_focused_table == table:
+            return
+
+        if self.last_focused_table is not None:
+            self.last_focused_table.view.set_selected(False)
+        table.view.set_selected(True)
+
+        self.last_focused_table = table
+
 
 class WatsonTableWidget(QWidget):
     """
@@ -131,6 +146,7 @@ class WatsonTableWidget(QWidget):
     that shows the date span and the time count of all the activities listed
     in the table.
     """
+    sig_tableview_focused_in = QSignal(object)
 
     def __init__(self, model, parent=None):
         super(WatsonTableWidget, self).__init__(parent)
@@ -145,6 +161,8 @@ class WatsonTableWidget(QWidget):
 
         self.view.proxy_model.sig_total_seconds_changed.connect(
             self.setup_timecount)
+        self.view.sig_focused_in.connect(
+            lambda: self.sig_tableview_focused_in.emit(self))
 
     def setup_titlebar(self):
         """Setup the titlebar of the table."""
@@ -238,12 +256,18 @@ class BasicWatsonTableView(QTableView):
         """Set the date span in the proxy model."""
         self.proxy_model.set_date_span(date_span)
 
+    def focusInEvent(self, event):
+        """Qt method override."""
+        self.sig_focused_in.emit(self)
+        super(BasicWatsonTableView, self).focusInEvent(event)
+
 
 class FormatedWatsonTableView(BasicWatsonTableView):
     """
     A BasicWatsonTableView formatted to look good when put in a scrollarea
     in a vertical stack of tables.
     """
+    sig_focused_in = QSignal(object)
 
     def __init__(self, source_model, parent=None):
         super(FormatedWatsonTableView, self).__init__(source_model, parent)
@@ -256,6 +280,11 @@ class FormatedWatsonTableView(BasicWatsonTableView):
         self.setShowGrid(False)
         self.setFrameShape(QFrame.NoFrame)
         self.setWordWrap(False)
+
+        self.setMouseTracking(True)
+        self.setSelectionBehavior(self.SelectRows)
+        self.setSelectionMode(self.SingleSelection)
+        self.set_selected(False)
 
         self.horizontalHeader().hide()
         self.verticalHeader().hide()
@@ -286,6 +315,10 @@ class FormatedWatsonTableView(BasicWatsonTableView):
         """
         super(FormatedWatsonTableView, self).set_date_span(date_span)
         self.update_table_height()
+
+    def set_selected(self, value):
+        self.is_selected = bool(value)
+        self.viewport().update()
 
 
 if __name__ == '__main__':
