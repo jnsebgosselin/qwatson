@@ -23,6 +23,7 @@ from PyQt5.QtWidgets import (
 
 from qwatson.utils import icons
 from qwatson.utils.dates import arrowspan_to_str, total_seconds_to_hour_min
+from qwatson.widgets.layout import ColoredFrame
 from qwatson.models.tablemodels import WatsonSortFilterProxyModel
 from qwatson.models.delegates import (
     ToolButtonDelegate, ComboBoxDelegate, LineEditDelegate, StartDelegate,
@@ -66,8 +67,7 @@ class WatsonDailyTableWidget(QFrame):
         """Setup the scrollarea that holds all the table widgets."""
         scrollarea = QScrollArea()
 
-        self.view = QFrame()
-        self.view.setStyleSheet("QFrame {background-color:white;}")
+        self.view = ColoredFrame(color='light')
 
         self.scene = QVBoxLayout(self.view)
         self.scene.addStretch(100)
