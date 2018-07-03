@@ -158,10 +158,14 @@ class WatsonDailyTableWidget(QFrame):
                 self.scene.removeWidget(self.tables[-1])
                 self.tables[-1].deleteLater()
 
+        # We hide the scrollbar widget while the tables are ubdated
+        # to avoid flickering.
+        self.scrollarea.widget().hide()
         base_span = date_span[0].span('day')
         for i, table in enumerate(self.tables):
             table.set_date_span(
                 (base_span[0].shift(days=i), base_span[1].shift(days=i)))
+        self.scrollarea.widget().show()
 
     def setup_time_total(self, delta_seconds):
         """
