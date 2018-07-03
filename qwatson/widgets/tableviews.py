@@ -413,6 +413,10 @@ if __name__ == '__main__':
     model = WatsonTableModel(client)
 
     app = QApplication(sys.argv)
+
+    from PyQt5.QtWidgets import QStyleFactory
+    app.setStyle(QStyleFactory.create('WindowsVista'))
+
     overview_window = WatsonOverviewWidget(client, model)
     overview_window.show()
     app.exec_()

@@ -9,7 +9,7 @@
 # ---- Third parties imports
 
 from PyQt5.QtCore import QEvent, QRect, QPoint, Qt
-
+from PyQt5.QtGui import QPalette
 from PyQt5.QtWidgets import (
     QApplication, QComboBox, QDateTimeEdit, QLineEdit, QStyle,
     QStyledItemDelegate, QStyleOptionToolButton, QListView)
@@ -61,6 +61,13 @@ class BaseDelegate(QStyledItemDelegate):
         # Set the options for the focus rectangle.
 
         option.state |= QStyle.State_KeyboardFocusChange
+
+        # We fill the background with a solid color before painting the
+        # control to override any painting that could have been done by
+        # the table view.
+
+        brush = option.palette.brush(QPalette.Normal, QPalette.Window)
+        painter.fillRect(option.rect, brush)
 
         style.drawControl(QStyle.CE_ItemViewItem, option, painter, widget)
 
