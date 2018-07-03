@@ -113,16 +113,16 @@ class WatsonDailyTableWidget(QFrame):
         scrollarea.verticalScrollBar().valueChanged.connect(
             self.srollbar_value_changed)
 
-        self.view = ColoredFrame(color='light')
+        widget = ColoredFrame(color='light')
 
-        self.scene = QVBoxLayout(self.view)
+        self.scene = QVBoxLayout(widget)
         self.scene.addStretch(100)
         self.scene.setSpacing(5)
         self.scene.setContentsMargins(10, 5, 10, 5)
 
         scrollarea.setMinimumWidth(900)
         scrollarea.setMinimumHeight(500)
-        scrollarea.setWidget(self.view)
+        scrollarea.setWidget(widget)
         scrollarea.setWidgetResizable(True)
 
         return scrollarea
