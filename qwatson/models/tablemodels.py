@@ -115,9 +115,9 @@ class WatsonTableModel(QAbstractTableModel):
     def flags(self, index):
         """Qt method override."""
         if index.column() in self.EDIT_COLUMNS:
-            return Qt.ItemIsEnabled | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemIsEditable | Qt.ItemIsSelectable
         else:
-            return Qt.ItemIsEnabled
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
     # ---- Utils
 
