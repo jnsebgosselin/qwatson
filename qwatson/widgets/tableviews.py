@@ -60,8 +60,8 @@ class WatsonDailyTableWidget(QFrame):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(3)
 
-        scrollarea = self.setup_scrollarea()
-        layout.addWidget(scrollarea, 0, 0)
+        self.scrollarea = self.setup_scrollarea()
+        layout.addWidget(self.scrollarea, 0, 0)
 
         statusbar = self.setup_satusbar()
         layout.addWidget(statusbar, 1, 0)
@@ -69,6 +69,8 @@ class WatsonDailyTableWidget(QFrame):
     def setup_scrollarea(self):
         """Setup the scrollarea that holds all the table widgets."""
         scrollarea = QScrollArea()
+        scrollarea.verticalScrollBar().valueChanged.connect(
+            self.srollbar_value_changed)
 
         self.view = ColoredFrame(color='light')
 
@@ -138,6 +140,23 @@ class WatsonDailyTableWidget(QFrame):
         table.view.set_selected(True)
 
         self.last_focused_table = table
+
+    def srollbar_value_changed(self, value):
+        viewport = self.scrollarea.viewport()
+        mouse_pos = viewport.mapFromGlobal(QCursor.pos()) + QPoint(0, value)
+        # We add the scrollbar value so that we get the mouse cursor
+        # vertical position relative to the widget of the scrollarea
+        # instead of the viewport.
+        for table in self.tables:
+            # Get the mouse position relative to the table view of the
+            # corresponding widget.
+            view_mouse_pos = mouse_pos - table.pos() - table.view.pos()
+
+            if not table.view.rect().contains(view_mouse_pos):
+                row_at = None
+            else:
+                row_at = table.view.rowAt(view_mouse_pos.y())
+            table.view.set_hovered_row(row_at)
 
 
 class WatsonTableWidget(QWidget):
@@ -232,6 +251,8 @@ class BasicWatsonTableView(QTableView):
         self.setItemDelegateForColumn(columns['start'], StartDelegate(self))
         self.setItemDelegateForColumn(columns['end'], StopDelegate(self))
         self.setItemDelegateForColumn(columns['tags'], TagEditDelegate(self))
+        self.setItemDelegateForColumn(columns['duration'], BaseDelegate(self))
+        self.setItemDelegateForColumn(columns['id'], BaseDelegate(self))
 
         # ---- Setup column size
 
@@ -268,11 +289,13 @@ class FormatedWatsonTableView(BasicWatsonTableView):
     in a vertical stack of tables.
     """
     sig_focused_in = QSignal(object)
+    _hovered_row = None
 
     def __init__(self, source_model, parent=None):
         super(FormatedWatsonTableView, self).__init__(source_model, parent)
         self.setup()
         self.update_table_height()
+        self.entered.connect(self.itemEnterEvent)
 
     def setup(self):
         """Setup the table view with the provided arguments."""
@@ -319,6 +342,22 @@ class FormatedWatsonTableView(BasicWatsonTableView):
     def set_selected(self, value):
         self.is_selected = bool(value)
         self.viewport().update()
+
+    def set_hovered_row(self, row):
+        if self._hovered_row != row:
+            self._hovered_row = row
+            self.viewport().update()
+
+    def itemEnterEvent(self, index):
+        self.set_hovered_row(index.row())
+
+    def leaveEvent(self, event):
+        super(FormatedWatsonTableView, self).leaveEvent(event)
+        self.set_hovered_row(None)
+
+    def focusOutEvent(self, event):
+        super(FormatedWatsonTableView, self).focusOutEvent(event)
+        self.set_hovered_row(None)
 
 
 if __name__ == '__main__':
