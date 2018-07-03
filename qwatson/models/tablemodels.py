@@ -20,6 +20,7 @@ from PyQt5.QtCore import (QAbstractTableModel, QModelIndex,
 
 # ---- Local imports
 
+from qwatson.utils import colors
 from qwatson.utils.dates import qdatetime_from_str
 from qwatson.utils.strformating import list_to_str
 from qwatson.utils.watsonhelpers import edit_frame_at
@@ -93,6 +94,8 @@ class WatsonTableModel(QAbstractTableModel):
                 return frames[index.row()].project
             elif index.column() == self.COLUMNS['tags']:
                 return list_to_str(frames[index.row()].tags)
+        elif role == Qt.BackgroundRole:
+            return colors.get_qcolor('base')
         elif role == Qt.TextAlignmentRole:
             if index.column() == self.COLUMNS['comment']:
                 return Qt.AlignLeft | Qt.AlignVCenter

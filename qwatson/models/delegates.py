@@ -65,9 +65,7 @@ class BaseDelegate(QStyledItemDelegate):
         # We fill the background with a solid color before painting the
         # control to override any painting that could have been done by
         # the table view.
-
-        brush = option.palette.brush(QPalette.Normal, QPalette.Window)
-        painter.fillRect(option.rect, brush)
+        painter.fillRect(option.rect, index.data(Qt.BackgroundRole))
 
         style.drawControl(QStyle.CE_ItemViewItem, option, painter, widget)
 
