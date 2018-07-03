@@ -159,15 +159,13 @@ class WatsonTableWidget(QWidget):
         self.timecount.setMargin(5)
         self.timecount.setFont(font)
 
-        titlebar = QFrame()
-        titlebar.setStyleSheet("QFrame {background-color:gray;}")
+        titlebar = ColoredFrame(color='grey')
+        titlebar_layout = QHBoxLayout(titlebar)
+        titlebar_layout.setContentsMargins(0, 0, 0, 0)
 
-        layout = QGridLayout(titlebar)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setColumnStretch(1, 100)
-
-        layout.addWidget(self.title, 0, 0)
-        layout.addWidget(self.timecount, 0, 2)
+        titlebar_layout.addWidget(self.title)
+        titlebar_layout.addStretch(100)
+        titlebar_layout.addWidget(self.timecount)
 
         return titlebar
 
@@ -207,7 +205,6 @@ class BasicWatsonTableView(QTableView):
         # ---- Setup the delegates
 
         columns = source_model.COLUMNS
-
         self.setItemDelegateForColumn(
             columns['icons'], ToolButtonDelegate(self))
         self.setItemDelegateForColumn(
