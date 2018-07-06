@@ -70,7 +70,6 @@ class CloseDialog(BaseDialog):
                 self.main.close()
             elif answer == 'No':
                 self.main.cancel_watson()
-                self.main.client.save()
                 self.main.close()
             elif answer == 'Cancel':
                 pass

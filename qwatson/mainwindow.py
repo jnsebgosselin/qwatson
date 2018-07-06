@@ -332,6 +332,7 @@ class QWatson(QWidget, QWatsonImportMixin):
             event.ignore()
         else:
             self.overview_widg.close()
+            self.client.save()
             event.accept()
             print("QWatson is closed.\n")
 
