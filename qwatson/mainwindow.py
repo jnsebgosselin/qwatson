@@ -25,8 +25,7 @@ from qwatson.watson.watson import Watson
 from qwatson.utils import icons
 from qwatson.utils.watsonhelpers import round_frame_at
 from qwatson.widgets.clock import ElapsedTimeLCDNumber
-from qwatson.widgets.dates import DateRangeNavigator
-from qwatson.widgets.tableviews import WatsonDailyTableWidget
+from qwatson.widgets.tableviews import WatsonOverviewWidget
 from qwatson.widgets.toolbar import (
     OnOffToolButton, QToolButtonSmall, DropDownToolButton)
 from qwatson import __namever__
@@ -335,46 +334,6 @@ class QWatson(QWidget, QWatsonImportMixin):
             self.client.save()
             event.accept()
             print("QWatson is closed.\n")
-
-
-class WatsonOverviewWidget(QWidget):
-    """A widget to show and edit activities logged with Watson."""
-    def __init__(self, client, model, parent=None):
-        super(WatsonOverviewWidget, self).__init__(parent)
-        self.setWindowIcon(icons.get_icon('master'))
-        self.setWindowTitle("Activity Overview")
-
-        self.setup(model)
-        self.date_span_changed()
-
-    def setup(self, model):
-        """Setup the widget with the provided arguments."""
-        self.table_widg = WatsonDailyTableWidget(model, parent=self)
-
-        self.date_range_nav = DateRangeNavigator()
-        self.date_range_nav.sig_date_span_changed.connect(
-            self.date_span_changed)
-
-        # ---- Setup the layout
-
-        layout = QGridLayout(self)
-        layout.addWidget(self.date_range_nav)
-        layout.addWidget(self.table_widg)
-
-    def date_span_changed(self):
-        """Handle when the range of the date range navigator widget change."""
-        self.table_widg.set_date_span(self.date_range_nav.current)
-
-    def show(self):
-        """Qt method override."""
-        super(WatsonOverviewWidget, self).show()
-        if self.windowState() & Qt.WindowMaximized:
-            self.setWindowState(Qt.WindowActive | Qt.WindowMaximized)
-        else:
-            self.setWindowState(Qt.WindowActive)
-        self.activateWindow()
-        self.raise_()
-        self.setFocus()
 
 
 if __name__ == '__main__':

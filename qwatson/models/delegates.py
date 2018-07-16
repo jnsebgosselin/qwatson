@@ -8,10 +8,11 @@
 
 # ---- Third parties imports
 
-from PyQt5.QtCore import (QEvent, QRect, QPoint, Qt)
+from PyQt5.QtCore import QEvent, QRect, QPoint, Qt
+from PyQt5.QtGui import QPalette
 from PyQt5.QtWidgets import (
     QApplication, QComboBox, QDateTimeEdit, QLineEdit, QStyle,
-    QStyledItemDelegate, QStyleOptionToolButton)
+    QStyledItemDelegate, QStyleOptionToolButton, QListView)
 
 # ---- Local imports
 
@@ -21,13 +22,61 @@ from qwatson.utils.strformating import list_to_str
 from qwatson.widgets.tags import TagLineEdit
 
 
-class TagEditDelegate(QStyledItemDelegate):
+class BaseDelegate(QStyledItemDelegate):
+
+    def __init__(self, parent):
+        super(BaseDelegate, self) .__init__(parent)
+
+    def paint(self, painter, option, index):
+        widget = QListView()
+        style = widget.style()
+
+        # A row can be highlighted only if the parent tableview is selected.
+
+        if not self.parent().is_selected:
+            option.state &= ~QStyle.State_Selected
+
+        # Set the options for mouse hover highlight.
+
+        if self.parent()._hovered_row == index.row():
+            option.state |= QStyle.State_MouseOver
+        else:
+            option.state &= ~QStyle.State_MouseOver
+
+        if index.column() == 0:
+            option.viewItemPosition = 1
+        elif index.column() == self.parent().model().columnCount()-1:
+            option.viewItemPosition = 3
+        else:
+            option.viewItemPosition = 2
+
+        # Set the options for the text.
+
+        option.text = index.data()
+        if index.data(Qt.TextAlignmentRole) & Qt.AlignLeft:
+            option.displayAlignment = Qt.AlignLeft | Qt.AlignVCenter
+        else:
+            option.displayAlignment = Qt.AlignCenter | Qt.AlignVCenter
+
+        # Set the options for the focus rectangle.
+
+        option.state |= QStyle.State_KeyboardFocusChange
+
+        # We fill the background with a solid color before painting the
+        # control to override any painting that could have been done by
+        # the table view.
+        painter.fillRect(option.rect, index.data(Qt.BackgroundRole))
+
+        style.drawControl(QStyle.CE_ItemViewItem, option, painter, widget)
+
+
+class TagEditDelegate(BaseDelegate):
     """
     A delegate that allow to edit the tags of a frame and
     force an update of the Watson data via the model.
     """
     def __init__(self, parent):
-        QStyledItemDelegate.__init__(self, parent)
+        super(TagEditDelegate, self).__init__(parent)
 
     def createEditor(self, parent, option, index):
         """Qt method override."""
@@ -44,14 +93,14 @@ class TagEditDelegate(QStyledItemDelegate):
             model.editFrame(index, tags=editor.tags)
 
 
-class ToolButtonDelegate(QStyledItemDelegate):
+class ToolButtonDelegate(BaseDelegate):
     """
     A delegate that draws a tool button in the middle of a table cell that
     emits a signal of the model when clicked.
     """
 
     def __init__(self, parent):
-        QStyledItemDelegate.__init__(self, parent)
+        super(ToolButtonDelegate, self).__init__(parent)
 
     def createEditor(self, parent, option, index):
         """Qt method override to prevent the creation of an editor."""
@@ -59,11 +108,13 @@ class ToolButtonDelegate(QStyledItemDelegate):
 
     def paint(self, painter, option, index):
         """Paint a toolbutton with an icon."""
+        super(ToolButtonDelegate, self).paint(painter, option, index)
+
         opt = QStyleOptionToolButton()
         opt.rect = self.get_btn_rect(option)
-        opt.icon = icons.get_icon('erase-right')
         opt.iconSize = icons.get_iconsize('small')
         opt.state |= QStyle.State_Enabled | QStyle.State_Raised
+        opt.icon = icons.get_icon('erase-right')
 
         QApplication.style().drawControl(
             QStyle.CE_ToolButtonLabel, opt, painter)
@@ -87,14 +138,14 @@ class ToolButtonDelegate(QStyledItemDelegate):
                        event, model, option, index)
 
 
-class LineEditDelegate(QStyledItemDelegate):
+class LineEditDelegate(BaseDelegate):
     """
     A delegate that allow to edit the text of a table cell and
     force an update of the Watson data via the model.
     """
 
     def __init__(self, parent):
-        QStyledItemDelegate.__init__(self, parent)
+        super(LineEditDelegate, self) .__init__(parent)
 
     def createEditor(self, parent, option, index):
         """Qt method override."""
@@ -111,14 +162,14 @@ class LineEditDelegate(QStyledItemDelegate):
             model.editFrame(index, message=editor.text())
 
 
-class ComboBoxDelegate(QStyledItemDelegate):
+class ComboBoxDelegate(BaseDelegate):
     """
     A delegate that allow to change the project of an activity from a
     combobox and force an update of the Watson data via the model.
     """
 
     def __init__(self, parent):
-        QStyledItemDelegate.__init__(self, parent)
+        super(ComboBoxDelegate, self) .__init__(parent)
 
     def createEditor(self, parent, option, index):
         """Qt method override."""
@@ -135,14 +186,14 @@ class ComboBoxDelegate(QStyledItemDelegate):
             model.editFrame(index, project=editor.currentText())
 
 
-class DateTimeDelegate(QStyledItemDelegate):
+class DateTimeDelegate(BaseDelegate):
     """
     A delegate that allow to edit the time of a table cell and force an
     update of the Watson data via the model.
     """
 
     def __init__(self, parent):
-        QStyledItemDelegate.__init__(self, parent)
+        super(DateTimeDelegate, self) .__init__(parent)
 
     def createEditor(self, parent, option, index):
         """Qt method override."""

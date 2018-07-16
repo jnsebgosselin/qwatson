@@ -29,9 +29,8 @@ class BaseDialog(ColoredFrame):
     """
 
     def __init__(self, main=None, parent=None):
-        super(BaseDialog, self).__init__(parent)
+        super(BaseDialog, self).__init__(color='light', parent=parent)
         self.answer = None
-        self.set_background_color('light')
         self.register_dialog_to(main)
         self.button_box = self.setup_dialog_button_box()
         self.buttons = {}
