@@ -10,6 +10,7 @@
 
 import time
 import sys
+import arrow
 
 # ---- Third party imports
 
@@ -37,6 +38,7 @@ class ElapsedTimeLCDNumber(QLCDNumber):
     def start(self, start_time=None):
         """Start the elapsed time counter."""
         self._start_time = time.time() if start_time is None else start_time
+        self.update_elapsed_time()
         self.timer.start(10)
         self.is_started = True
 
@@ -47,12 +49,14 @@ class ElapsedTimeLCDNumber(QLCDNumber):
 
     def update_elapsed_time(self):
         """Update elapsed time in the widget."""
-        elapsed_time = time.time() - self._start_time
-        self.display(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
+        self._elapsed_time = time.time() - self._start_time
+        self.display(
+            time.strftime("%H:%M:%S", time.gmtime(self._elapsed_time)))
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     timer = ElapsedTimeLCDNumber()
     timer.show()
+    timer.start(arrow.now().timestamp)
     app.exec_()
