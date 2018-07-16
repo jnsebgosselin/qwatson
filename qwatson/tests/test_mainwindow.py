@@ -198,6 +198,39 @@ def test_rename_project(qtbot, mocker):
     mainwindow.close()
 
 
+def test_start_from_last_when_later_than_now(qtbot, mocker):
+    """
+    Test that starting a new activity with the option 'start from' set to
+    'last' is working as expected when the stop time of the last saved
+    activity is later than current time (See Issue #53 and PR #54).
+    """
+    now = local_arrow_from_tuple((2018, 6, 14, 17, 13, 43))
+    mocker.patch('arrow.now', return_value=now)
+    mocker.patch('time.time', return_value=now.timestamp)
+
+    mainwindow = QWatson(APPDIR)
+    qtbot.addWidget(mainwindow)
+    mainwindow.show()
+
+    mainwindow.start_from.setCurrentIndex(1)
+    assert mainwindow.start_from.text() == 'start from last'
+
+    # Start the activity
+
+    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
+    assert mainwindow.elap_timer.is_started
+    assert round(mainwindow.elap_timer._elapsed_time) == 0
+
+    # Stop the activity
+
+    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
+    assert not mainwindow.elap_timer.is_started
+
+    frame = mainwindow.client.frames[-1]
+    assert frame.start.format('YYYY-MM-DD HH:mm') == '2018-06-14 17:15'
+    assert frame.stop.format('YYYY-MM-DD HH:mm') == '2018-06-14 17:15'
+
+
 def test_start_from_last(qtbot, mocker):
     """
     Test that starting an activity with the option 'start from' set to 'last'
@@ -479,8 +512,8 @@ def test_accept_import_from_watson_cancel(qtbot, mocker):
     assert mainwindow.currentIndex() == 0
 
     table = mainwindow.overview_widg.table_widg.tables[3]
-    assert len(mainwindow.client.frames) == 4
-    assert table.view.proxy_model.get_accepted_row_count() == 4
+    assert len(mainwindow.client.frames) == 5
+    assert table.view.proxy_model.get_accepted_row_count() == 5
 
     assert mainwindow.activity_input_dial.project == 'project1_renamed'
     assert mainwindow.activity_input_dial.comment == 'First activity'
