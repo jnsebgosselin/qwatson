@@ -215,8 +215,6 @@ def test_start_from_last_when_later_than_now(qtbot, mocker):
     mainwindow.start_from.setCurrentIndex(1)
     assert mainwindow.start_from.text() == 'start from last'
 
-    assert now == mainwindow.client.frames[-1].stop
-
     # Start the activity
 
     qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
