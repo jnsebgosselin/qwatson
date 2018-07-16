@@ -134,5 +134,39 @@ def test_overview_row_selection(overview_creator):
             assert table.get_selected_frame_index() == 2 + 2 + 1 - 1
 
 
+def test_mouse_hovered_row(overview_creator):
+    """
+    Test that the highlighting of mouse hovered row is working as expected.
+    """
+    overview, qtbot, mocker = overview_creator
+    overview.show()
+    qtbot.waitForWindowShown(overview)
+
+    tables = overview.table_widg.tables
+
+    # Mouse hover the second row of the second table.
+
+    index = tables[1].view.proxy_model.index(1, 0)
+    visual_rect = tables[1].view.visualRect(index)
+
+    qtbot.mouseMove(tables[1].view.viewport(), pos=visual_rect.center())
+    tables[1].view.itemEnterEvent(index)
+    assert tables[1].view._hovered_row == 1
+
+    # Mouse hover the first row of the fourth table and simulate a change of
+    # value of the scrollbar. Assert that the _hovered_row of the second
+    # table is now None and that the  _hovered_row of the fourth table is 0.
+
+    index = tables[4].view.proxy_model.index(0, 0)
+    visual_rect = tables[4].view.visualRect(index)
+
+    qtbot.mouseMove(tables[4].view.viewport(), pos=visual_rect.center())
+    overview.table_widg.srollbar_value_changed(
+        overview.table_widg.scrollarea.verticalScrollBar().value())
+
+    assert tables[1].view._hovered_row is None
+    assert tables[4].view._hovered_row == 0
+
+
 if __name__ == "__main__":
     pytest.main(['-x', os.path.basename(__file__), '-v', '-rw'])
