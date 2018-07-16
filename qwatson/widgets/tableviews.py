@@ -272,6 +272,13 @@ class WatsonTableWidget(QWidget):
         """Return the index of the selected row in the view."""
         return self.view.get_selected_row()
 
+    def get_selected_frame_index(self):
+        """
+        Return the index of the frame corresponding to the selected row if
+        there is one, else return None.
+        """
+        return self.view.get_selected_frame_index()
+
 
 # ---- TableView
 
@@ -395,12 +402,22 @@ class FormatedWatsonTableView(BasicWatsonTableView):
 
     def get_selected_row(self):
         """
-        Return the index of the selected row if there is one, return
+        Return the index of the selected row if there is one and return
         None otherwise.
         """
         if self.is_selected:
-            indexes = self.selectionModel().selectedRows()
-            return indexes[0].row()
+            return self.selectionModel().selectedRows()[0].row()
+        else:
+            return None
+
+    def get_selected_frame_index(self):
+        """
+        Return the index of the frame corresponding to the selected row if
+        there is one, else return None.
+        """
+        if self.is_selected:
+            return self.proxy_model.mapToSource(
+                self.selectionModel().selectedRows()[0]).row()
         else:
             return None
 
