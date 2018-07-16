@@ -202,7 +202,7 @@ def test_start_from_last_when_later_than_now(qtbot, mocker):
     """
     Test that starting a new activity with the option 'start from' set to
     'last' is working as expected when the stop time of the last saved
-    activity is later than current time (See Issue #53).
+    activity is later than current time (See Issue #53 and PR #54).
     """
     now = local_arrow_from_tuple((2018, 6, 14, 17, 13, 43))
     mocker.patch('arrow.now', return_value=now)

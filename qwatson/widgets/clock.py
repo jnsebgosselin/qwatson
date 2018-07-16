@@ -10,7 +10,6 @@
 
 import time
 import sys
-import arrow
 
 # ---- Third party imports
 
@@ -58,5 +57,5 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     timer = ElapsedTimeLCDNumber()
     timer.show()
-    timer.start(arrow.now().timestamp)
+    timer.start()
     app.exec_()
