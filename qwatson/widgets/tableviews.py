@@ -143,6 +143,7 @@ class WatsonDailyTableWidget(QFrame):
         Set the range over which actitivies are displayed in the widget
         and update the layout accordingly by adding or removing tables.
         """
+        self.date_span = date_span
         total_seconds = round((date_span[1] - date_span[0]).total_seconds())
         ndays = ceil(total_seconds / (60*60*24))
         while True:
@@ -267,6 +268,10 @@ class WatsonTableWidget(QWidget):
         """
         self.timecount.setText(total_seconds_to_hour_min(total_seconds))
 
+    def get_selected_row(self):
+        """Return the index of the selected row in the view."""
+        return self.view.get_selected_row()
+
 
 # ---- TableView
 
@@ -387,6 +392,17 @@ class FormatedWatsonTableView(BasicWatsonTableView):
     def set_selected(self, value):
         self.is_selected = bool(value)
         self.viewport().update()
+
+    def get_selected_row(self):
+        """
+        Return the index of the selected row if there is one, return
+        None otherwise.
+        """
+        if self.is_selected:
+            indexes = self.selectionModel().selectedRows()
+            return indexes[0].row()
+        else:
+            return None
 
     def set_hovered_row(self, row):
         if self._hovered_row != row:
