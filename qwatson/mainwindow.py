@@ -14,6 +14,7 @@ import platform
 # ---- Third parties imports
 
 import click
+import arrow
 from PyQt5.QtCore import Qt, QModelIndex
 from PyQt5.QtWidgets import (QApplication, QGridLayout, QHBoxLayout,
                              QSizePolicy, QWidget, QStackedWidget,
@@ -280,7 +281,7 @@ class QWatson(QWidget, QWatsonImportMixin):
             if start_from == 'now':
                 self.start_watson()
             elif start_from == 'last' and len(frames) > 0:
-                self.start_watson(start_time=frames[-1].stop)
+                self.start_watson(min(frames[-1].stop, arrow.now()))
             else:
                 self.datetime_input_dial.show()
         else:
