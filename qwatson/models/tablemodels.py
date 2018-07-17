@@ -21,7 +21,8 @@ from PyQt5.QtCore import (QAbstractTableModel, QModelIndex,
 # ---- Local imports
 
 from qwatson.utils import colors
-from qwatson.utils.dates import qdatetime_from_str
+from qwatson.utils.dates import (
+    qdatetime_from_str, local_arrow_from_str, contraint_arrow_to_span)
 from qwatson.utils.strformating import list_to_str
 from qwatson.utils.watsonhelpers import edit_frame_at
 
@@ -136,35 +137,29 @@ class WatsonTableModel(QAbstractTableModel):
         """Return the frame id from a table index."""
         return self.client.frames[index.row()].id
 
-    def get_start_qdatetime_range(self, index):
+    def get_start_datetime_range(self, index):
         """
-        Return QDateTime objects representing the range in which the start
-        time of the frame located at index can be moved without creating
-        any conflict.
-        """
-        frames = self.client.frames
-        if index.row() > 0:
-            lmin = frames[index.row()-1].stop.format('YYYY-MM-DD HH:mm')
-        else:
-            lmin = '1900-01-01 00:00'
-        lmax = frames[index.row()].stop.format('YYYY-MM-DD HH:mm')
-
-        return qdatetime_from_str(lmin), qdatetime_from_str(lmax)
-
-    def get_stop_qdatetime_range(self, index):
-        """
-        Return QDateTime objects representing the range in which the stop
-        time of the frame located at index can be moved without creating
-        any conflict.
+        Return the range in which the start time of the frame located at
+        index can be moved without creating any conflict.
         """
         frames = self.client.frames
-        lmin = frames[index.row()].start.format('YYYY-MM-DD HH:mm')
-        if index.row() == len(frames)-1:
-            lmax = arrow.now().format('YYYY-MM-DD HH:mm')
-        else:
-            lmax = frames[index.row()+1].start.format('YYYY-MM-DD HH:mm')
+        lmin = (frames[index.row()-1].stop if index.row() > 0 else
+                local_arrow_from_str('1980-01-01 00:00:00',
+                                     'YYYY-MM-DD HH:mm:ss')
+                )
+        lmax = frames[index.row()].stop
+        return lmin, lmax
 
-        return qdatetime_from_str(lmin), qdatetime_from_str(lmax)
+    def get_stop_datetime_range(self, index):
+        """
+        Return the range in which the stop time of the frame located at
+        index can be moved without creating any conflict.
+        """
+        frames = self.client.frames
+        lmin = frames[index.row()].start
+        lmax = (arrow.now() if index.row() == (len(frames)-1) else
+                frames[index.row()+1].start)
+        return lmin, lmax
 
     # ---- Watson handlers
 
@@ -189,10 +184,15 @@ class WatsonTableModel(QAbstractTableModel):
 
     def editDateTime(self, index, date_time):
         """Edit the start or stop field in the frame stored at index."""
+        date_time = local_arrow_from_str(date_time, 'YYYY-MM-DD HH:mm:ss')
         if index.column() == self.COLUMNS['start']:
-            self.editFrame(index, start=date_time)
+            span = self.get_start_datetime_range(index)
+            self.editFrame(
+                index, start=contraint_arrow_to_span(date_time, span))
         elif index.column() == self.COLUMNS['end']:
-            self.editFrame(index, stop=date_time)
+            span = self.get_stop_datetime_range(index)
+            self.editFrame(
+                index, stop=contraint_arrow_to_span(date_time, span))
 
 
 class WatsonSortFilterProxyModel(QSortFilterProxyModel):
@@ -280,16 +280,6 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
     def get_frameid_from_index(self, proxy_index):
         """Return the frame id from a table index."""
         return self.sourceModel().get_frameid_from_index(
-                   self.mapToSource(proxy_index))
-
-    def get_start_qdatetime_range(self, proxy_index):
-        """Map proxy method to source."""
-        return self.sourceModel().get_start_qdatetime_range(
-                   self.mapToSource(proxy_index))
-
-    def get_stop_qdatetime_range(self, proxy_index):
-        """Map proxy method to source."""
-        return self.sourceModel().get_stop_qdatetime_range(
                    self.mapToSource(proxy_index))
 
     def removeRows(self, proxy_index):
