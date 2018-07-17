@@ -10,7 +10,7 @@ QWatson is a simple GUI entirely written in Python with [PyQt5](https://www.rive
 
 Many thanks to [TailorDev](https://tailordev.fr) for sharing their awesome work.
 
-![screenshot](https://github.com/jnsebgosselin/qwatson/blob/master/images/qwatson_printscreen.png)
+![screenshot](./images/qwatson_printscreen.png)
 
 ## To Know More About Watson
 
@@ -29,7 +29,11 @@ Unfortunately, QWatson is not being tested and no binary is available for the Ma
 **Important:**<br>
 In order to support the addition of log messages/comments to the activity frames, QWatson is distributed with a forked version of Watson (see [Pull Request #1](https://github.com/jnsebgosselin/qwatson/pull/1)). This means that until this feature is officially supported in Watson, frames edited with QWatson won't be readable nor editable with the Watson CLI (see [Issue #37](https://github.com/jnsebgosselin/qwatson/issues/37)).
 
-For this reason, the default path for the QWatson application folder is set differently from that of Watson, so that one does not unknowingly make its whole activity database incompatible with the Watson CLI while trying out QWatson. On first startup, QWatson will ask if you want to import your settings and data from Watson. This will simply copy over the configuration and data files from the Watson application folder to that of QWatson. If you decide not to import your Watson's settings and data on the first startup, it is always possible to do this afterwards by copying the files manually. Depending on your system, the default path for the application folders might be:
+For this reason, the default path for the QWatson application folder is set differently from that of Watson, so that one does not unknowingly make its whole activity database incompatible with the Watson CLI while trying out QWatson. On first startup, QWatson will ask if you want to import your settings and data from Watson.
+
+<p align="center"><img src="./images/import_from_watson_dialog.png" alt="Import Watson settings screenshot"></p>
+
+This will simply copy over the configuration and data files from the Watson application folder to that of QWatson. If you decide not to import your Watson's settings and data on the first startup, it is always possible to do this afterwards by copying the files manually. Depending on your system, the default path for the application folders might be:
 
 - Windows: C:/Users/\<user\>/AppData/Roaming/
 - MacOSX: ~/Library/Application Support/
