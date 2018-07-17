@@ -30,7 +30,7 @@ from qwatson.widgets.dates import DateRangeNavigator
 from qwatson.models.tablemodels import WatsonSortFilterProxyModel
 from qwatson.models.delegates import (
     BaseDelegate, ToolButtonDelegate, ComboBoxDelegate, LineEditDelegate,
-    StartDelegate, StopDelegate, TagEditDelegate)
+    DateTimeDelegate, TagEditDelegate)
 
 
 class WatsonOverviewWidget(QWidget):
@@ -305,8 +305,8 @@ class BasicWatsonTableView(QTableView):
             columns['project'], ComboBoxDelegate(self))
         self.setItemDelegateForColumn(
             columns['comment'], LineEditDelegate(self))
-        self.setItemDelegateForColumn(columns['start'], StartDelegate(self))
-        self.setItemDelegateForColumn(columns['end'], StopDelegate(self))
+        self.setItemDelegateForColumn(columns['start'], DateTimeDelegate(self))
+        self.setItemDelegateForColumn(columns['end'], DateTimeDelegate(self))
         self.setItemDelegateForColumn(columns['tags'], TagEditDelegate(self))
         self.setItemDelegateForColumn(columns['duration'], BaseDelegate(self))
         self.setItemDelegateForColumn(columns['id'], BaseDelegate(self))
