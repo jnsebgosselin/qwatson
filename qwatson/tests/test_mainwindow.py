@@ -24,8 +24,7 @@ from qwatson.mainwindow import QWatson
 from qwatson.utils.fileio import delete_folder_recursively
 from qwatson.utils.dates import local_arrow_from_tuple, qdatetime_from_str
 from qwatson.models.delegates import (
-    StartDelegate, StopDelegate, ToolButtonDelegate, TagEditDelegate,
-    LineEditDelegate)
+    DateTimeDelegate, ToolButtonDelegate, TagEditDelegate, LineEditDelegate)
 
 
 APPDIR = osp.join(osp.dirname(__file__), 'appdir')
@@ -720,14 +719,16 @@ def test_edit_start_stop(qtbot, mocker):
 
     index = table.view.proxy_model.index(0, 0)
     delegate = table.view.itemDelegate(index)
-    assert isinstance(delegate, StartDelegate)
+    assert isinstance(delegate, DateTimeDelegate)
 
     # Assert the delegate displayed value.
+
     table.view.edit(index)
     assert old_start == delegate.editor.dateTime().toString("yyyy-MM-dd hh:mm")
 
     # The new start must be in the same day as the old start, or otherwise,
     # the current table will become empty after the change.
+
     new_start = '2018-06-14 12:23'
     delegate.editor.setDateTime(qdatetime_from_str(new_start))
     with qtbot.waitSignal(table.view.proxy_model.sig_sourcemodel_changed):
@@ -744,7 +745,7 @@ def test_edit_start_stop(qtbot, mocker):
 
     index = table.view.proxy_model.index(0, 1)
     delegate = table.view.itemDelegate(table.view.proxy_model.index(0, 1))
-    assert isinstance(delegate, StopDelegate)
+    assert isinstance(delegate, DateTimeDelegate)
 
     # Assert the delegate displayed value.
     table.view.edit(index)
