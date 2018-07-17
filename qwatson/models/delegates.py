@@ -211,29 +211,3 @@ class DateTimeDelegate(BaseDelegate):
         date_time = editor.dateTime().toString("yyyy-MM-dd hh:mm")
         if date_time != model.data(index):
             model.editDateTime(index, date_time+':00')
-
-
-class StartDelegate(DateTimeDelegate):
-    """
-    A delegate that allow to edit the start time of an activity and force an
-    update of the Watson data via the model.
-    """
-
-    def setEditorData(self, editor, index):
-        """Constraint the range of possible values to avoid conflict."""
-        super(StartDelegate, self).setEditorData(editor, index)
-        qdatetime_range = index.model().get_start_qdatetime_range(index)
-        editor.setDateTimeRange(*qdatetime_range)
-
-
-class StopDelegate(DateTimeDelegate):
-    """
-    A delegate that allow to edit the stop time of an activity and force an
-    update of the Watson data via the model.
-    """
-
-    def setEditorData(self, editor, index):
-        """Constraint the range of possible values to avoid conflict."""
-        super(StopDelegate, self).setEditorData(editor, index)
-        qdatetime_range = index.model().get_stop_qdatetime_range(index)
-        editor.setDateTimeRange(*qdatetime_range)
