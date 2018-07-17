@@ -24,7 +24,7 @@ from qwatson.mainwindow import QWatson
 from qwatson.utils.fileio import delete_folder_recursively
 from qwatson.utils.dates import local_arrow_from_tuple, qdatetime_from_str
 from qwatson.models.delegates import (
-    DateTimeDelegate, ToolButtonDelegate, TagEditDelegate, LineEditDelegate)
+    ToolButtonDelegate, TagEditDelegate, LineEditDelegate)
 
 
 APPDIR = osp.join(osp.dirname(__file__), 'appdir')
@@ -682,127 +682,6 @@ def test_delete_frame(qtbot, mocker):
     assert table.view.proxy_model.get_accepted_row_count() == expected_rowcount
     assert len(mainwindow.client.frames) == expected_rowcount
     assert 'error' not in mainwindow.client.tags
-
-    mainwindow.close()
-
-
-def test_edit_start_datetime(qtbot, mocker):
-    """
-    Test editing start and stop date in the activity overview table.
-    """
-    now = local_arrow_from_tuple((2018, 6, 14, 23, 59, 0))
-    mocker.patch('arrow.now', return_value=now)
-
-    mainwindow = QWatson(APPDIR2)
-    qtbot.addWidget(mainwindow)
-    qtbot.addWidget(mainwindow.overview_widg)
-    mainwindow.show()
-
-    qtbot.mouseClick(mainwindow.btn_report, Qt.LeftButton)
-    qtbot.waitForWindowShown(mainwindow.overview_widg)
-
-    table_widg = mainwindow.overview_widg.table_widg
-
-    # Find the table where the first frame is stored.
-
-    fstart_day = mainwindow.client.frames[0].start.floor('day')
-    for i, table in enumerate(table_widg.tables):
-        if table.date_span[0] == fstart_day:
-            break
-    assert i == 3
-
-    # ---- Edit frame start
-
-    old_start = '2018-06-14 16:00'
-    fstart = mainwindow.client.frames[0].start.format('YYYY-MM-DD HH:mm')
-    assert fstart == old_start
-
-    index = table.view.proxy_model.index(0, 0)
-    delegate = table.view.itemDelegate(index)
-    assert isinstance(delegate, DateTimeDelegate)
-
-    # Assert the delegate displayed value.
-
-    table.view.edit(index)
-    assert old_start == delegate.editor.dateTime().toString("yyyy-MM-dd hh:mm")
-
-    # The new start must be in the same day as the old start, or otherwise,
-    # the current table will become empty after the change.
-
-    new_start = '2018-06-14 12:23'
-    delegate.editor.setDateTime(qdatetime_from_str(new_start))
-    with qtbot.waitSignal(table.view.proxy_model.sig_sourcemodel_changed):
-        qtbot.keyPress(delegate.editor, Qt.Key_Enter)
-
-    fstart = mainwindow.client.frames[0].start.format('YYYY-MM-DD HH:mm')
-    assert fstart == new_start
-
-
-def test_edit_stop_datetime(qtbot, mocker):
-    now = local_arrow_from_tuple((2018, 6, 14, 23, 59, 0))
-    mocker.patch('arrow.now', return_value=now)
-
-    mainwindow = QWatson(APPDIR2)
-    qtbot.addWidget(mainwindow)
-    qtbot.addWidget(mainwindow.overview_widg)
-    mainwindow.show()
-
-    qtbot.mouseClick(mainwindow.btn_report, Qt.LeftButton)
-    qtbot.waitForWindowShown(mainwindow.overview_widg)
-
-    table_widg = mainwindow.overview_widg.table_widg
-
-    # Find the table where the first frame is stored.
-
-    fstart_day = mainwindow.client.frames[0].start.floor('day')
-    for i, table in enumerate(table_widg.tables):
-        if table.date_span[0] == fstart_day:
-            break
-    assert i == 3
-
-    # Assert the frame stop value.
-
-    old_stop = '2018-06-14 17:15'
-    fstop = mainwindow.client.frames[0].stop.format('YYYY-MM-DD HH:mm')
-    assert fstop == old_stop
-
-    # Assert the delegate.
-
-    index = table.view.proxy_model.index(0, 1)
-    delegate = table.view.itemDelegate(table.view.proxy_model.index(0, 1))
-    assert isinstance(delegate, DateTimeDelegate)
-
-    # Assert the delegate displayed value.
-
-    table.view.edit(index)
-    assert delegate.editor.isVisible()
-    assert old_stop == delegate.editor.dateTime().toString("yyyy-MM-dd hh:mm")
-
-    # Check that the stop cannot be changed past the start value of the next
-    # saved frame, which is '2018-06-14 17:15'.
-
-    delegate.editor.setDateTime(qdatetime_from_str('2018-06-14 18:15'))
-    with qtbot.waitSignal(table.view.proxy_model.sig_sourcemodel_changed):
-        qtbot.keyPress(delegate.editor, Qt.Key_Enter)
-
-    old_stop = '2018-06-14 17:15'
-    fstop = mainwindow.client.frames[0].stop.format('YYYY-MM-DD HH:mm')
-    assert fstop == old_stop
-
-    # Assert that the stop value is changed as expected when a valid
-    # value is provided.
-
-    table.view.edit(index)
-    assert delegate.editor.isVisible()
-    assert old_stop == delegate.editor.dateTime().toString("yyyy-MM-dd hh:mm")
-
-    new_stop = '2018-06-14 16:43'
-    delegate.editor.setDateTime(qdatetime_from_str(new_stop))
-    with qtbot.waitSignal(table.view.proxy_model.sig_sourcemodel_changed):
-        qtbot.keyPress(delegate.editor, Qt.Key_Enter)
-
-    fstop = mainwindow.client.frames[0].stop.format('YYYY-MM-DD HH:mm')
-    assert fstop == new_stop
 
     mainwindow.close()
 

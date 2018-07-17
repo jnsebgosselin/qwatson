@@ -40,6 +40,9 @@ class WatsonOverviewWidget(QWidget):
         self.setWindowIcon(icons.get_icon('master'))
         self.setWindowTitle("Activity Overview")
 
+        self.client = client
+        self.model = model
+
         self.setup(model)
         self.date_span_changed()
 

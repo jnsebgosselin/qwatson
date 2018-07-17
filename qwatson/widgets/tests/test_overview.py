@@ -20,13 +20,17 @@ from PyQt5.QtCore import Qt
 
 from qwatson.mainwindow import QWatson
 from qwatson.utils.dates import local_arrow_from_tuple
+from qwatson.utils.fileio import delete_file_safely
+from qwatson.utils.dates import local_arrow_from_tuple, qdatetime_from_str
+from qwatson.models.delegates import DateTimeDelegate
 
 
 APPDIR = osp.join(osp.dirname(__file__), 'appdir')
 FRAME_FILE = osp.join(APPDIR, 'frames')
 
-NOW = local_arrow_from_tuple((2018, 6, 14, 23, 59, 0))
+NOW = local_arrow_from_tuple((2018, 6, 17, 23, 59, 0))
 SPAN = NOW.floor('week').span('week')
+delete_file_safely(FRAME_FILE)
 
 
 # ---- Fixtures and utilities
@@ -166,6 +170,94 @@ def test_mouse_hovered_row(overview_creator):
 
     assert tables[1].view._hovered_row is None
     assert tables[4].view._hovered_row == 0
+
+
+# ---- Test Edits
+
+def test_edit_start_datetime(overview_creator):
+    """Test editing the start date in the activity overview table."""
+    overview, qtbot, mocker = overview_creator
+    overview.show()
+    qtbot.waitForWindowShown(overview)
+
+    # Edit the start date of the first frame in the first table.
+
+    table = overview.table_widg.tables[0]
+    index = table.view.proxy_model.index(0, 0)
+    delegate = table.view.itemDelegate(index)
+    assert isinstance(delegate, DateTimeDelegate)
+
+    # Check that the start value is contraint by the stop value of the frame.
+
+    table.view.edit(index)
+    assert delegate.editor.isVisible()
+    assert (delegate.editor.dateTime().toString("yyyy-MM-dd hh:mm") ==
+            '2018-06-11 06:00')
+
+    delegate.editor.setDateTime(qdatetime_from_str('2018-06-11 15:23'))
+    with qtbot.waitSignal(table.view.proxy_model.sig_sourcemodel_changed):
+        qtbot.keyPress(delegate.editor, Qt.Key_Enter)
+
+    assert (overview.client.frames[0].start.format('YYYY-MM-DD HH:mm') ==
+            '2018-06-11 12:00')
+
+    # Check that the stat is changed correctly when a valid value is
+    # provided.
+
+    table.view.edit(index)
+    assert delegate.editor.isVisible()
+    assert (delegate.editor.dateTime().toString("yyyy-MM-dd hh:mm") ==
+            '2018-06-11 12:00')
+
+    delegate.editor.setDateTime(qdatetime_from_str('2018-06-11 07:16'))
+    with qtbot.waitSignal(table.view.proxy_model.sig_sourcemodel_changed):
+        qtbot.keyPress(delegate.editor, Qt.Key_Enter)
+
+    assert (overview.client.frames[0].start.format('YYYY-MM-DD HH:mm') ==
+            '2018-06-11 07:16')
+
+
+def test_edit_stop_datetime(overview_creator):
+    """Test editing the stop date in the activity overview table."""
+    overview, qtbot, mocker = overview_creator
+    overview.show()
+    qtbot.waitForWindowShown(overview)
+
+    # Edit the stop date of the first frame of the third table
+
+    table = overview.table_widg.tables[2]
+    index = table.view.proxy_model.index(0, 1)
+    delegate = table.view.itemDelegate(table.view.proxy_model.index(0, 1))
+    assert isinstance(delegate, DateTimeDelegate)
+
+    # Check that the stop value is constraint by the start value of the frame.
+
+    table.view.edit(index)
+    assert delegate.editor.isVisible()
+    assert (delegate.editor.dateTime().toString("yyyy-MM-dd hh:mm") ==
+            '2018-06-13 12:00')
+
+    delegate.editor.setDateTime(qdatetime_from_str('2018-06-13 03:00'))
+    with qtbot.waitSignal(table.view.proxy_model.sig_sourcemodel_changed):
+        qtbot.keyPress(delegate.editor, Qt.Key_Enter)
+
+    assert (overview.client.frames[4].stop.format('YYYY-MM-DD HH:mm') ==
+            '2018-06-13 06:00')
+
+    # Check that the stop value is contraint by the start value of the
+    # next frame.
+
+    table.view.edit(index)
+    assert delegate.editor.isVisible()
+    assert (delegate.editor.dateTime().toString("yyyy-MM-dd hh:mm") ==
+            '2018-06-13 06:00')
+
+    delegate.editor.setDateTime(qdatetime_from_str('2018-06-13 21:45'))
+    with qtbot.waitSignal(table.view.proxy_model.sig_sourcemodel_changed):
+        qtbot.keyPress(delegate.editor, Qt.Key_Enter)
+
+    assert (overview.client.frames[4].stop.format('YYYY-MM-DD HH:mm') ==
+            '2018-06-13 18:00')
 
 
 if __name__ == "__main__":
