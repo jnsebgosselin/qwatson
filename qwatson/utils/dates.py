@@ -87,6 +87,11 @@ def round_arrow_to(arrow, base):
     return rounded_arrow
 
 
+def contraint_arrow_to_span(arrow, span):
+    """Constraint arrow to the limits of the specified span."""
+    return min(max(arrow, span[0]), span[1])
+
+
 def local_arrow_from_tuple(datetime_tuple):
     """
     Return an arrow object from a datetime tuple formatted for local timezone.
