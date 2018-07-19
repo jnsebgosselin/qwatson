@@ -67,7 +67,7 @@ class QWatson(QWidget, QWatsonImportMixin):
             self.stop_watson(message="last session not closed correctly.",
                              tags=['error'])
 
-        self.overview_widg = ActivityOverviewWidget(self.client, self.model)
+        self.overview_widg = ActivityOverviewWidget(self.model)
         self.setup()
 
     # ---- Setup layout

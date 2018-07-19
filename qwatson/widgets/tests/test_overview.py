@@ -198,7 +198,7 @@ def test_edit_start_datetime(overview_creator):
     with qtbot.waitSignal(table.view.proxy_model.sig_sourcemodel_changed):
         qtbot.keyPress(delegate.editor, Qt.Key_Enter)
 
-    assert (overview.client.frames[0].start.format('YYYY-MM-DD HH:mm') ==
+    assert (overview.model.client.frames[0].start.format('YYYY-MM-DD HH:mm') ==
             '2018-06-11 12:00')
 
     # Check that the stat is changed correctly when a valid value is
@@ -213,7 +213,7 @@ def test_edit_start_datetime(overview_creator):
     with qtbot.waitSignal(table.view.proxy_model.sig_sourcemodel_changed):
         qtbot.keyPress(delegate.editor, Qt.Key_Enter)
 
-    assert (overview.client.frames[0].start.format('YYYY-MM-DD HH:mm') ==
+    assert (overview.model.client.frames[0].start.format('YYYY-MM-DD HH:mm') ==
             '2018-06-11 07:16')
 
 
@@ -241,7 +241,7 @@ def test_edit_stop_datetime(overview_creator):
     with qtbot.waitSignal(table.view.proxy_model.sig_sourcemodel_changed):
         qtbot.keyPress(delegate.editor, Qt.Key_Enter)
 
-    assert (overview.client.frames[4].stop.format('YYYY-MM-DD HH:mm') ==
+    assert (overview.model.client.frames[4].stop.format('YYYY-MM-DD HH:mm') ==
             '2018-06-13 06:00')
 
     # Check that the stop value is contraint by the start value of the
@@ -256,7 +256,7 @@ def test_edit_stop_datetime(overview_creator):
     with qtbot.waitSignal(table.view.proxy_model.sig_sourcemodel_changed):
         qtbot.keyPress(delegate.editor, Qt.Key_Enter)
 
-    assert (overview.client.frames[4].stop.format('YYYY-MM-DD HH:mm') ==
+    assert (overview.model.client.frames[4].stop.format('YYYY-MM-DD HH:mm') ==
             '2018-06-13 18:00')
 
 

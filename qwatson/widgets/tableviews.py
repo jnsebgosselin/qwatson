@@ -35,12 +35,11 @@ from qwatson.models.delegates import (
 
 class ActivityOverviewWidget(QWidget):
     """A widget to show and edit activities logged with Watson."""
-    def __init__(self, client, model, parent=None):
+    def __init__(self, model, parent=None):
         super(ActivityOverviewWidget, self).__init__(parent)
         self.setWindowIcon(icons.get_icon('master'))
         self.setWindowTitle("Activity Overview")
 
-        self.client = client
         self.model = model
 
         self.setup(model)
