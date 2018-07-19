@@ -68,6 +68,20 @@ def insert_new_frame(client, data, index):
     client.frames._rows.insert(index, new_frame)
 
 
+def find_where_to_insert_new_frame(client, new_start, where='above'):
+    """
+    Return the frame index where to insert a new frame according to its
+    start datetime.
+    """
+    for i, frame in enumerate(client.frames):
+        if where == 'above' and new_start < frame.start:
+            return i
+        elif where == 'below' and new_start < frame.stop:
+            return i
+    else:
+        return len(client.frames)
+
+
 def reset_watson(client):
     """
     Reset the internal variables of the client to None to force a reloading
