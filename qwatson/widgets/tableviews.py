@@ -513,7 +513,8 @@ if __name__ == '__main__':
     from qwatson.watson.watson import Watson
     from qwatson.models.tablemodels import WatsonTableModel
 
-    client = Watson()
+    client = Watson(
+        config_dir="C:/Users/User/qwatson/qwatson/widgets/tests/appdir")
     model = WatsonTableModel(client)
 
     app = QApplication(sys.argv)
@@ -521,6 +522,6 @@ if __name__ == '__main__':
     from PyQt5.QtWidgets import QStyleFactory
     app.setStyle(QStyleFactory.create('WindowsVista'))
 
-    overview_window = WatsonOverviewWidget(client, model)
+    overview_window = ActivityOverviewWidget(model)
     overview_window.show()
     app.exec_()
