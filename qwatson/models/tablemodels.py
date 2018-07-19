@@ -242,7 +242,7 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
         row of the source model is within the specified date_span.
         """
         frame_start = self.sourceModel().client.frames[source_row].start
-        return (frame_start >= date_span[0] and frame_start < date_span[1])
+        return (frame_start >= date_span[0] and frame_start <= date_span[1])
 
     def calcul_total_seconds(self):
         """
