@@ -26,6 +26,7 @@ from PyQt5.QtWidgets import (
 from qwatson.utils import icons
 from qwatson.utils.dates import arrowspan_to_str, total_seconds_to_hour_min
 from qwatson.widgets.layout import ColoredFrame
+from qwatson.widgets.toolbar import QToolButtonBase
 from qwatson.widgets.dates import DateRangeNavigator
 from qwatson.models.tablemodels import WatsonSortFilterProxyModel
 from qwatson.models.delegates import (
@@ -48,16 +49,48 @@ class ActivityOverviewWidget(QWidget):
     def setup(self, model):
         """Setup the widget with the provided arguments."""
         self.table_widg = WatsonMultiTableWidget(model, parent=self)
-
-        self.date_range_nav = DateRangeNavigator()
-        self.date_range_nav.sig_date_span_changed.connect(
-            self.date_span_changed)
+        self.toolbar = self.setup_toolbar()
 
         # ---- Setup the layout
 
         layout = QGridLayout(self)
-        layout.addWidget(self.date_range_nav)
+        layout.addWidget(self.toolbar)
         layout.addWidget(self.table_widg)
+
+    def setup_toolbar(self):
+        """Setup the toolbar of the widget."""
+        self.date_range_nav = DateRangeNavigator()
+        self.date_range_nav.sig_date_span_changed.connect(
+            self.date_span_changed)
+
+        self.add_act_above_btn = QToolButtonBase('insert_above', 'small')
+        self.add_act_above_btn.setToolTip(
+            "<b>Add Activity Above</b><br><br>"
+            "Add a new activity directly above the currently selected"
+            " activity. If no activity is selected, the new activity will"
+            " be added at the beginning of the week.")
+
+        self.add_act_below_btn = QToolButtonBase('insert_below', 'small')
+        self.add_act_below_btn.setToolTip(
+            "<b>Add Activity Below</b><br><br>"
+            "Add a new activity directly below the currently selected"
+            " activity. If no activity is selected, the new activity will"
+            " be added at the end of the week.")
+
+        # Setup the layout.
+
+        toolbar = QFrame()
+
+        layout = QHBoxLayout(toolbar)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(1)
+
+        layout.addWidget(self.date_range_nav)
+        layout.addStretch()
+        layout.addWidget(self.add_act_above_btn)
+        layout.addWidget(self.add_act_below_btn)
+
+        return toolbar
 
     def date_span_changed(self):
         """Handle when the range of the date range navigator widget change."""
