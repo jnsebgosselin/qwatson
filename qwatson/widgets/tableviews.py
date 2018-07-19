@@ -156,6 +156,8 @@ class WatsonMultiTableWidget(QFrame):
                 self.tables.append(WatsonTableWidget(self.model, parent=self))
                 self.tables[-1].sig_tableview_focused_in.connect(
                     self.tableview_focused_in)
+                self.tables[-1].sig_tableview_cleared.connect(
+                    self.tableview_cleared)
                 self.scene.insertWidget(self.scene.count()-1, self.tables[-1])
             else:
                 self.tables.remove(self.tables[-1])
@@ -180,6 +182,8 @@ class WatsonMultiTableWidget(QFrame):
         self.total_time_labl.setText(
             "Total : %s" % total_seconds_to_hour_min(self.total_seconds))
 
+    # ---- Table focus handlers
+
     def tableview_focused_in(self, table):
         """
         Save the last focused table and unselect the previous focused table.
@@ -188,6 +192,15 @@ class WatsonMultiTableWidget(QFrame):
             self.clear_focused_table()
             table.view.set_selected(True)
             self.last_focused_table = table
+
+    def tableview_cleared(self, table):
+        """
+        Handle when one of the tables is now empty due to the user deleting
+        one or more of its activities.
+        """
+        if table == self.last_focused_table:
+            self.clear_focused_table()
+            print('clearing the fucking focused table!!!')
 
     def clear_focused_table(self):
         """Clear the last focused table."""
@@ -224,6 +237,7 @@ class WatsonTableWidget(QWidget):
     in the table.
     """
     sig_tableview_focused_in = QSignal(object)
+    sig_tableview_cleared = QSignal(object)
 
     def __init__(self, model, parent=None):
         super(WatsonTableWidget, self).__init__(parent)
@@ -240,6 +254,8 @@ class WatsonTableWidget(QWidget):
             self.setup_timecount)
         self.view.sig_focused_in.connect(
             lambda: self.sig_tableview_focused_in.emit(self))
+        self.view.sig_table_cleared.connect(
+            lambda: self.sig_tableview_cleared.emit(self))
 
     def setup_titlebar(self):
         """Setup the titlebar of the table."""
@@ -299,6 +315,7 @@ class BasicWatsonTableView(QTableView):
     A single table view that displays Watson activity log and
     allow sorting and filtering of the data through the use of a proxy model.
     """
+    sig_table_cleared = QSignal(object)
 
     def __init__(self, source_model, parent=None):
         super(BasicWatsonTableView, self).__init__(parent)
@@ -334,13 +351,18 @@ class BasicWatsonTableView(QTableView):
             columns['comment'], QHeaderView.Stretch)
 
     def del_model_row(self, proxy_index):
-        """Delete a row from the model, but ask for confirmation first."""
+        """
+        Ask for confirmation to delete a row and delete or not the row from
+        the model according the answer.
+        """
         frame_id = self.proxy_model.get_frameid_from_index(proxy_index)
         ans = QMessageBox.question(
             self, 'Delete frame', "Do you want to delete frame %s?" % frame_id,
             defaultButton=QMessageBox.No)
         if ans == QMessageBox.Yes:
             self.proxy_model.removeRows(proxy_index)
+            if self.proxy_model.get_accepted_row_count() == 0:
+                self.sig_table_cleared.emit(self)
 
     def set_date_span(self, date_span):
         """Set the date span in the proxy model."""
