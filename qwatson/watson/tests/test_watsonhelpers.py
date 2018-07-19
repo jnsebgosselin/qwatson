@@ -19,9 +19,9 @@ import arrow
 # ---- Local imports
 
 from qwatson.utils.dates import local_arrow_from_tuple
-from qwatson.watson.watson import Watson
-from qwatson.utils.watsonhelpers import (insert_new_frame, round_frame_at,
-                                         edit_frame_at)
+from qwatson.watson.watsonextends import Watson
+from qwatson.watson.watsonhelpers import (
+    insert_new_frame, round_frame_at, edit_frame_at)
 from qwatson.utils.fileio import delete_file_safely
 
 WORKDIR = osp.dirname(__file__)

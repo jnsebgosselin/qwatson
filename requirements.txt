@@ -1,5 +1,5 @@
 sip
 pyqt5
+td-watson
 arrow
-requests
 click
