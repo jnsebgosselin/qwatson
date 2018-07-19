@@ -15,7 +15,7 @@ from math import ceil
 
 import arrow
 from PyQt5.QtCore import pyqtSignal as QSignal
-from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtCore import Qt, QPoint, QModelIndex
 from PyQt5.QtGui import QCursor
 from PyQt5.QtWidgets import (
     QApplication, QGridLayout, QHeaderView, QLabel, QMessageBox, QScrollArea,
@@ -25,6 +25,8 @@ from PyQt5.QtWidgets import (
 
 from qwatson.utils import icons
 from qwatson.utils.dates import arrowspan_to_str, total_seconds_to_hour_min
+from qwatson.utils.watsonhelpers import (find_where_to_insert_new_frame,
+                                         insert_new_frame)
 from qwatson.widgets.layout import ColoredFrame
 from qwatson.widgets.toolbar import QToolButtonBase
 from qwatson.widgets.dates import DateRangeNavigator
@@ -69,6 +71,8 @@ class ActivityOverviewWidget(QWidget):
             "Add a new activity directly above the currently selected"
             " activity. If no activity is selected, the new activity will"
             " be added at the beginning of the week.")
+        self.add_act_above_btn.clicked.connect(
+            lambda: self.table_widg.add_new_activity('above'))
 
         self.add_act_below_btn = QToolButtonBase('insert_below', 'small')
         self.add_act_below_btn.setToolTip(
@@ -76,6 +80,8 @@ class ActivityOverviewWidget(QWidget):
             "Add a new activity directly below the currently selected"
             " activity. If no activity is selected, the new activity will"
             " be added at the end of the week.")
+        self.add_act_below_btn.clicked.connect(
+            lambda: self.table_widg.add_new_activity('below'))
 
         # Setup the layout.
 
@@ -261,6 +267,37 @@ class WatsonMultiTableWidget(QFrame):
             else:
                 row_at = table.view.rowAt(view_mouse_pos.y())
             table.view.set_hovered_row(row_at)
+
+    def add_new_activity(self, where='above'):
+        """
+        Add a new activity in the last focused table if not None. If the last
+        focused table is None, the activity is added to the first table of the
+        page if where is 'above' or to the last table if where is 'below'.
+        """
+        if self.last_focused_table is not None and self.last_focused_table:
+            frame_index = self.last_focused_table.get_selected_frame_index()
+            if where == 'above':
+                insert_time = self.model.client.frames[frame_index].start
+            elif where == 'below':
+                insert_time = self.model.client.frames[frame_index].stop
+                frame_index += 1
+        elif where == 'above':
+            frame_index = find_where_to_insert_new_frame(
+                self.model.client, self.tables[0].date_span[0], where)
+            insert_time = self.tables[0].date_span[0]
+        elif where == 'below':
+            frame_index = find_where_to_insert_new_frame(
+                self.model.client, self.tables[-1].date_span[1], where)
+            insert_time = self.tables[-1].date_span[1]
+        frame_data = [
+            '', insert_time, insert_time, None, None, None,
+            "<New activity added manually on %s>" %
+            arrow.now().format('YYYY-MM-DD HH:mm')]
+
+        self.model.beginInsertRows(QModelIndex(), frame_index, frame_index)
+        insert_new_frame(self.model.client, frame_data, frame_index)
+        self.model.client.save()
+        self.model.endInsertRows()
 
 
 class WatsonTableWidget(QWidget):
