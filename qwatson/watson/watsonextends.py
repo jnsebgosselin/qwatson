@@ -16,6 +16,10 @@ watson.frames.HEADERS = HEADERS
 
 
 class Frame(namedtuple('Frame', HEADERS)):
+    """
+    This an extension of the Frame class to support adding comments to Frame.
+    """
+
     def __new__(cls, start, stop, project, id, tags=None, updated_at=None,
                 message=None):
         try:
@@ -72,6 +76,9 @@ watson.frames.Frame = Frame
 
 
 class Frames(watson.frames.Frames):
+    """
+    This an extension of the Frames class to support adding comments to Frame.
+    """
 
     def new_frame(self, project, start, stop, tags=None, id=None,
                   updated_at=None, message=None):
@@ -91,6 +98,9 @@ watson.frames.Frames = Frames
 class Watson(watson.watson.Watson):
     def __init__(self, **kwargs):
         super(Watson, self).__init__(**kwargs)
+    """
+    This an extension of the Watson class to support adding comments to Frame.
+    """
 
     # ---- Watson override
 
