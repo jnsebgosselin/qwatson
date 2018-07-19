@@ -24,7 +24,7 @@ from PyQt5.QtWidgets import QApplication, QVBoxLayout, QPushButton
 
 from qwatson.dialogs.basedialog import BaseDialog
 from qwatson.utils import icons
-from qwatson.utils.watsonhelpers import reset_watson
+from qwatson.watson.watsonhelpers import reset_watson
 from qwatson.widgets.layout import InfoBox
 
 

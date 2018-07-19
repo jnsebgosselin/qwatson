@@ -22,9 +22,9 @@ from PyQt5.QtWidgets import (QApplication, QGridLayout, QHBoxLayout,
 
 # ---- Local imports
 
-from qwatson.watson.watsonextends import Watson
 from qwatson.utils import icons
-from qwatson.utils.watsonhelpers import round_frame_at
+from qwatson.watson.watsonextends import Watson
+from qwatson.watson.watsonhelpers import round_frame_at
 from qwatson.widgets.clock import ElapsedTimeLCDNumber
 from qwatson.widgets.tableviews import WatsonOverviewWidget
 from qwatson.widgets.toolbar import (
