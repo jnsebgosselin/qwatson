@@ -48,7 +48,7 @@ class ActivityOverviewWidget(QWidget):
 
     def setup(self, model):
         """Setup the widget with the provided arguments."""
-        self.table_widg = WatsonDailyTableWidget(model, parent=self)
+        self.table_widg = WatsonMultiTableWidget(model, parent=self)
 
         self.date_range_nav = DateRangeNavigator()
         self.date_range_nav.sig_date_span_changed.connect(
@@ -78,7 +78,7 @@ class ActivityOverviewWidget(QWidget):
 
 # ---- TableWidget
 
-class WatsonDailyTableWidget(QFrame):
+class WatsonMultiTableWidget(QFrame):
     """
     A widget that displays Watson activities on a daily basis over a
     given timespan.
@@ -86,7 +86,7 @@ class WatsonDailyTableWidget(QFrame):
 
     def __init__(self, model, date_span=arrow.now().floor('week').span('week'),
                  parent=None):
-        super(WatsonDailyTableWidget, self).__init__(parent)
+        super(WatsonMultiTableWidget, self).__init__(parent)
 
         self.total_seconds = 0
         self.date_span = date_span
