@@ -547,7 +547,7 @@ class FormatedWatsonTableView(BasicWatsonTableView):
 
 
 if __name__ == '__main__':
-    from qwatson.watson.watson import Watson
+    from qwatson.watson.watsonextends import Watson
     from qwatson.models.tablemodels import WatsonTableModel
     import os.path as osp
     from qwatson import __rootdir__

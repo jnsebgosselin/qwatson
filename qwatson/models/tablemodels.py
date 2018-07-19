@@ -23,7 +23,7 @@ from PyQt5.QtCore import (QAbstractTableModel, QModelIndex,
 from qwatson.utils import colors
 from qwatson.utils.dates import local_arrow_from_str, contraint_arrow_to_span
 from qwatson.utils.strformating import list_to_str
-from qwatson.utils.watsonhelpers import edit_frame_at
+from qwatson.watson.watsonhelpers import edit_frame_at
 
 
 class WatsonTableModel(QAbstractTableModel):
