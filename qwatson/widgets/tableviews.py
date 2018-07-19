@@ -197,6 +197,10 @@ class WatsonMultiTableWidget(QFrame):
         self.last_focused_table = None
 
     def srollbar_value_changed(self, value):
+        """
+        Handle when the value of the vertical scrollbar changes, so that
+        the mouse hovered highlighted row can be updated correctly.
+        """
         viewport = self.scrollarea.viewport()
         mouse_pos = viewport.mapFromGlobal(QCursor.pos()) + QPoint(0, value)
         # We add the scrollbar value so that we get the mouse cursor
