@@ -549,9 +549,11 @@ class FormatedWatsonTableView(BasicWatsonTableView):
 if __name__ == '__main__':
     from qwatson.watson.watson import Watson
     from qwatson.models.tablemodels import WatsonTableModel
+    import os.path as osp
+    from qwatson import __rootdir__
 
-    client = Watson(
-        config_dir="C:/Users/User/qwatson/qwatson/widgets/tests/appdir")
+    dirname = osp.join(__rootdir__, 'widgets', 'tests', 'appdir')
+    client = Watson(config_dir=dirname)
     model = WatsonTableModel(client)
 
     app = QApplication(sys.argv)
