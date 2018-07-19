@@ -399,6 +399,8 @@ class FormatedWatsonTableView(BasicWatsonTableView):
         super(FormatedWatsonTableView, self).set_date_span(date_span)
         self.update_table_height()
 
+    # ---- Row selection
+
     def set_selected(self, value):
         self.is_selected = bool(value)
         self.viewport().update()
@@ -419,10 +421,12 @@ class FormatedWatsonTableView(BasicWatsonTableView):
         there is one, else return None.
         """
         if self.is_selected:
-            return self.proxy_model.mapToSource(
-                self.selectionModel().selectedRows()[0]).row()
-        else:
-            return None
+            selected_row = self.selectionModel().selectedRows()
+            if len(selected_row) > 0:
+                return self.proxy_model.mapToSource(selected_row[0]).row()
+        return None
+
+    # ---- Mouse hovered
 
     def set_hovered_row(self, row):
         if self._hovered_row != row:
