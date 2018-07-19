@@ -143,9 +143,10 @@ class WatsonDailyTableWidget(QFrame):
 
     def set_date_span(self, date_span):
         """
-        Set the range over which actitivies are displayed in the widget
+        Set the range over which activities are displayed in the widget
         and update the layout accordingly by adding or removing tables.
         """
+        self.clear_focused_table()
         self.date_span = date_span
         total_seconds = round((date_span[1] - date_span[0]).total_seconds())
         ndays = ceil(total_seconds / (60*60*24))
@@ -181,14 +182,19 @@ class WatsonDailyTableWidget(QFrame):
             "Total : %s" % total_seconds_to_hour_min(self.total_seconds))
 
     def tableview_focused_in(self, table):
-        if self.last_focused_table == table:
-            return
+        """
+        Save the last focused table and unselect the previous focused table.
+        """
+        if self.last_focused_table != table:
+            self.clear_focused_table()
+            table.view.set_selected(True)
+            self.last_focused_table = table
 
+    def clear_focused_table(self):
+        """Clear the last focused table."""
         if self.last_focused_table is not None:
             self.last_focused_table.view.set_selected(False)
-        table.view.set_selected(True)
-
-        self.last_focused_table = table
+        self.last_focused_table = None
 
     def srollbar_value_changed(self, value):
         viewport = self.scrollarea.viewport()
