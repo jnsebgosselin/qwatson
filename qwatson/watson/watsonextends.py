@@ -87,17 +87,11 @@ class Frames(watson.frames.Frames):
         return Frame(start, stop, project, id, tags=tags,
                      updated_at=updated_at, message=message)
 
-    def dump(self):
-        return tuple(frame.dump() for frame in self._rows)
-
-
 watson.watson.Frames = Frames
 watson.frames.Frames = Frames
 
 
 class Watson(watson.watson.Watson):
-    def __init__(self, **kwargs):
-        super(Watson, self).__init__(**kwargs)
     """
     This an extension of the Watson class to support adding comments to Frame.
     """
