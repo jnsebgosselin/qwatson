@@ -25,8 +25,8 @@ from PyQt5.QtWidgets import (
 
 from qwatson.utils import icons
 from qwatson.utils.dates import arrowspan_to_str, total_seconds_to_hour_min
-from qwatson.utils.watsonhelpers import (find_where_to_insert_new_frame,
-                                         insert_new_frame)
+from qwatson.watson.watsonhelpers import (find_where_to_insert_new_frame,
+                                          insert_new_frame)
 from qwatson.widgets.layout import ColoredFrame
 from qwatson.widgets.toolbar import QToolButtonBase
 from qwatson.widgets.dates import DateRangeNavigator
