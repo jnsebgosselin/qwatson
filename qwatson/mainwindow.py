@@ -26,7 +26,7 @@ from qwatson.watson.watson import Watson
 from qwatson.utils import icons
 from qwatson.utils.watsonhelpers import round_frame_at
 from qwatson.widgets.clock import ElapsedTimeLCDNumber
-from qwatson.widgets.tableviews import WatsonOverviewWidget
+from qwatson.widgets.tableviews import ActivityOverviewWidget
 from qwatson.widgets.toolbar import (
     OnOffToolButton, QToolButtonSmall, DropDownToolButton)
 from qwatson import __namever__
@@ -67,7 +67,7 @@ class QWatson(QWidget, QWatsonImportMixin):
             self.stop_watson(message="last session not closed correctly.",
                              tags=['error'])
 
-        self.overview_widg = WatsonOverviewWidget(self.client, self.model)
+        self.overview_widg = ActivityOverviewWidget(self.client, self.model)
         self.setup()
 
     # ---- Setup layout

@@ -33,10 +33,10 @@ from qwatson.models.delegates import (
     DateTimeDelegate, TagEditDelegate)
 
 
-class WatsonOverviewWidget(QWidget):
+class ActivityOverviewWidget(QWidget):
     """A widget to show and edit activities logged with Watson."""
     def __init__(self, client, model, parent=None):
-        super(WatsonOverviewWidget, self).__init__(parent)
+        super(ActivityOverviewWidget, self).__init__(parent)
         self.setWindowIcon(icons.get_icon('master'))
         self.setWindowTitle("Activity Overview")
 
@@ -66,7 +66,7 @@ class WatsonOverviewWidget(QWidget):
 
     def show(self):
         """Qt method override."""
-        super(WatsonOverviewWidget, self).show()
+        super(ActivityOverviewWidget, self).show()
         if self.windowState() & Qt.WindowMaximized:
             self.setWindowState(Qt.WindowActive | Qt.WindowMaximized)
         else:
