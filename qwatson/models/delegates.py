@@ -178,7 +178,8 @@ class ComboBoxDelegate(BaseDelegate):
     def setEditorData(self, editor, index):
         """Qt method override."""
         editor.addItems(index.model().projects)
-        editor.setCurrentIndex(editor.findText(index.model().data(index)))
+        editor.setCurrentIndex(
+            editor.findText(index.model().get_project_from_index(index)))
 
     def setModelData(self, editor, model, index):
         """Qt method override."""
