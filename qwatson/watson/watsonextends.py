@@ -11,6 +11,7 @@ import watson
 from watson.watson import WatsonError, make_json_writer, safe_save, arrow
 from watson.frames import uuid, namedtuple
 
+
 HEADERS = ('start', 'stop', 'project', 'id', 'tags', 'updated_at', 'message')
 watson.frames.HEADERS = HEADERS
 
@@ -86,6 +87,7 @@ class Frames(watson.frames.Frames):
             id = uuid.uuid4().hex
         return Frame(start, stop, project, id, tags=tags,
                      updated_at=updated_at, message=message)
+
 
 watson.watson.Frames = Frames
 watson.frames.Frames = Frames
