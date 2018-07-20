@@ -43,7 +43,7 @@ class ComboBoxEdit(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
 
     def setFixedHeight(self, height):
-        """Qt method override."""
+        """Extend Qt method setFixedHeight."""
         self.linedit.setFixedHeight(height)
         self.combobox.setFixedHeight(height)
         super(ComboBoxEdit, self).setFixedHeight(height)
