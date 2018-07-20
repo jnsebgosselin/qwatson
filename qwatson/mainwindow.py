@@ -17,12 +17,14 @@ import click
 import arrow
 from PyQt5.QtCore import Qt, QModelIndex
 from PyQt5.QtWidgets import (QApplication, QGridLayout, QHBoxLayout,
-                             QSizePolicy, QWidget, QStackedWidget,
-                             QVBoxLayout)
+                             QLabel, QLineEdit, QSizePolicy, QWidget,
+                             QStackedWidget, QVBoxLayout)
 
 # ---- Local imports
 
 from qwatson.utils import icons
+from qwatson.managers.projects import ProjectManager
+from qwatson.widgets.tags import TagLineEdit
 from qwatson.watson.watsonextends import Watson
 from qwatson.watson.watsonhelpers import round_frame_at
 from qwatson.widgets.clock import ElapsedTimeLCDNumber
@@ -31,7 +33,6 @@ from qwatson.widgets.toolbar import (
     OnOffToolButton, QToolButtonSmall, DropDownToolButton)
 from qwatson import __namever__
 from qwatson.models.tablemodels import WatsonTableModel
-from qwatson.dialogs.activitydialog import ActivityInputDialog
 from qwatson.dialogs.datetimedialog import DateTimeInputDialog
 from qwatson.dialogs.importdialog import QWatsonImportMixin
 from qwatson.dialogs.closedialog import CloseDialog
@@ -91,7 +92,7 @@ class QWatson(QWidget, QWatsonImportMixin):
     def setup_activity_tracker(self):
         """Setup the widget used to start, track, and stop new activity."""
         timebar = self.setup_timebar()
-        self.activity_input_dial = self.setup_activity_input_dial()
+        managers = self.setup_watson_managers()
         statusbar = self.setup_statusbar()
 
         # ---- Setup the layout of the main widget
@@ -101,7 +102,7 @@ class QWatson(QWidget, QWatsonImportMixin):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         layout.addWidget(timebar)
-        layout.addWidget(self.activity_input_dial)
+        layout.addWidget(managers)
         layout.addWidget(statusbar)
         layout.setStretch(1, 100)
 
@@ -123,26 +124,46 @@ class QWatson(QWidget, QWatsonImportMixin):
         self.datetime_input_dial = DateTimeInputDialog(parent=self)
         self.datetime_input_dial.register_dialog_to(self)
 
-    def setup_activity_input_dial(self):
+    def setup_watson_managers(self):
         """
         Setup the embedded dialog to setup the current activity parameters.
         """
-        activity_input_dial = ActivityInputDialog()
-        activity_input_dial.set_background_color('light')
-        activity_input_dial.set_projects(self.client.projects)
+        self.project_manager = ProjectManager()
 
-        activity_input_dial.sig_project_removed.connect(self.project_removed)
-        activity_input_dial.sig_project_renamed.connect(self.project_renamed)
-        activity_input_dial.sig_project_added.connect(self.new_project_added)
-        activity_input_dial.sig_project_changed.connect(self.project_changed)
+        self.project_manager.sig_project_added.connect(self.new_project_added)
+        self.project_manager.sig_project_changed.connect(self.project_changed)
+        self.project_manager.sig_project_removed.connect(self.project_removed)
+        self.project_manager.sig_project_renamed.connect(self.project_renamed)
+        self.project_manager.set_projects(self.client.projects)
+
+        self.tag_manager = TagLineEdit()
+        self.tag_manager.setPlaceholderText("Tags (comma separated)")
+
+        self.comment_manager = QLineEdit()
+        self.comment_manager.setPlaceholderText("Comment")
+
+        # ---- Setup the layout
+
+        managers = ColoredFrame('light')
+
+        layout = QGridLayout(managers)
+        layout.setContentsMargins(5, 5, 5, 5)
+
+        layout.addWidget(self.project_manager, 0, 1)
+        layout.addWidget(self.tag_manager, 1, 1)
+        layout.addWidget(self.comment_manager, 2, 1)
+
+        layout.addWidget(QLabel('project :'), 0, 0)
+        layout.addWidget(QLabel('tags :'), 1, 0)
+        layout.addWidget(QLabel('comment :'), 2, 0)
 
         # Set current activity inputs to the last ones saved in the database.
         if len(self.client.frames) > 0:
-            activity_input_dial.set_current_project(self.client.frames[-1][2])
-            activity_input_dial.set_tags(self.client.frames[-1].tags)
-            activity_input_dial.set_comment(self.client.frames[-1].message)
+            self.project_manager.set_current_project(self.client.frames[-1][2])
+            self.tag_manager.set_tags(self.client.frames[-1].tags)
+            self.comment_manager.setText(self.client.frames[-1].message)
 
-        return activity_input_dial
+        return managers
 
     def setup_timebar(self):
         """
@@ -287,14 +308,14 @@ class QWatson(QWidget, QWatsonImportMixin):
                 self.datetime_input_dial.show()
         else:
             self.elap_timer.stop()
-            self.stop_watson(message=self.activity_input_dial.comment,
-                             project=self.activity_input_dial.project,
-                             tags=self.activity_input_dial.tags,
+            self.stop_watson(message=self.comment_manager.text(),
+                             project=self.project_manager.current_project,
+                             tags=self.tag_manager.tags,
                              round_to=ROUNDMIN[self.round_time_btn.text()])
 
     def start_watson(self, start_time=None):
         """Start monitoring a new activity with the Watson client."""
-        self.client.start(self.activity_input_dial.project)
+        self.client.start(self.project_manager.current_project)
         if start_time is not None:
             self.client._current['start'] = start_time
             self.elap_timer.start(start_time.timestamp)

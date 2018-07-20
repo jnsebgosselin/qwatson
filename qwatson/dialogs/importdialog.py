@@ -87,12 +87,12 @@ class QWatsonImportMixin(object):
         table model.
         """
         reset_watson(self.client)
-        self.activity_input_dial.set_projects(self.client.projects)
+        self.project_manager.set_projects(self.client.projects)
         if len(self.client.frames) > 0:
             lastframe = self.client.frames[-1]
-            self.activity_input_dial.set_current_project(lastframe.project)
-            self.activity_input_dial.set_tags(lastframe.tags)
-            self.activity_input_dial.set_comment(lastframe.message)
+            self.project_manager.set_current_project(lastframe.project)
+            self.tag_manager.set_tags(lastframe.tags)
+            self.comment_manager.setText(lastframe.message)
         self.model.modelReset.emit()
 
 
