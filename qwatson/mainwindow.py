@@ -257,9 +257,10 @@ class QWatson(QWidget, QWatsonImportMixin):
             self.client.rename_project(old_name, new_name)
             self.model.endResetModel()
 
-    def new_project_added(self, name):
+    def new_project_added(self, project):
         """Handle when a new project is added in the manager."""
-        pass
+        if project not in self.client.projects:
+            self.client.add_project(project)
 
     def project_removed(self, project):
         """

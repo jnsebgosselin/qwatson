@@ -98,6 +98,11 @@ class Watson(watson.watson.Watson):
     This an extension of the Watson class to support adding comments to Frame.
     """
 
+    def __init__(self, **kwargs):
+        super(Watson, self).__init__(**kwargs)
+        self._projects = None
+        self.projects_file = os.path.join(self._dir, 'projects')
+
     # ---- Watson override
 
     def save(self):
@@ -132,6 +137,10 @@ class Watson(watson.watson.Watson):
             if self._last_sync is not None:
                 safe_save(self.last_sync_file,
                           make_json_writer(self._format_date, self.last_sync))
+
+            if self._projects is not None:
+                safe_save(self.projects_file,
+                          make_json_writer(lambda: self.projects))
         except OSError as e:
             raise WatsonError(
                 "Impossible to write {}: {}".format(e.filename, e)
@@ -189,6 +198,35 @@ class Watson(watson.watson.Watson):
         return frame
 
     # ---- Watson extension
+
+    @property
+    def projects(self):
+        """
+        Get or set the list of all the existing projects. The project list
+        are returned sorted by name.
+        """
+        if self._projects is None:
+            self._projects = sorted(set(
+                [''] + list(self.frames['project']) +
+                self._load_json_file(self.projects_file, type=list)
+                ))
+        else:
+            self._projects = sorted(set(
+                [''] + list(self.frames['project']) + self._projects
+                ))
+
+        return self._projects
+
+    @projects.setter
+    def projects(self, projects):
+        self._projects = sorted(set(projects))
+
+    def add_project(self, project):
+        if project in self.projects:
+            raise ValueError('Project "%s" already exist' % project)
+
+        self._projects = self._projects = sorted(set(
+            [str(project)] + self._projects))
 
     def delete_project(self, project):
         """Delete the project and all related frames."""
