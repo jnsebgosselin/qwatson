@@ -197,7 +197,7 @@ class Watson(watson.watson.Watson):
 
         return frame
 
-    # ---- Watson extension
+    # ---- Watson project extension
 
     @property
     def projects(self):
@@ -211,9 +211,7 @@ class Watson(watson.watson.Watson):
                 self._load_json_file(self.projects_file, type=list)
                 ))
         else:
-            self._projects = sorted(set(
-                [''] + list(self.frames['project']) + self._projects
-                ))
+            self._projects = sorted(set([''] + self._projects))
 
         return self._projects
 
@@ -222,19 +220,27 @@ class Watson(watson.watson.Watson):
         self._projects = sorted(set(projects))
 
     def add_project(self, project):
+        """Add project to the database."""
         if project in self.projects:
             raise ValueError('Project "%s" already exist' % project)
+        self._projects.append(str(project))
+        self.save()
 
-        self._projects = self._projects = sorted(set(
-            [str(project)] + self._projects))
+    def rename_project(self, old_name, new_name):
+        """Extend Watson method."""
+        super(Watson, self).rename_project(old_name, new_name)
+        self._projects.remove(old_name)
+        self._projects.append(new_name)
+        self.save()
 
     def delete_project(self, project):
         """Delete the project and all related frames."""
         if project not in self.projects:
             raise ValueError('Project "%s" does not exist' % project)
 
-        for frame in self.frames:
+        for frame in reversed(self.frames):
             if frame.project == project:
                 del self.frames[frame.id]
 
+        self._projects.remove(project)
         self.save()
