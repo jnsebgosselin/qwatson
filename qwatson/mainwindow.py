@@ -27,10 +27,10 @@ from PyQt5.QtWidgets import (QApplication, QGridLayout, QHBoxLayout,
 # ---- Local imports
 
 from qwatson.utils import icons
-from qwatson.managers.projects import ProjectManager
 from qwatson.widgets.tags import TagLineEdit
 from qwatson.watson.watsonextends import Watson
 from qwatson.watson.watsonhelpers import round_frame_at, reset_watson
+from qwatson.widgets.projects import ProjectManager
 from qwatson.widgets.clock import ElapsedTimeLCDNumber
 from qwatson.widgets.tableviews import WatsonOverviewWidget
 from qwatson.widgets.toolbar import (
