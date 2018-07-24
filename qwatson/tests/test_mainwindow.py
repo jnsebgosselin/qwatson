@@ -54,7 +54,7 @@ def test_mainwindow_init(qtbot):
 
     # Check the default values.
 
-    assert qwatson.project_manager.current_project == ''
+    assert qwatson.currentProject() == ''
     assert qwatson.tag_manager.tags == []
     assert qwatson.comment_manager.text() == ''
     assert qwatson.round_time_btn.text() == 'round to 5min'
@@ -92,7 +92,7 @@ def test_add_first_project(qtbot, mocker):
     qtbot.mouseClick(qwatson.project_manager.btn_add, Qt.LeftButton)
     qtbot.keyClicks(qwatson.project_manager.project_cbox.linedit, 'project1')
     qtbot.keyPress(qwatson.project_manager.project_cbox.linedit, Qt.Key_Enter)
-    assert qwatson.project_manager.current_project == 'project1'
+    assert qwatson.currentProject() == 'project1'
 
     # ---- Add first activity
 
@@ -132,7 +132,7 @@ def test_load_config(qtbot, mocker):
     assert len(qwatson.client.frames) == 1
     qwatson.show()
 
-    assert qwatson.project_manager.current_project == 'project1'
+    assert qwatson.currentProject() == 'project1'
     assert qwatson.tag_manager.tags == ['tag1', 'tag2', 'tag3']
     assert qwatson.comment_manager.text() == 'First activity'
     assert qwatson.round_time_btn.text() == 'round to 5min'
@@ -156,7 +156,7 @@ def test_rename_project(qtbot, mocker):
     assert not project_manager.project_cbox.linedit.isVisible()
     assert project_manager.project_cbox.combobox.isVisible()
 
-    assert project_manager.current_project == 'project1'
+    assert qwatson.currentProject() == 'project1'
     assert qwatson.client.frames[0].project == 'project1'
 
     # Enter edit mode and change the project name.
@@ -171,7 +171,7 @@ def test_rename_project(qtbot, mocker):
     assert not project_manager.project_cbox.linedit.isVisible()
     assert project_manager.project_cbox.combobox.isVisible()
 
-    assert project_manager.current_project == 'project1_renamed'
+    assert qwatson.currentProject() == 'project1_renamed'
     assert qwatson.client.frames[0].project == 'project1_renamed'
 
     # Cancel the renaming of a project by pressing Escape
@@ -185,7 +185,7 @@ def test_rename_project(qtbot, mocker):
     assert not project_manager.project_cbox.linedit.isVisible()
     assert project_manager.project_cbox.combobox.isVisible()
 
-    assert project_manager.current_project == 'project1_renamed'
+    assert qwatson.currentProject() == 'project1_renamed'
     assert qwatson.client.frames[0].project == 'project1_renamed'
 
     qwatson.close()
@@ -435,7 +435,7 @@ def test_cancel_import_from_watson(qtbot, mocker):
     assert qwatson.import_dialog is None
 
     assert len(qwatson.client.frames) == 0
-    assert qwatson.project_manager.current_project == ''
+    assert qwatson.currentProject() == ''
     assert qwatson.comment_manager.text() == ''
     assert qwatson.tag_manager.tags == []
 
@@ -467,12 +467,12 @@ def test_import_from_watson_noshow(qtbot, mocker):
     assert len(qwatson.client.frames) == 0
     assert table.view.proxy_model.get_accepted_row_count() == 0
 
-    assert qwatson.project_manager.current_project == ''
+    assert qwatson.currentProject() == ''
     assert qwatson.comment_manager.text() == ''
     assert qwatson.tag_manager.tags == []
 
 
-def test_accept_import_from_watson_cancel(qtbot, mocker):
+def test_accept_import_from_watson(qtbot, mocker):
     """
     Test that the dialog to import settings and data from Watson the first
     time QWatson is started is working as expected when the import is
@@ -508,7 +508,7 @@ def test_accept_import_from_watson_cancel(qtbot, mocker):
     assert len(qwatson.client.frames) == 5
     assert table.view.proxy_model.get_accepted_row_count() == 5
 
-    assert qwatson.project_manager.current_project == 'project1_renamed'
+    assert qwatson.currentProject() == 'project1_renamed'
     assert qwatson.comment_manager.text() == 'First activity'
     assert qwatson.tag_manager.tags == ['tag1', 'tag2', 'tag3']
 
@@ -546,7 +546,7 @@ def test_last_closed_error(qtbot, mocker):
     assert frame.start.format('YYYY-MM-DD HH:mm') == '2018-06-14 17:15'
     assert frame.stop.format('YYYY-MM-DD HH:mm') == '2018-06-14 19:45'
 
-    assert qwatson.project_manager.current_project == 'test_error'
+    assert qwatson.currentProject() == 'test_error'
     assert frame.project == 'test_error'
 
     assert qwatson.tag_manager.tags == ['error']

@@ -22,7 +22,7 @@ import arrow
 from PyQt5.QtCore import Qt, QModelIndex
 from PyQt5.QtWidgets import (QApplication, QGridLayout, QHBoxLayout,
                              QLabel, QLineEdit, QSizePolicy, QWidget,
-                             QStackedWidget, QVBoxLayout)
+                             QStackedWidget, QVBoxLayout, QMessageBox)
 
 # ---- Local imports
 
@@ -45,7 +45,74 @@ STARTFROM = {'start from now': 'now', 'start from last': 'last',
              'start from other': 'other'}
 
 
-class QWatson(QWidget, QWatsonImportMixin):
+class QWatsonProjectMixin(object):
+    """
+    A mixin for the main QWatson class with the necessary methods to handle
+    the management of watson projects.
+    """
+
+    def setup_project_manager(self):
+        """Setup the widget to manage projects in QWatson."""
+        self.project_manager = ProjectManager(self.client)
+
+        self.project_manager.sig_rename_project.connect(self.rename_project)
+        self.project_manager.sig_add_project.connect(self.add_new_project)
+        self.project_manager.sig_del_project.connect(self.del_project)
+        self.project_manager.sig_project_changed.connect(self.project_changed)
+
+        return self.project_manager
+
+    def currentProject(self):
+        """Return the currently selected project in the project manager."""
+        return self.project_manager.currentProject()
+
+    # ---- Handlers
+
+    def project_changed(self, index):
+        """Handle when the project selection change in the manager."""
+        self.btn_startstop.setEnabled(index != -1)
+
+    def rename_project(self, old_name, new_name):
+        """Rename the project with the new provided name."""
+        if old_name != new_name and old_name in self.client.projects:
+            self.model.beginResetModel()
+            self.project_manager.model.beginResetModel()
+            self.client.rename_project(old_name, new_name)
+            self.model.endResetModel()
+            self.project_manager.model.endResetModel()
+        self.project_manager.setCurrentProject(new_name)
+
+    def add_new_project(self, project):
+        """Add the new project to the database."""
+        if project not in self.client.projects:
+            self.project_manager.model.beginResetModel()
+            self.client.add_project(project)
+            self.project_manager.model.endResetModel()
+        self.project_manager.setCurrentProject(project)
+
+    def del_project(self, project):
+        """
+        Ask for confirmation to delete the corresponding project from the
+        database and update the model.
+        """
+        msg = ("Are you sure that you want to delete project %s and all "
+               " related frames?<br><br>All data will be lost."
+               ) % project
+        ans = QMessageBox.question(self, 'Delete project', msg,
+                                   defaultButton=QMessageBox.No)
+
+        if ans == QMessageBox.Yes and project in self.client.projects:
+            index = self.project_manager.currentProjectIndex()
+
+            self.model.beginResetModel()
+            self.project_manager.model.beginResetModel()
+            self.client.delete_project(project)
+            self.model.endResetModel()
+            self.project_manager.model.endResetModel()
+
+            index = min(index, len(self.client.projects)-1)
+            self.project_manager.setCurrentProjectIndex(index)
+
 
 class QWatsonImportMixin(object):
     """
@@ -115,6 +182,7 @@ class QWatsonImportMixin(object):
             self.comment_manager.setText(lastframe.message)
 
 
+class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin):
 
     def __init__(self, config_dir=None, parent=None):
         super(QWatson, self).__init__(parent)
@@ -199,13 +267,7 @@ class QWatsonImportMixin(object):
         """
         Setup the embedded dialog to setup the current activity parameters.
         """
-        self.project_manager = ProjectManager()
-
-        self.project_manager.sig_project_added.connect(self.new_project_added)
-        self.project_manager.sig_project_changed.connect(self.project_changed)
-        self.project_manager.sig_project_removed.connect(self.project_removed)
-        self.project_manager.sig_project_renamed.connect(self.project_renamed)
-        self.project_manager.set_projects(self.client.projects)
+        project_manager = self.setup_project_manager()
 
         self.tag_manager = TagLineEdit()
         self.tag_manager.setPlaceholderText("Tags (comma separated)")
@@ -220,7 +282,7 @@ class QWatsonImportMixin(object):
         layout = QGridLayout(managers)
         layout.setContentsMargins(5, 5, 5, 5)
 
-        layout.addWidget(self.project_manager, 0, 1)
+        layout.addWidget(project_manager, 0, 1)
         layout.addWidget(self.tag_manager, 1, 1)
         layout.addWidget(self.comment_manager, 2, 1)
 
@@ -230,7 +292,7 @@ class QWatsonImportMixin(object):
 
         # Set current activity inputs to the last ones saved in the database.
         if len(self.client.frames) > 0:
-            self.project_manager.set_current_project(self.client.frames[-1][2])
+            project_manager.setCurrentProject(self.client.frames[-1][2])
             self.tag_manager.set_tags(self.client.frames[-1].tags)
             self.comment_manager.setText(self.client.frames[-1].message)
 
@@ -336,34 +398,6 @@ class QWatsonImportMixin(object):
         """Set the current index of the stackwidget."""
         self.stackwidget.setCurrentIndex(index)
 
-    # ---- Project handlers
-
-    def project_changed(self, index):
-        """Handle when the project selection change in the manager."""
-        self.btn_startstop.setEnabled(index != -1)
-
-    def project_renamed(self, old_name, new_name):
-        """Handle when a project is renamed in the manager."""
-        if old_name != new_name:
-            self.model.beginResetModel()
-            self.client.rename_project(old_name, new_name)
-            self.model.endResetModel()
-
-    def new_project_added(self, project):
-        """Handle when a new project is added in the manager."""
-        if project not in self.client.projects:
-            self.client.add_project(project)
-
-    def project_removed(self, project):
-        """
-        Handle when a project is removed from the manager by removing
-        the corresponding project from the database and updating the model.
-        """
-        if project in self.client.projects:
-            self.model.beginResetModel()
-            self.client.delete_project(project)
-            self.model.endResetModel()
-
     # ---- Toolbar handlers
 
     def btn_startstop_isclicked(self):
@@ -380,13 +414,13 @@ class QWatsonImportMixin(object):
         else:
             self.elap_timer.stop()
             self.stop_watson(message=self.comment_manager.text(),
-                             project=self.project_manager.current_project,
+                             project=self.currentProject(),
                              tags=self.tag_manager.tags,
                              round_to=ROUNDMIN[self.round_time_btn.text()])
 
     def start_watson(self, start_time=None):
         """Start monitoring a new activity with the Watson client."""
-        self.client.start(self.project_manager.current_project)
+        self.client.start(self.currentProject())
         if start_time is not None:
             self.client._current['start'] = start_time
             self.elap_timer.start(start_time.timestamp)
