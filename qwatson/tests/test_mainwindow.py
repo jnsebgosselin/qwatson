@@ -38,7 +38,7 @@ def test_mainwindow_init(qtbot):
     Test that the QWatson main widget and avtivity overview widgets are
     started correctly.
     """
-    delete_folder_recursively(APPDIR, delroot=False)
+    delete_folder_recursively(APPDIR, delroot=True)
 
     qwatson = QWatson(APPDIR)
     qtbot.addWidget(qwatson)
@@ -411,7 +411,7 @@ def test_cancel_import_from_watson(qtbot, mocker):
     now = local_arrow_from_tuple((2018, 6, 14, 19, 36, 23))
     mocker.patch('arrow.now', return_value=now)
 
-    delete_folder_recursively(APPDIR2, delroot=False)
+    delete_folder_recursively(APPDIR2, delroot=True)
     os.environ['WATSON_DIR'] = APPDIR
 
     qwatson = QWatson(APPDIR2)
@@ -481,7 +481,7 @@ def test_accept_import_from_watson(qtbot, mocker):
     now = local_arrow_from_tuple((2018, 6, 14, 19, 36, 23))
     mocker.patch('arrow.now', return_value=now)
 
-    delete_folder_recursively(APPDIR2, delroot=False)
+    delete_folder_recursively(APPDIR2, delroot=True)
     os.environ['WATSON_DIR'] = APPDIR
 
     qwatson = QWatson(APPDIR2)
