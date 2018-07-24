@@ -8,7 +8,8 @@
 
 import os
 import watson
-from watson.watson import WatsonError, make_json_writer, safe_save, arrow
+from watson.watson import (WatsonError, make_json_writer, safe_save, arrow,
+                           deduplicate)
 from watson.frames import uuid, namedtuple
 
 
@@ -98,6 +99,11 @@ class Watson(watson.watson.Watson):
     This an extension of the Watson class to support adding comments to Frame.
     """
 
+    def __init__(self, **kwargs):
+        super(Watson, self).__init__(**kwargs)
+        self._projects = None
+        self.projects_file = os.path.join(self._dir, 'projects')
+
     # ---- Watson override
 
     def save(self):
@@ -132,6 +138,10 @@ class Watson(watson.watson.Watson):
             if self._last_sync is not None:
                 safe_save(self.last_sync_file,
                           make_json_writer(self._format_date, self.last_sync))
+
+            if self._projects is not None:
+                safe_save(self.projects_file,
+                          make_json_writer(lambda: self.projects))
         except OSError as e:
             raise WatsonError(
                 "Impossible to write {}: {}".format(e.filename, e)
@@ -172,6 +182,26 @@ class Watson(watson.watson.Watson):
         if self._old_state is None:
             self._old_state = self._current
 
+    def start(self, project, tags=None, restart=False):
+        """
+        Override the Watson start method to support starting an activity
+        without specifying a project first.
+        """
+        project = '' if project is None else project
+        if self.is_started:
+            raise WatsonError(
+                u"Project {} is already started.".format(
+                    self.current['project']
+                )
+            )
+
+        default_tags = self.config.getlist('default_tags', project)
+        if not restart:
+            tags = (tags or []) + default_tags
+
+        self.current = {'project': project, 'tags': deduplicate(tags)}
+        return self.current
+
     def stop(self):
         """
         Override of Watson stop method to support adding comment to frame.
@@ -188,15 +218,50 @@ class Watson(watson.watson.Watson):
 
         return frame
 
-    # ---- Watson extension
+    # ---- Watson project extension
+
+    @property
+    def projects(self):
+        """
+        Get or set the list of all the existing projects. The project list
+        are returned sorted by name.
+        """
+        if self._projects is None:
+            self._projects = sorted(set(
+                [''] + list(self.frames['project']) +
+                self._load_json_file(self.projects_file, type=list)
+                ))
+        else:
+            self._projects = sorted(set([''] + self._projects))
+
+        return self._projects
+
+    @projects.setter
+    def projects(self, projects):
+        self._projects = sorted(set(projects))
+
+    def add_project(self, project):
+        """Add project to the database."""
+        if project in self.projects:
+            raise ValueError('Project "%s" already exist' % project)
+        self._projects.append(str(project))
+        self.save()
+
+    def rename_project(self, old_name, new_name):
+        """Extend Watson method."""
+        super(Watson, self).rename_project(old_name, new_name)
+        self._projects.remove(old_name)
+        self._projects.append(new_name)
+        self.save()
 
     def delete_project(self, project):
         """Delete the project and all related frames."""
         if project not in self.projects:
             raise ValueError('Project "%s" does not exist' % project)
 
-        for frame in self.frames:
+        for frame in reversed(self.frames):
             if frame.project == project:
                 del self.frames[frame.id]
 
+        self._projects.remove(project)
         self.save()

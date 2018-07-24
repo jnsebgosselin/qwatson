@@ -38,29 +38,29 @@ def test_mainwindow_init(qtbot):
     Test that the QWatson main widget and avtivity overview widgets are
     started correctly.
     """
-    delete_folder_recursively(APPDIR)
+    delete_folder_recursively(APPDIR, delroot=True)
 
-    mainwindow = QWatson(APPDIR)
-    qtbot.addWidget(mainwindow)
-    qtbot.addWidget(mainwindow.overview_widg)
-    mainwindow.show()
+    qwatson = QWatson(APPDIR)
+    qtbot.addWidget(qwatson)
+    qtbot.addWidget(qwatson.overview_widg)
+    qwatson.show()
+    qtbot.waitForWindowShown(qwatson)
 
-    assert mainwindow
-    assert mainwindow.client.frames_file == osp.join(APPDIR, 'frames')
+    assert qwatson
+    assert qwatson.client.frames_file == osp.join(APPDIR, 'frames')
 
-    qtbot.mouseClick(mainwindow.btn_report, Qt.LeftButton)
-    assert mainwindow.overview_widg.isVisible()
+    qtbot.mouseClick(qwatson.btn_report, Qt.LeftButton)
+    qtbot.waitForWindowShown(qwatson.overview_widg)
 
-    # Check default values
+    # Check the default values.
 
-    activity_input_dial = mainwindow.activity_input_dial
-    assert activity_input_dial.project == ''
-    assert activity_input_dial.tags == []
-    assert activity_input_dial.comment == ''
-    assert mainwindow.round_time_btn.text() == 'round to 5min'
-    assert mainwindow.start_from.text() == 'start from now'
+    assert qwatson.currentProject() == ''
+    assert qwatson.tag_manager.tags == []
+    assert qwatson.comment_manager.text() == ''
+    assert qwatson.round_time_btn.text() == 'round to 5min'
+    assert qwatson.start_from.text() == 'start from now'
 
-    mainwindow.close()
+    qwatson.close()
 
 
 def test_add_first_project(qtbot, mocker):
@@ -68,63 +68,58 @@ def test_add_first_project(qtbot, mocker):
     Test adding a new project and starting/stopping the timer to add an
     activity to the database for the first time.
     """
-    mainwindow = QWatson(APPDIR)
-    qtbot.addWidget(mainwindow)
-    mainwindow.show()
-    qtbot.waitForWindowShown(mainwindow)
-
-    activity_input_dial = mainwindow.activity_input_dial
+    qwatson = QWatson(APPDIR)
+    qtbot.addWidget(qwatson)
+    qwatson.show()
+    qtbot.waitForWindowShown(qwatson)
 
     # ---- Setup the activity input dialog
 
     # Setup the tags
 
-    qtbot.keyClicks(activity_input_dial.tag_lineedit, 'tag1, tag2, tag3')
-    qtbot.keyPress(activity_input_dial.tag_lineedit, Qt.Key_Enter)
-    assert activity_input_dial.tags == ['tag1', 'tag2', 'tag3']
+    qtbot.keyClicks(qwatson.tag_manager, 'tag1, tag2, tag3')
+    qtbot.keyPress(qwatson.tag_manager, Qt.Key_Enter)
+    assert qwatson.tag_manager.tags == ['tag1', 'tag2', 'tag3']
 
     # Setup the comment
 
-    qtbot.keyClicks(activity_input_dial.msg_textedit, 'First activity')
-    qtbot.keyPress(activity_input_dial.msg_textedit, Qt.Key_Enter)
-    assert activity_input_dial.comment == 'First activity'
+    qtbot.keyClicks(qwatson.comment_manager, 'First activity')
+    qtbot.keyPress(qwatson.comment_manager, Qt.Key_Enter)
+    assert qwatson.comment_manager.text() == 'First activity'
 
     # Add a new project
 
-    qtbot.mouseClick(
-        activity_input_dial.project_manager.btn_add, Qt.LeftButton)
-    qtbot.keyClicks(
-        activity_input_dial.project_manager.project_cbox.linedit, 'project1')
-    qtbot.keyPress(
-        activity_input_dial.project_manager.project_cbox.linedit, Qt.Key_Enter)
-    assert activity_input_dial.project == 'project1'
+    qtbot.mouseClick(qwatson.project_manager.btn_add, Qt.LeftButton)
+    qtbot.keyClicks(qwatson.project_manager.project_cbox.linedit, 'project1')
+    qtbot.keyPress(qwatson.project_manager.project_cbox.linedit, Qt.Key_Enter)
+    assert qwatson.currentProject() == 'project1'
 
     # ---- Add first activity
 
-    assert len(mainwindow.client.frames) == 0
+    assert len(qwatson.client.frames) == 0
 
     # Start the activity timer
     start = local_arrow_from_tuple((2018, 6, 14, 15, 59, 54))
     mocker.patch('arrow.now', return_value=start)
-    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
-    assert mainwindow.elap_timer.is_started
+    qtbot.mouseClick(qwatson.btn_startstop, Qt.LeftButton)
+    assert qwatson.elap_timer.is_started
 
     # Stop the activity timer
     stop = local_arrow_from_tuple((2018, 6, 14, 17, 12, 35))
     mocker.patch('arrow.now', return_value=stop)
-    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
-    assert not mainwindow.elap_timer.is_started
+    qtbot.mouseClick(qwatson.btn_startstop, Qt.LeftButton)
+    assert not qwatson.elap_timer.is_started
 
     # Assert frame logged data
-    assert len(mainwindow.client.frames) == 1
-    frame = mainwindow.client.frames[0]
+    assert len(qwatson.client.frames) == 1
+    frame = qwatson.client.frames[0]
     assert frame.start.format('YYYY-MM-DD HH:mm') == '2018-06-14 16:00'
     assert frame.stop.format('YYYY-MM-DD HH:mm') == '2018-06-14 17:15'
     assert frame.tags == ['tag1', 'tag2', 'tag3']
     assert frame.message == 'First activity'
     assert frame.project == 'project1'
 
-    mainwindow.close()
+    qwatson.close()
 
 
 def test_load_config(qtbot, mocker):
@@ -132,25 +127,24 @@ def test_load_config(qtbot, mocker):
     Test that the activity fields are set correctly when starting QWatson and
     a frames file already exists.
     """
-    mainwindow = QWatson(APPDIR)
-    qtbot.addWidget(mainwindow)
-    assert len(mainwindow.client.frames) == 1
-    mainwindow.show()
+    qwatson = QWatson(APPDIR)
+    qtbot.addWidget(qwatson)
+    assert len(qwatson.client.frames) == 1
+    qwatson.show()
 
-    activity_input_dial = mainwindow.activity_input_dial
-    assert activity_input_dial.project == 'project1'
-    assert activity_input_dial.tags == ['tag1', 'tag2', 'tag3']
-    assert activity_input_dial.comment == 'First activity'
-    assert mainwindow.round_time_btn.text() == 'round to 5min'
-    mainwindow.close()
+    assert qwatson.currentProject() == 'project1'
+    assert qwatson.tag_manager.tags == ['tag1', 'tag2', 'tag3']
+    assert qwatson.comment_manager.text() == 'First activity'
+    assert qwatson.round_time_btn.text() == 'round to 5min'
+    qwatson.close()
 
 
 def test_rename_project(qtbot, mocker):
     """Test that renaming a project works as expected."""
-    mainwindow = QWatson(APPDIR)
-    qtbot.addWidget(mainwindow)
-    mainwindow.show()
-    project_manager = mainwindow.activity_input_dial.project_manager
+    qwatson = QWatson(APPDIR)
+    qtbot.addWidget(qwatson)
+    qwatson.show()
+    project_manager = qwatson.project_manager
 
     # Enter edit mode, but do not change the project name.
 
@@ -162,8 +156,8 @@ def test_rename_project(qtbot, mocker):
     assert not project_manager.project_cbox.linedit.isVisible()
     assert project_manager.project_cbox.combobox.isVisible()
 
-    assert mainwindow.activity_input_dial.project == 'project1'
-    assert mainwindow.client.frames[0].project == 'project1'
+    assert qwatson.currentProject() == 'project1'
+    assert qwatson.client.frames[0].project == 'project1'
 
     # Enter edit mode and change the project name.
 
@@ -177,8 +171,8 @@ def test_rename_project(qtbot, mocker):
     assert not project_manager.project_cbox.linedit.isVisible()
     assert project_manager.project_cbox.combobox.isVisible()
 
-    assert mainwindow.activity_input_dial.project == 'project1_renamed'
-    assert mainwindow.client.frames[0].project == 'project1_renamed'
+    assert qwatson.currentProject() == 'project1_renamed'
+    assert qwatson.client.frames[0].project == 'project1_renamed'
 
     # Cancel the renaming of a project by pressing Escape
 
@@ -191,10 +185,10 @@ def test_rename_project(qtbot, mocker):
     assert not project_manager.project_cbox.linedit.isVisible()
     assert project_manager.project_cbox.combobox.isVisible()
 
-    assert mainwindow.activity_input_dial.project == 'project1_renamed'
-    assert mainwindow.client.frames[0].project == 'project1_renamed'
+    assert qwatson.currentProject() == 'project1_renamed'
+    assert qwatson.client.frames[0].project == 'project1_renamed'
 
-    mainwindow.close()
+    qwatson.close()
 
 
 def test_start_from_last_when_later_than_now(qtbot, mocker):
@@ -417,36 +411,36 @@ def test_cancel_import_from_watson(qtbot, mocker):
     now = local_arrow_from_tuple((2018, 6, 14, 19, 36, 23))
     mocker.patch('arrow.now', return_value=now)
 
-    delete_folder_recursively(APPDIR2)
+    delete_folder_recursively(APPDIR2, delroot=True)
     os.environ['WATSON_DIR'] = APPDIR
 
-    mainwindow = QWatson(APPDIR2)
-    qtbot.addWidget(mainwindow)
-    mainwindow.show()
-    qtbot.waitForWindowShown(mainwindow)
+    qwatson = QWatson(APPDIR2)
+    qtbot.addWidget(qwatson)
+    qwatson.show()
+    qtbot.waitForWindowShown(qwatson)
 
     # Assert that the import dialog it shown on first start.
 
-    assert mainwindow.import_dialog is not None
-    assert mainwindow.import_dialog.isVisible()
+    assert qwatson.import_dialog is not None
+    assert qwatson.import_dialog.isVisible()
 
     # Answer Cancel in the import dialog and assert that the frames and that
     # the activity input dialog is empty.
 
-    with qtbot.waitSignal(mainwindow.import_dialog.destroyed):
-        qtbot.mouseClick(mainwindow.import_dialog.buttons['Cancel'],
+    with qtbot.waitSignal(qwatson.import_dialog.destroyed):
+        qtbot.mouseClick(qwatson.import_dialog.buttons['Cancel'],
                          Qt.LeftButton)
 
-    assert mainwindow.currentIndex() == 0
-    assert mainwindow.import_dialog is None
+    assert qwatson.currentIndex() == 0
+    assert qwatson.import_dialog is None
 
-    assert len(mainwindow.client.frames) == 0
-    assert mainwindow.activity_input_dial.project == ''
-    assert mainwindow.activity_input_dial.comment == ''
-    assert mainwindow.activity_input_dial.tags == []
+    assert len(qwatson.client.frames) == 0
+    assert qwatson.currentProject() == ''
+    assert qwatson.comment_manager.text() == ''
+    assert qwatson.tag_manager.tags == []
 
-    assert osp.exists(mainwindow.client.frames_file)
-    mainwindow.close()
+    assert osp.exists(qwatson.client.frames_file)
+    qwatson.close()
 
 
 def test_import_from_watson_noshow(qtbot, mocker):
@@ -459,26 +453,26 @@ def test_import_from_watson_noshow(qtbot, mocker):
 
     os.environ['WATSON_DIR'] = APPDIR
 
-    mainwindow = QWatson(APPDIR2)
-    qtbot.addWidget(mainwindow)
-    mainwindow.show()
-    qtbot.waitForWindowShown(mainwindow)
+    qwatson = QWatson(APPDIR2)
+    qtbot.addWidget(qwatson)
+    qwatson.show()
+    qtbot.waitForWindowShown(qwatson)
 
     # Assert that the import from Watson dialog is not shown on the second run.
 
-    assert mainwindow.import_dialog is None
-    assert mainwindow.currentIndex() == 0
+    assert qwatson.import_dialog is None
+    assert qwatson.currentIndex() == 0
 
-    table = mainwindow.overview_widg.table_widg.tables[3]
-    assert len(mainwindow.client.frames) == 0
+    table = qwatson.overview_widg.table_widg.tables[3]
+    assert len(qwatson.client.frames) == 0
     assert table.view.proxy_model.get_accepted_row_count() == 0
 
-    assert mainwindow.activity_input_dial.project == ''
-    assert mainwindow.activity_input_dial.comment == ''
-    assert mainwindow.activity_input_dial.tags == []
+    assert qwatson.currentProject() == ''
+    assert qwatson.comment_manager.text() == ''
+    assert qwatson.tag_manager.tags == []
 
 
-def test_accept_import_from_watson_cancel(qtbot, mocker):
+def test_accept_import_from_watson(qtbot, mocker):
     """
     Test that the dialog to import settings and data from Watson the first
     time QWatson is started is working as expected when the import is
@@ -487,38 +481,38 @@ def test_accept_import_from_watson_cancel(qtbot, mocker):
     now = local_arrow_from_tuple((2018, 6, 14, 19, 36, 23))
     mocker.patch('arrow.now', return_value=now)
 
-    delete_folder_recursively(APPDIR2)
+    delete_folder_recursively(APPDIR2, delroot=True)
     os.environ['WATSON_DIR'] = APPDIR
 
-    mainwindow = QWatson(APPDIR2)
-    qtbot.addWidget(mainwindow)
-    mainwindow.show()
-    qtbot.waitForWindowShown(mainwindow)
+    qwatson = QWatson(APPDIR2)
+    qtbot.addWidget(qwatson)
+    qwatson.show()
+    qtbot.waitForWindowShown(qwatson)
 
     # Assert that the import dialog it shown.
 
-    assert mainwindow.import_dialog is not None
-    assert mainwindow.import_dialog.isVisible()
+    assert qwatson.import_dialog is not None
+    assert qwatson.import_dialog.isVisible()
 
     # Answer Import in the import dialog and assert that the frames and that
     # the activity input dialog data.
 
-    with qtbot.waitSignal(mainwindow.import_dialog.destroyed):
-        qtbot.mouseClick(mainwindow.import_dialog.buttons['Import'],
+    with qtbot.waitSignal(qwatson.import_dialog.destroyed):
+        qtbot.mouseClick(qwatson.import_dialog.buttons['Import'],
                          Qt.LeftButton)
 
-    assert mainwindow.import_dialog is None
-    assert mainwindow.currentIndex() == 0
+    assert qwatson.import_dialog is None
+    assert qwatson.currentIndex() == 0
 
-    table = mainwindow.overview_widg.table_widg.tables[3]
-    assert len(mainwindow.client.frames) == 5
+    table = qwatson.overview_widg.table_widg.tables[3]
+    assert len(qwatson.client.frames) == 5
     assert table.view.proxy_model.get_accepted_row_count() == 5
 
-    assert mainwindow.activity_input_dial.project == 'project1_renamed'
-    assert mainwindow.activity_input_dial.comment == 'First activity'
-    assert mainwindow.activity_input_dial.tags == ['tag1', 'tag2', 'tag3']
+    assert qwatson.currentProject() == 'project1_renamed'
+    assert qwatson.comment_manager.text() == 'First activity'
+    assert qwatson.tag_manager.tags == ['tag1', 'tag2', 'tag3']
 
-    mainwindow.close()
+    qwatson.close()
 
 
 def test_last_closed_error(qtbot, mocker):
@@ -544,22 +538,22 @@ def test_last_closed_error(qtbot, mocker):
     # Open QWatson and assert an error frame is added correctly to
     # the database
 
-    mainwindow = QWatson(APPDIR2)
-    qtbot.addWidget(mainwindow)
-    mainwindow.show()
+    qwatson = QWatson(APPDIR2)
+    qtbot.addWidget(qwatson)
+    qwatson.show()
 
-    frame = mainwindow.client.frames[-1]
+    frame = qwatson.client.frames[-1]
     assert frame.start.format('YYYY-MM-DD HH:mm') == '2018-06-14 17:15'
     assert frame.stop.format('YYYY-MM-DD HH:mm') == '2018-06-14 19:45'
 
-    assert mainwindow.activity_input_dial.project == 'test_error'
+    assert qwatson.currentProject() == 'test_error'
     assert frame.project == 'test_error'
 
-    assert mainwindow.activity_input_dial.tags == ['error']
+    assert qwatson.tag_manager.tags == ['error']
     assert frame.tags == ['error']
 
     expected_comment = "last session not closed correctly."
-    assert mainwindow.activity_input_dial.comment == expected_comment
+    assert qwatson.comment_manager.text() == expected_comment
     assert frame.message == expected_comment
 
 

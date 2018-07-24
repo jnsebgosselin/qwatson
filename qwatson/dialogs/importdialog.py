@@ -9,14 +9,9 @@
 # ---- Standard imports
 
 import sys
-import os
-import os.path as osp
-import shutil
-import json
 
 # ---- Third party imports
 
-import click
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QPushButton
 
@@ -24,76 +19,7 @@ from PyQt5.QtWidgets import QApplication, QVBoxLayout, QPushButton
 
 from qwatson.dialogs.basedialog import BaseDialog
 from qwatson.utils import icons
-from qwatson.watson.watsonhelpers import reset_watson
 from qwatson.widgets.layout import InfoBox
-
-
-class QWatsonImportMixin(object):
-    """
-    A mixin for the main QWatson class with the necessary methods to handle
-    the import of config and data files from the watson application folder
-    to that of QWatson.
-    """
-
-    def setup_import_dialog(self):
-        """
-        Setup a dialog to import data from the watson application folder
-        to that of QWatson the first time QWatson is started.
-        """
-        if not osp.exists(self.client.frames_file):
-            watson_frames_exists = osp.exists(osp.join(
-                os.environ.get('WATSON_DIR') or click.get_app_dir('watson'),
-                'frames'))
-            if watson_frames_exists:
-                self.import_dialog = ImportDialog(main=self, parent=self)
-                self.import_dialog.show()
-            else:
-                self.create_empty_frames_file()
-        else:
-            self.import_dialog = None
-
-    def import_data_from_watson(self):
-        """
-        Copy the relevant resources files from the watson application folder
-        to that of QWatson.
-        """
-        if not osp.exists(self.client._dir):
-            os.makedirs(self.client._dir)
-
-        filenames = ['frames', 'frames.bak', 'last_sync', 'state', 'state.bak']
-        watson_dir = (os.environ.get('WATSON_DIR') or
-                      click.get_app_dir('watson'))
-        for filename in filenames:
-            if osp.exists(osp.join(watson_dir, filename)):
-                shutil.copyfile(osp.join(watson_dir, filename),
-                                osp.join(self.client._dir, filename))
-        self.reset_model_and_gui()
-
-    def create_empty_frames_file(self):
-        """
-        Create an empty frame file to indicate that QWatson have been
-        started at least one time.
-        """
-        if not osp.exists(self.client._dir):
-            os.makedirs(self.client._dir)
-
-        content = json.dumps({})
-        with open(self.client.frames_file, 'w') as f:
-            f.write(content)
-
-    def reset_model_and_gui(self):
-        """
-        Force a reset of the watson client and a refresh of the gui and
-        table model.
-        """
-        reset_watson(self.client)
-        self.activity_input_dial.set_projects(self.client.projects)
-        if len(self.client.frames) > 0:
-            lastframe = self.client.frames[-1]
-            self.activity_input_dial.set_current_project(lastframe.project)
-            self.activity_input_dial.set_tags(lastframe.tags)
-            self.activity_input_dial.set_comment(lastframe.message)
-        self.model.modelReset.emit()
 
 
 class ImportDialog(BaseDialog):

@@ -10,6 +10,10 @@
 
 import sys
 import platform
+import os
+import os.path as osp
+import shutil
+import json
 
 # ---- Third parties imports
 
@@ -17,24 +21,23 @@ import click
 import arrow
 from PyQt5.QtCore import Qt, QModelIndex
 from PyQt5.QtWidgets import (QApplication, QGridLayout, QHBoxLayout,
-                             QSizePolicy, QWidget, QStackedWidget,
-                             QVBoxLayout)
+                             QLabel, QLineEdit, QSizePolicy, QWidget,
+                             QStackedWidget, QVBoxLayout, QMessageBox)
 
 # ---- Local imports
 
 from qwatson.utils import icons
+from qwatson.widgets.tags import TagLineEdit
 from qwatson.watson.watsonextends import Watson
-from qwatson.watson.watsonhelpers import round_frame_at
+from qwatson.watson.watsonhelpers import round_frame_at, reset_watson
+from qwatson.widgets.projects import ProjectManager
 from qwatson.widgets.clock import ElapsedTimeLCDNumber
 from qwatson.widgets.tableviews import WatsonOverviewWidget
 from qwatson.widgets.toolbar import (
     OnOffToolButton, QToolButtonSmall, DropDownToolButton)
 from qwatson import __namever__
 from qwatson.models.tablemodels import WatsonTableModel
-from qwatson.dialogs.activitydialog import ActivityInputDialog
-from qwatson.dialogs.datetimedialog import DateTimeInputDialog
-from qwatson.dialogs.importdialog import QWatsonImportMixin
-from qwatson.dialogs.closedialog import CloseDialog
+from qwatson.dialogs import ImportDialog, DateTimeInputDialog, CloseDialog
 from qwatson.widgets.layout import ColoredFrame
 
 ROUNDMIN = {'round to 1min': 1, 'round to 5min': 5, 'round to 10min': 10}
@@ -42,7 +45,144 @@ STARTFROM = {'start from now': 'now', 'start from last': 'last',
              'start from other': 'other'}
 
 
-class QWatson(QWidget, QWatsonImportMixin):
+class QWatsonProjectMixin(object):
+    """
+    A mixin for the main QWatson class with the necessary methods to handle
+    the management of watson projects.
+    """
+
+    def setup_project_manager(self):
+        """Setup the widget to manage projects in QWatson."""
+        self.project_manager = ProjectManager(self.client)
+
+        self.project_manager.sig_rename_project.connect(self.rename_project)
+        self.project_manager.sig_add_project.connect(self.add_new_project)
+        self.project_manager.sig_del_project.connect(self.del_project)
+        self.project_manager.sig_project_changed.connect(self.project_changed)
+
+        return self.project_manager
+
+    def currentProject(self):
+        """Return the currently selected project in the project manager."""
+        return self.project_manager.currentProject()
+
+    # ---- Handlers
+
+    def project_changed(self, index):
+        """Handle when the project selection change in the manager."""
+        self.btn_startstop.setEnabled(index != -1)
+
+    def rename_project(self, old_name, new_name):
+        """Rename the project with the new provided name."""
+        if old_name != new_name and old_name in self.client.projects:
+            self.model.beginResetModel()
+            self.project_manager.model.beginResetModel()
+            self.client.rename_project(old_name, new_name)
+            self.model.endResetModel()
+            self.project_manager.model.endResetModel()
+        self.project_manager.setCurrentProject(new_name)
+
+    def add_new_project(self, project):
+        """Add the new project to the database."""
+        if project not in self.client.projects:
+            self.project_manager.model.beginResetModel()
+            self.client.add_project(project)
+            self.project_manager.model.endResetModel()
+        self.project_manager.setCurrentProject(project)
+
+    def del_project(self, project):
+        """
+        Ask for confirmation to delete the corresponding project from the
+        database and update the model.
+        """
+        msg = ("Are you sure that you want to delete project %s and all "
+               " related frames?<br><br>All data will be lost."
+               ) % project
+        ans = QMessageBox.question(self, 'Delete project', msg,
+                                   defaultButton=QMessageBox.No)
+
+        if ans == QMessageBox.Yes and project in self.client.projects:
+            index = self.project_manager.currentProjectIndex()
+
+            self.model.beginResetModel()
+            self.project_manager.model.beginResetModel()
+            self.client.delete_project(project)
+            self.model.endResetModel()
+            self.project_manager.model.endResetModel()
+
+            index = min(index, len(self.client.projects)-1)
+            self.project_manager.setCurrentProjectIndex(index)
+
+
+class QWatsonImportMixin(object):
+    """
+    A mixin for the main QWatson class with the necessary methods to handle
+    the import of config and data files from the watson application folder
+    to that of QWatson.
+    """
+
+    def setup_import_dialog(self):
+        """
+        Setup a dialog to import data from the watson application folder
+        to that of QWatson the first time QWatson is started.
+        """
+        if not osp.exists(self.client.frames_file):
+            watson_frames_exists = osp.exists(osp.join(
+                os.environ.get('WATSON_DIR') or click.get_app_dir('watson'),
+                'frames'))
+            if watson_frames_exists:
+                self.import_dialog = ImportDialog(main=self, parent=self)
+                self.import_dialog.show()
+            else:
+                self.create_empty_frames_file()
+        else:
+            self.import_dialog = None
+
+    def import_data_from_watson(self):
+        """
+        Copy the relevant resources files from the watson application folder
+        to that of QWatson.
+        """
+        if not osp.exists(self.client._dir):
+            os.makedirs(self.client._dir)
+
+        filenames = ['frames', 'frames.bak', 'last_sync', 'state', 'state.bak']
+        watson_dir = (os.environ.get('WATSON_DIR') or
+                      click.get_app_dir('watson'))
+        for filename in filenames:
+            if osp.exists(osp.join(watson_dir, filename)):
+                shutil.copyfile(osp.join(watson_dir, filename),
+                                osp.join(self.client._dir, filename))
+        self.reset_model_and_gui()
+
+    def create_empty_frames_file(self):
+        """
+        Create an empty frame file to indicate that QWatson have been
+        started at least one time.
+        """
+        if not osp.exists(self.client._dir):
+            os.makedirs(self.client._dir)
+
+        content = json.dumps({})
+        with open(self.client.frames_file, 'w') as f:
+            f.write(content)
+
+    def reset_model_and_gui(self):
+        """
+        Force a reset of the watson client and a refresh of the gui and
+        table model.
+        """
+        reset_watson(self.client)
+        self.project_manager.model.modelReset.emit()
+        self.model.modelReset.emit()
+        if len(self.client.frames) > 0:
+            lastframe = self.client.frames[-1]
+            self.project_manager.setCurrentProject(lastframe.project)
+            self.tag_manager.set_tags(lastframe.tags)
+            self.comment_manager.setText(lastframe.message)
+
+
+class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin):
 
     def __init__(self, config_dir=None, parent=None):
         super(QWatson, self).__init__(parent)
@@ -91,7 +231,7 @@ class QWatson(QWidget, QWatsonImportMixin):
     def setup_activity_tracker(self):
         """Setup the widget used to start, track, and stop new activity."""
         timebar = self.setup_timebar()
-        self.activity_input_dial = self.setup_activity_input_dial()
+        managers = self.setup_watson_managers()
         statusbar = self.setup_statusbar()
 
         # ---- Setup the layout of the main widget
@@ -101,7 +241,7 @@ class QWatson(QWidget, QWatsonImportMixin):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         layout.addWidget(timebar)
-        layout.addWidget(self.activity_input_dial)
+        layout.addWidget(managers)
         layout.addWidget(statusbar)
         layout.setStretch(1, 100)
 
@@ -123,26 +263,40 @@ class QWatson(QWidget, QWatsonImportMixin):
         self.datetime_input_dial = DateTimeInputDialog(parent=self)
         self.datetime_input_dial.register_dialog_to(self)
 
-    def setup_activity_input_dial(self):
+    def setup_watson_managers(self):
         """
         Setup the embedded dialog to setup the current activity parameters.
         """
-        activity_input_dial = ActivityInputDialog()
-        activity_input_dial.set_background_color('light')
-        activity_input_dial.set_projects(self.client.projects)
+        project_manager = self.setup_project_manager()
 
-        activity_input_dial.sig_project_removed.connect(self.project_removed)
-        activity_input_dial.sig_project_renamed.connect(self.project_renamed)
-        activity_input_dial.sig_project_added.connect(self.new_project_added)
-        activity_input_dial.sig_project_changed.connect(self.project_changed)
+        self.tag_manager = TagLineEdit()
+        self.tag_manager.setPlaceholderText("Tags (comma separated)")
+
+        self.comment_manager = QLineEdit()
+        self.comment_manager.setPlaceholderText("Comment")
+
+        # ---- Setup the layout
+
+        managers = ColoredFrame('light')
+
+        layout = QGridLayout(managers)
+        layout.setContentsMargins(5, 5, 5, 5)
+
+        layout.addWidget(project_manager, 0, 1)
+        layout.addWidget(self.tag_manager, 1, 1)
+        layout.addWidget(self.comment_manager, 2, 1)
+
+        layout.addWidget(QLabel('project :'), 0, 0)
+        layout.addWidget(QLabel('tags :'), 1, 0)
+        layout.addWidget(QLabel('comment :'), 2, 0)
 
         # Set current activity inputs to the last ones saved in the database.
         if len(self.client.frames) > 0:
-            activity_input_dial.set_current_project(self.client.frames[-1][2])
-            activity_input_dial.set_tags(self.client.frames[-1].tags)
-            activity_input_dial.set_comment(self.client.frames[-1].message)
+            project_manager.setCurrentProject(self.client.frames[-1][2])
+            self.tag_manager.set_tags(self.client.frames[-1].tags)
+            self.comment_manager.setText(self.client.frames[-1].message)
 
-        return activity_input_dial
+        return managers
 
     def setup_timebar(self):
         """
@@ -244,33 +398,6 @@ class QWatson(QWidget, QWatsonImportMixin):
         """Set the current index of the stackwidget."""
         self.stackwidget.setCurrentIndex(index)
 
-    # ---- Project handlers
-
-    def project_changed(self, index):
-        """Handle when the project selection change in the manager."""
-        self.btn_startstop.setEnabled(index != -1)
-
-    def project_renamed(self, old_name, new_name):
-        """Handle when a project is renamed in the manager."""
-        if old_name != new_name:
-            self.model.beginResetModel()
-            self.client.rename_project(old_name, new_name)
-            self.model.endResetModel()
-
-    def new_project_added(self, name):
-        """Handle when a new project is added in the manager."""
-        pass
-
-    def project_removed(self, project):
-        """
-        Handle when a project is removed from the manager by removing
-        the corresponding project from the database and updating the model.
-        """
-        if project in self.client.projects:
-            self.model.beginResetModel()
-            self.client.delete_project(project)
-            self.model.endResetModel()
-
     # ---- Toolbar handlers
 
     def btn_startstop_isclicked(self):
@@ -286,14 +413,14 @@ class QWatson(QWidget, QWatsonImportMixin):
                 self.datetime_input_dial.show()
         else:
             self.elap_timer.stop()
-            self.stop_watson(message=self.activity_input_dial.comment,
-                             project=self.activity_input_dial.project,
-                             tags=self.activity_input_dial.tags,
+            self.stop_watson(message=self.comment_manager.text(),
+                             project=self.currentProject(),
+                             tags=self.tag_manager.tags,
                              round_to=ROUNDMIN[self.round_time_btn.text()])
 
     def start_watson(self, start_time=None):
         """Start monitoring a new activity with the Watson client."""
-        self.client.start(self.activity_input_dial.project)
+        self.client.start(self.currentProject())
         if start_time is not None:
             self.client._current['start'] = start_time
             self.elap_timer.start(start_time.timestamp)

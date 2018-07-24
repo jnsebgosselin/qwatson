@@ -9,3 +9,6 @@
 A compendium of dialogs that are specifically tailored to display data and
 route user commands to Watson.
 """
+from .importdialog import ImportDialog
+from .datetimedialog import DateTimeInputDialog
+from .closedialog import CloseDialog
