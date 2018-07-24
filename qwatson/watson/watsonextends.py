@@ -8,7 +8,8 @@
 
 import os
 import watson
-from watson.watson import WatsonError, make_json_writer, safe_save, arrow
+from watson.watson import (WatsonError, make_json_writer, safe_save, arrow,
+                           deduplicate)
 from watson.frames import uuid, namedtuple
 
 
@@ -180,6 +181,26 @@ class Watson(watson.watson.Watson):
 
         if self._old_state is None:
             self._old_state = self._current
+
+    def start(self, project, tags=None, restart=False):
+        """
+        Override the Watson start method to support starting an activity
+        without specifying a project first.
+        """
+        project = '' if project is None else project
+        if self.is_started:
+            raise WatsonError(
+                u"Project {} is already started.".format(
+                    self.current['project']
+                )
+            )
+
+        default_tags = self.config.getlist('default_tags', project)
+        if not restart:
+            tags = (tags or []) + default_tags
+
+        self.current = {'project': project, 'tags': deduplicate(tags)}
+        return self.current
 
     def stop(self):
         """
