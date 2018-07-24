@@ -13,6 +13,7 @@ import os.path as osp
 
 # ---- Third party imports
 
+import arrow
 import pytest
 from PyQt5.QtCore import Qt
 
@@ -20,21 +21,29 @@ from PyQt5.QtCore import Qt
 
 from qwatson.widgets.tableviews import QMessageBox
 from qwatson.mainwindow import QWatson
-from qwatson.utils.fileio import delete_folder_recursively
 from qwatson.utils.dates import local_arrow_from_tuple
+from qwatson.utils.fileio import delete_folder_recursively
 
 
-APPDIR = osp.join(osp.dirname(__file__), 'appdir')
-NOW = local_arrow_from_tuple((2018, 6, 17, 0, 0, 0))
-delete_folder_recursively(APPDIR)
+@pytest.fixture(scope="module")
+def appdir(tmpdir_factory):
+    appdir = osp.join(osp.dirname(__file__), 'appdir')
+    delete_folder_recursively(appdir)
+    return appdir
+
+
+@pytest.fixture(scope="module")
+def now():
+    return local_arrow_from_tuple((2018, 6, 17, 0, 0, 0))
 
 
 @pytest.fixture
-def qwatson_creator(qtbot, mocker):
-    mocker.patch('arrow.now', return_value=NOW)
-    qwatson = QWatson(config_dir=APPDIR)
+def qwatson_creator(qtbot, mocker, appdir, now):
+    mocker.patch('arrow.now', return_value=now)
+    qwatson = QWatson(config_dir=appdir)
     qtbot.addWidget(qwatson)
-    return qwatson, qtbot, mocker
+    yield qwatson, qtbot, mocker
+    qwatson.close()
 
 
 # ---- Test QWatsonProjectMixin
@@ -82,8 +91,6 @@ def test_add_activities(qwatson_creator):
         assert qwatson.currentProject() == project
 
         # Start Watson.
-        start = NOW.shift(hours=i)
-        mocker.patch('arrow.now', return_value=start)
         qtbot.mouseClick(qwatson.btn_startstop, Qt.LeftButton)
 
         # Setup the comment.
@@ -94,8 +101,7 @@ def test_add_activities(qwatson_creator):
         assert qwatson.comment_manager.text() == comment
 
         # Stop Watson.
-        stop = NOW.shift(hours=i+1)
-        mocker.patch('arrow.now', return_value=stop)
+        mocker.patch('arrow.now', return_value=arrow.now().shift(hours=1))
         qtbot.mouseClick(qwatson.btn_startstop, Qt.LeftButton)
         assert qwatson.client.frames[-1].project == project
     assert len(qwatson.client.frames) == 5
