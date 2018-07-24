@@ -73,6 +73,7 @@ def reset_watson(client):
     Reset the internal variables of the client to None to force a reloading
     of the data from the files.
     """
+    client._projects = None
     client._current = None
     client._old_state = None
     client._frames = None
