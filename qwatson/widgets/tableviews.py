@@ -37,6 +37,8 @@ from qwatson.models.delegates import (
 
 class ActivityOverviewWidget(QWidget):
     """A widget to show and edit activities logged with Watson."""
+    sig_add_activity = QSignal(int, arrow.Arrow, arrow.Arrow)
+
     def __init__(self, model, parent=None):
         super(ActivityOverviewWidget, self).__init__(parent)
         self.setWindowIcon(icons.get_icon('master'))
@@ -71,7 +73,7 @@ class ActivityOverviewWidget(QWidget):
             " activity. If no activity is selected, the new activity will"
             " be added on the first day of the week.")
         self.add_act_above_btn.clicked.connect(
-            lambda: self.table_widg.add_new_activity('above'))
+            lambda: self.add_new_activity('above'))
 
         self.add_act_below_btn = QToolButtonBase('insert_below', 'small')
         self.add_act_below_btn.setToolTip(
@@ -80,7 +82,7 @@ class ActivityOverviewWidget(QWidget):
             " activity. If no activity is selected, the new activity will"
             " be added on the last day of the week.")
         self.add_act_below_btn.clicked.connect(
-            lambda: self.table_widg.add_new_activity('below'))
+            lambda: self.add_new_activity('below'))
 
         # Setup the layout.
 
@@ -111,6 +113,16 @@ class ActivityOverviewWidget(QWidget):
         self.activateWindow()
         self.raise_()
         self.setFocus()
+
+    def add_new_activity(self, where):
+        """
+        Send a signal containing the index, the start time, and stop time of
+        the new activity that needs to be added to Watson's frames.
+        The QWatson mainwindow is in charge of actually adding the activity
+        to Watson's frames.
+        """
+        index, time = self.table_widg.get_new_activity_index_and_time(where)
+        self.sig_add_activity.emit(index, time, time)
 
 
 # ---- TableWidget
@@ -266,11 +278,14 @@ class WatsonMultiTableWidget(QFrame):
                 row_at = table.view.rowAt(view_mouse_pos.y())
             table.view.set_hovered_row(row_at)
 
-    def add_new_activity(self, where='above'):
+    def get_new_activity_index_and_time(self, where='above'):
         """
-        Add a new activity in the last focused table if not None. If the last
-        focused table is None, the activity is added to the first table of the
-        page if where is 'above' or to the last table if where is 'below'.
+        Get the index and datetime of the activity that is to be added to
+        Watson's frames.
+        The new activity is in the last focused table if it is not None.
+        If the last focused table is None, the activity is added at the
+        beginning of the first day of the week if where is 'above' and to the
+        beginning of the last day of the week if where is 'below'.
         """
         if self.last_focused_table is not None and self.last_focused_table:
             frame_index = self.last_focused_table.get_selected_frame_index()
@@ -279,23 +294,13 @@ class WatsonMultiTableWidget(QFrame):
             elif where == 'below':
                 insert_time = self.model.client.frames[frame_index].stop
                 frame_index += 1
-        elif where == 'above':
+        else:
+            table = self.tables[0] if where == 'above' else self.tables[-1]
+            insert_time = table.date_span[0]
             frame_index = find_where_to_insert_new_frame(
-                self.model.client, self.tables[0].date_span[0], where)
-            insert_time = self.tables[0].date_span[0]
-        elif where == 'below':
-            frame_index = find_where_to_insert_new_frame(
-                self.model.client, self.tables[-1].date_span[1], where)
-            insert_time = self.tables[-1].date_span[0]
+                self.model.client, insert_time, 'above')
 
-        self.model.beginInsertRows(QModelIndex(), frame_index, frame_index)
-        self.model.client.insert(
-            frame_index, project='', start=insert_time, stop=insert_time,
-            message=("<New activity added manually on %s>" %
-                     arrow.now().format('YYYY-MM-DD HH:mm'))
-            )
-        self.model.client.save()
-        self.model.endInsertRows()
+        return frame_index, insert_time
 
 
 class WatsonTableWidget(QWidget):
@@ -352,6 +357,10 @@ class WatsonTableWidget(QWidget):
     def date_span(self):
         """Return the arrow span of the filter proxy model."""
         return self.view.proxy_model.date_span
+
+    def rowCount(self):
+        """Return the number of activity shown in the table."""
+        return self.view.proxy_model.get_accepted_row_count()
 
     def set_date_span(self, date_span):
         """Set the date span in the table and title."""
