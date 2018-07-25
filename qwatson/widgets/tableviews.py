@@ -69,7 +69,7 @@ class ActivityOverviewWidget(QWidget):
             "<b>Add Activity Above</b><br><br>"
             "Add a new activity directly above the currently selected"
             " activity. If no activity is selected, the new activity will"
-            " be added at the beginning of the week.")
+            " be added on the first day of the week.")
         self.add_act_above_btn.clicked.connect(
             lambda: self.table_widg.add_new_activity('above'))
 
@@ -78,7 +78,7 @@ class ActivityOverviewWidget(QWidget):
             "<b>Add Activity Below</b><br><br>"
             "Add a new activity directly below the currently selected"
             " activity. If no activity is selected, the new activity will"
-            " be added at the end of the week.")
+            " be added on the last day of the week.")
         self.add_act_below_btn.clicked.connect(
             lambda: self.table_widg.add_new_activity('below'))
 
@@ -286,7 +286,7 @@ class WatsonMultiTableWidget(QFrame):
         elif where == 'below':
             frame_index = find_where_to_insert_new_frame(
                 self.model.client, self.tables[-1].date_span[1], where)
-            insert_time = self.tables[-1].date_span[1]
+            insert_time = self.tables[-1].date_span[0]
 
         self.model.beginInsertRows(QModelIndex(), frame_index, frame_index)
         self.model.client.insert(
