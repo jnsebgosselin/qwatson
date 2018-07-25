@@ -6,6 +6,11 @@
 # This file is part of QWatson.
 # Licensed under the terms of the GNU General Public License.
 
+"""
+Test that adding activities aposteriori from the activity overview widget is
+working as expected.
+"""
+
 # ---- Standard imports
 
 import os
@@ -25,22 +30,33 @@ from qwatson.utils.dates import local_arrow_from_tuple
 from qwatson.utils.fileio import delete_folder_recursively
 
 
+# ---- Fixtures
+
+
 @pytest.fixture(scope="module")
 def now():
     return local_arrow_from_tuple((2018, 7, 25, 6, 0, 0))
 
 
 @pytest.fixture(scope="module")
-def appdir(tmpdir_factory, now):
-    appdir = osp.join(osp.dirname(__file__), 'appdir4')
-    delete_folder_recursively(appdir, delroot=True)
-    os.mkdir(appdir)
+def appdir(now):
+    # In Windows, the temp folder is locater in :
+    # C:\Users\User\AppData\Local\Temp\pytest-of-User
+
+    appdir = osp.join(
+        osp.dirname(__file__), 'appdir', 'mainwindow_aposteriori')
+
+    delete_folder_recursively(appdir)
+    if not osp.exists(appdir):
+        os.makedirs(appdir)
 
     # Create the projects file.
+
     with open(osp.join(appdir, 'projects'), 'w') as f:
         f.write(json.dumps(['p1', 'p2', 'p3']))
 
     # Create the frames file.
+
     frames = [[now.timestamp, now.timestamp, "p1",
                "e22fe653844442bab09a109f086688ec",
                ["tag1", "tag2", "tag3"], now.timestamp, "Base activity"]]
@@ -54,10 +70,8 @@ def appdir(tmpdir_factory, now):
 def qwatson_creator(qtbot, mocker, appdir, now):
     mocker.patch('arrow.now', return_value=now)
     qwatson = QWatson(config_dir=appdir)
+
     qtbot.addWidget(qwatson)
-
-    # Add one activity to frames.
-
     qwatson.show()
     qtbot.waitForWindowShown(qwatson)
 
@@ -66,10 +80,12 @@ def qwatson_creator(qtbot, mocker, appdir, now):
     qtbot.waitForWindowShown(qwatson.overview_widg)
 
     yield qwatson, qtbot, mocker
+
     qwatson.close()
 
 
-# ---- Test QWatsonActivityMixin
+# ---- Tests
+
 
 def test_setup(qwatson_creator):
     """Test that the projects and frames files were generated correctly."""
@@ -97,17 +113,17 @@ def test_add_activity_below_nofocus(qwatson_creator):
     qwatson, qtbot, mocker = qwatson_creator
     overview = qwatson.overview_widg
 
-    qwatson.comment_manager.setText('Add activity below, no focus')
+    qwatson.comment_manager.setText('Add activity below when no selected row.')
     qtbot.mouseClick(overview.add_act_below_btn, Qt.LeftButton)
 
-    # Assert the that the frame was added correctly.
+    # Assert the that the frame was added correctly at the beginning of the
+    # last day of the week with the right project and comment.
 
-    frames = qwatson.client.frames
-    assert len(frames) == 2
-    frame = frames[1]
+    assert len(qwatson.client.frames) == 2
+    frame = qwatson.client.frames[1]
     assert frame.start == frame.stop == arrow.now().floor('week').shift(days=6)
     assert frame.project == 'p1'
-    assert frame.message == 'Add activity below, no focus'
+    assert frame.message == 'Add activity below when no selected row.'
     assert frame.tags == ['tag1', 'tag2', 'tag3']
 
     # Assert that the overview table is showing the right thing.
@@ -124,18 +140,18 @@ def test_add_activity_above_nofocus(qwatson_creator):
     qwatson, qtbot, mocker = qwatson_creator
     overview = qwatson.overview_widg
 
-    qwatson.comment_manager.setText('Add activity above, no focus')
+    qwatson.comment_manager.setText('Add activity above when no selected row.')
     qwatson.setCurrentProject('p2')
     qtbot.mouseClick(overview.add_act_above_btn, Qt.LeftButton)
 
-    # Assert the that the frame was added correctly.
+    # Assert the that the frame was added correctly at the beginning of the
+    # first day of the week with the right project and comment.
 
-    frames = qwatson.client.frames
-    assert len(frames) == 3
-    frame = frames[0]
+    assert len(qwatson.client.frames) == 3
+    frame = qwatson.client.frames[0]
     assert frame.start == frame.stop == arrow.now().floor('week')
     assert frame.project == 'p2'
-    assert frame.message == 'Add activity above, no focus'
+    assert frame.message == 'Add activity above when no selected row.'
 
     # Assert that the overview table is showing the right thing.
 
@@ -151,36 +167,35 @@ def test_add_activity_above_selection(qwatson_creator):
     qwatson, qtbot, mocker = qwatson_creator
     overview = qwatson.overview_widg
 
+    qwatson.setCurrentProject('p3')
     qwatson.comment_manager.setText('Add activity above selection')
 
-    # Select the base activity and add a new activity above.
+    # Select the base activity and add a new activity above it.
 
     table = overview.table_widg.tables[2]
-    index = table.view.proxy_model.index(0, 0)
-    visual_rect = table.view.visualRect(index)
-
+    visual_rect = table.view.visualRect(table.view.proxy_model.index(1, 0))
     qtbot.mouseClick(
         table.view.viewport(), Qt.LeftButton, pos=visual_rect.center())
-
-    assert table.get_selected_row() == 0
 
     # Add an activity above the selection.
 
     qtbot.mouseClick(overview.add_act_above_btn, Qt.LeftButton)
 
-    # Assert the that the frame was added correctly.
+    # Assert the that the frame was added correctly at the right index.
 
-    frames = qwatson.client.frames
-    assert len(frames) == 4
-    frame = frames[1]
+    assert len(qwatson.client.frames) == 4
+    frame = qwatson.client.frames[1]
     assert frame.start == frame.stop == arrow.now()
+    assert frame.project == 'p3'
     assert frame.message == 'Add activity above selection'
 
-    # Assert that the overview table is showing the right thing.
+    # Assert that the overview table is showing the right number of activities
+    # and that the base activity is still selected.
 
     row_counts = [table.rowCount() for table in overview.table_widg.tables]
     assert row_counts == [1, 0, 2, 0, 0, 0, 1]
     assert table.get_selected_row() == 1
+    assert overview.table_widg.last_focused_table == table
 
 
 def test_add_activity_below_selection(qwatson_creator):
@@ -191,36 +206,36 @@ def test_add_activity_below_selection(qwatson_creator):
     qwatson, qtbot, mocker = qwatson_creator
     overview = qwatson.overview_widg
 
+    qwatson.setCurrentProject('')
     qwatson.comment_manager.setText('Add activity below selection')
 
-    # Select the base activity and add a new activity below.
+    # Select the base activity and add a new activity below. Note that an
+    # activity has been added above the base activity.
 
     table = overview.table_widg.tables[2]
-    index = table.view.proxy_model.index(1, 0)
-    visual_rect = table.view.visualRect(index)
-
+    visual_rect = table.view.visualRect(table.view.proxy_model.index(1, 0))
     qtbot.mouseClick(
         table.view.viewport(), Qt.LeftButton, pos=visual_rect.center())
-
-    assert table.get_selected_row() == 1
 
     # Add an activity below the selection.
 
     qtbot.mouseClick(overview.add_act_below_btn, Qt.LeftButton)
 
-    # Assert the that the frame was added correctly.
+    # Assert the that the frame was added correctly at the right index.
 
-    frames = qwatson.client.frames
-    assert len(frames) == 5
-    frame = frames[3]
+    assert len(qwatson.client.frames) == 5
+    frame = qwatson.client.frames[3]
     assert frame.start == frame.stop == arrow.now()
+    assert frame.project == ''
     assert frame.message == 'Add activity below selection'
 
-    # Assert that the overview table is showing the right thing.
+    # Assert that the overview table is showing the right number of activities
+    # and that the base activity is still selected.
 
     row_counts = [table.rowCount() for table in overview.table_widg.tables]
     assert row_counts == [1, 0, 3, 0, 0, 0, 1]
     assert table.get_selected_row() == 1
+    assert overview.table_widg.last_focused_table == table
 
 
 if __name__ == "__main__":
