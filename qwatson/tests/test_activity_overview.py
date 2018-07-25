@@ -10,6 +10,7 @@
 
 import os
 import os.path as osp
+import json
 
 # ---- Third party imports
 
@@ -18,75 +19,87 @@ from PyQt5.QtCore import Qt
 
 # ---- Local imports
 
+from qwatson.watson_ext.watsonextends import Frames
 from qwatson.mainwindow import QWatson
 from qwatson.utils.dates import local_arrow_from_tuple
-from qwatson.utils.fileio import delete_file_safely
+from qwatson.utils.fileio import delete_folder_recursively
 from qwatson.utils.dates import qdatetime_from_str
 from qwatson.models.delegates import DateTimeDelegate
 
 
-APPDIR = osp.join(osp.dirname(__file__), 'appdir')
-FRAME_FILE = osp.join(APPDIR, 'frames')
-
-NOW = local_arrow_from_tuple((2018, 6, 17, 23, 59, 0))
-SPAN = NOW.floor('week').span('week')
-delete_file_safely(FRAME_FILE)
-
-
 # ---- Fixtures and utilities
 
-@pytest.fixture
-def overview_creator(qtbot, mocker):
-    if not osp.exists(FRAME_FILE):
-        create_framefile(mocker)
 
-    mocker.patch('arrow.now', return_value=NOW)
-
-    qwatson = QWatson(config_dir=APPDIR)
-    overview = qwatson.overview_widg
-    qtbot.addWidget(overview)
-    return overview, qtbot, mocker
+@pytest.fixture(scope="module")
+def now():
+    return local_arrow_from_tuple((2018, 6, 17, 23, 59, 0))
 
 
-def create_framefile(mocker):
-    """
-    Create a framefile that span over the current week with 2 activity of
-    6 hours per day, between 6:00 AM and 12:00 PM and 6:00PM and 12:00AM.
-    """
-    qwatson = QWatson(APPDIR)
+@pytest.fixture(scope="module")
+def span(now):
+    return now.floor('week').span('week')
 
+
+@pytest.fixture(scope="module")
+def appdir(now, span):
+    # In Windows, the temp folder is locater in :
+    # C:\Users\User\AppData\Local\Temp\pytest-of-User
+
+    appdir = osp.join(osp.dirname(__file__), 'appdir', 'activity_overview')
+
+    delete_folder_recursively(appdir)
+    if not osp.exists(appdir):
+        os.makedirs(appdir)
+
+    # Create the frames file.
+
+    frames = Frames()
     i = 1
     while True:
-        start = SPAN[0].shift(hours=i*6)
-        mocker.patch('arrow.now', return_value=start)
-        qwatson.client.start('test_overview')
-
-        stop = SPAN[0].shift(hours=(i+1)*6)
-        stop = SPAN[0].shift(hours=(i+1)*6)
-        mocker.patch('arrow.now', return_value=stop)
-        qwatson.stop_watson(
-            message='activity #%s' % i, project='test_overview', tags=None,
-            round_to=5)
-
-        if stop >= SPAN[1]:
+        frame = frames.add(project='test_overview',
+                           start=span[0].shift(hours=i*6).timestamp,
+                           stop=span[0].shift(hours=(i+1)*6).timestamp,
+                           message='activity #%s' % (i//2),
+                           updated_at=now
+                           )
+        if frame.stop >= span[1]:
             break
         i += 2
 
-    qwatson.client.save()
+    with open(osp.join(appdir, 'frames'), 'w') as f:
+        f.write(json.dumps(frames.dump(), indent=1, ensure_ascii=False))
+
+    return appdir
 
 
-def test_overview_init(overview_creator):
+@pytest.fixture
+def overview_creator(qtbot, mocker, appdir, now):
+    mocker.patch('arrow.now', return_value=now)
+    qwatson = QWatson(config_dir=appdir)
+
+    qtbot.addWidget(qwatson)
+    qwatson.show()
+    qtbot.waitForWindowShown(qwatson)
+
+    qtbot.addWidget(qwatson.overview_widg)
+    qtbot.mouseClick(qwatson.btn_report, Qt.LeftButton)
+    qtbot.waitForWindowShown(qwatson.overview_widg)
+
+    return qwatson.overview_widg, qtbot, mocker
+
+
+# ---- Tests
+
+
+def test_overview_init(overview_creator, span):
     """Test that the overview is initialized correctly."""
     overview, qtbot, mocker = overview_creator
-    overview.show()
-    qtbot.waitForWindowShown(overview)
 
     assert overview.isVisible()
-
     assert overview.table_widg.total_seconds == 7*(2*6)*60*60
     assert len(overview.table_widg.tables) == 7
     assert overview.table_widg.last_focused_table is None
-    assert overview.table_widg.date_span == SPAN
+    assert overview.table_widg.date_span == span
 
 
 def test_overview_row_selection(overview_creator):
