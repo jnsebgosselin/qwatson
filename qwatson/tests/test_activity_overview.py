@@ -42,8 +42,8 @@ def span(now):
 
 @pytest.fixture(scope="module")
 def appdir(now, span):
-    # In Windows, the temp folder is locater in :
-    # C:\Users\User\AppData\Local\Temp\pytest-of-User
+    # We do not use the tmpdir_factory fixture because we use the files
+    # produces by the tests to test QWatson locally
 
     appdir = osp.join(osp.dirname(__file__), 'appdir', 'activity_overview')
 
@@ -101,15 +101,17 @@ def test_overview_init(overview_creator, span):
     assert overview.table_widg.last_focused_table is None
     assert overview.table_widg.date_span == span
 
+    # Assert that the overview table is showing the right number of activities.
+
+    row_counts = [table.rowCount() for table in overview.table_widg.tables]
+    assert row_counts == [2, 2, 2, 2, 2, 2, 2]
+
 
 def test_overview_row_selection(overview_creator):
     """
     Test that table and row selection is working as expected.
     """
     overview, qtbot, mocker = overview_creator
-    overview.show()
-    qtbot.waitForWindowShown(overview)
-
     tables = overview.table_widg.tables
 
     # Mouse click on the second row of the second table.
@@ -121,6 +123,7 @@ def test_overview_row_selection(overview_creator):
         tables[1].view.viewport(), Qt.LeftButton, pos=visual_rect.center())
 
     # Assert that all but one table have a row and a frame selected.
+
     assert overview.table_widg.last_focused_table == tables[1]
     for table in tables:
         if table != overview.table_widg.last_focused_table:
@@ -156,9 +159,6 @@ def test_mouse_hovered_row(overview_creator):
     Test that the highlighting of mouse hovered row is working as expected.
     """
     overview, qtbot, mocker = overview_creator
-    overview.show()
-    qtbot.waitForWindowShown(overview)
-
     tables = overview.table_widg.tables
 
     # Mouse hover the second row of the second table.
@@ -185,13 +185,76 @@ def test_mouse_hovered_row(overview_creator):
     assert tables[4].view._hovered_row == 0
 
 
+def test_daterange_navigation(overview_creator, span):
+    """
+    Test that the widget to change the datespan of the activity overview is
+    working as expected.
+    """
+    overview, qtbot, mocker = overview_creator
+    assert not overview.date_range_nav.btn_next.isEnabled()
+
+    # Move back one week.
+
+    qtbot.mouseClick(overview.date_range_nav.btn_prev, Qt.LeftButton)
+    new_span = (span[0].shift(weeks=-1), span[1].shift(weeks=-1))
+    assert overview.table_widg.date_span == new_span
+    assert overview.date_range_nav.btn_next.isEnabled()
+
+    # Move back two additional weeks.
+
+    qtbot.mouseClick(overview.date_range_nav.btn_prev, Qt.LeftButton)
+    qtbot.mouseClick(overview.date_range_nav.btn_prev, Qt.LeftButton)
+    new_span = (new_span[0].shift(weeks=-2), new_span[1].shift(weeks=-2))
+    assert overview.table_widg.date_span == new_span
+    assert overview.date_range_nav.btn_next.isEnabled()
+
+    # Move forth one week.
+
+    qtbot.mouseClick(overview.date_range_nav.btn_next, Qt.LeftButton)
+    new_span = (new_span[0].shift(weeks=1), new_span[1].shift(weeks=1))
+    assert overview.table_widg.date_span == new_span
+    assert overview.date_range_nav.btn_next.isEnabled()
+
+    # Go back home.
+
+    qtbot.mouseClick(overview.date_range_nav.btn_home, Qt.LeftButton)
+    assert overview.table_widg.date_span == span
+    assert not overview.date_range_nav.btn_next.isEnabled()
+
+
+def test_selected_row_is_cleared_when_navigating(overview_creator):
+    """
+    Test that the selected row is cleared when changing the date span of the
+    overview table with the date range navigator widget.
+    """
+    overview, qtbot, mocker = overview_creator
+    table = overview.table_widg.tables[1]
+
+    # Select the second row of the second table.
+
+    visual_rect = table.view.visualRect(table.view.proxy_model.index(1, 0))
+    qtbot.mouseClick(
+        table.view.viewport(), Qt.LeftButton, pos=visual_rect.center())
+    assert table.get_selected_row() == 1
+    assert overview.table_widg.last_focused_table == table
+
+    # Move back and forth one week in the date range navigation widget.
+
+    qtbot.mouseClick(overview.date_range_nav.btn_prev, Qt.LeftButton)
+
+    # Assert that the selected row was cleared as expected.
+
+    assert overview.table_widg.last_focused_table is None
+    for table in overview.table_widg.tables:
+        assert table.get_selected_row() is None
+
+
 # ---- Test Edits
+
 
 def test_edit_start_datetime(overview_creator):
     """Test editing the start date in the activity overview table."""
     overview, qtbot, mocker = overview_creator
-    overview.show()
-    qtbot.waitForWindowShown(overview)
 
     # Edit the start date of the first frame in the first table.
 

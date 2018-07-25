@@ -40,8 +40,8 @@ def now():
 
 @pytest.fixture(scope="module")
 def appdir(now):
-    # In Windows, the temp folder is locater in :
-    # C:\Users\User\AppData\Local\Temp\pytest-of-User
+    # We do not use the tmpdir_factory fixture because we use the files
+    # produces by the tests to test QWatson locally.
 
     appdir = osp.join(
         osp.dirname(__file__), 'appdir', 'mainwindow_aposteriori')
