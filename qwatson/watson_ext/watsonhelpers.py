@@ -60,7 +60,7 @@ def find_where_to_insert_new_frame(client, new_start, where='above'):
     start datetime.
     """
     for i, frame in enumerate(client.frames):
-        if where == 'above' and new_start < frame.start:
+        if where == 'above' and new_start <= frame.start:
             return i
         elif where == 'below' and new_start < frame.stop:
             return i
