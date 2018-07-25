@@ -19,8 +19,8 @@ import arrow
 # ---- Local imports
 
 from qwatson.utils.dates import local_arrow_from_tuple
-from qwatson.watson.watsonextends import Watson
-from qwatson.watson.watsonhelpers import (
+from qwatson.watson_ext.watsonextends import Watson
+from qwatson.watson_ext.watsonhelpers import (
     insert_new_frame, round_frame_at, edit_frame_at)
 from qwatson.utils.fileio import delete_file_safely
 

@@ -21,7 +21,7 @@ from PyQt5.QtCore import Qt
 from qwatson.mainwindow import QWatson
 from qwatson.utils.dates import local_arrow_from_tuple
 from qwatson.utils.fileio import delete_file_safely
-from qwatson.utils.dates import local_arrow_from_tuple, qdatetime_from_str
+from qwatson.utils.dates import qdatetime_from_str
 from qwatson.models.delegates import DateTimeDelegate
 
 

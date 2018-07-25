@@ -24,7 +24,7 @@ def delete_file_safely(filename):
         return e.strerror
 
 
-def delete_folder_recursively(dirpath):
+def delete_folder_recursively(dirpath, delroot=False):
     """Try to delete all files and sub-folders below the given dirpath."""
     if osp.exists(dirpath):
         for filename in os.listdir(dirpath):
@@ -33,3 +33,5 @@ def delete_folder_recursively(dirpath):
                 rmtree(filepath)
             except OSError:
                 delete_file_safely(filepath)
+        if delroot:
+            os.rmdir(dirpath)
