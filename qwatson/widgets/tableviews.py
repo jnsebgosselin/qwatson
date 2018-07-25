@@ -25,8 +25,7 @@ from PyQt5.QtWidgets import (
 
 from qwatson.utils import icons
 from qwatson.utils.dates import arrowspan_to_str, total_seconds_to_hour_min
-from qwatson.watson.watsonhelpers import (find_where_to_insert_new_frame,
-                                          insert_new_frame)
+from qwatson.watson_ext.watsonhelpers import find_where_to_insert_new_frame
 from qwatson.widgets.layout import ColoredFrame
 from qwatson.widgets.toolbar import QToolButtonBase
 from qwatson.widgets.dates import DateRangeNavigator
@@ -239,7 +238,6 @@ class WatsonMultiTableWidget(QFrame):
         """
         if table == self.last_focused_table:
             self.clear_focused_table()
-            print('clearing the fucking focused table!!!')
 
     def clear_focused_table(self):
         """Clear the last focused table."""
@@ -289,13 +287,13 @@ class WatsonMultiTableWidget(QFrame):
             frame_index = find_where_to_insert_new_frame(
                 self.model.client, self.tables[-1].date_span[1], where)
             insert_time = self.tables[-1].date_span[1]
-        frame_data = [
-            '', insert_time, insert_time, None, None, None,
-            "<New activity added manually on %s>" %
-            arrow.now().format('YYYY-MM-DD HH:mm')]
 
         self.model.beginInsertRows(QModelIndex(), frame_index, frame_index)
-        insert_new_frame(self.model.client, frame_data, frame_index)
+        self.model.client.insert(
+            project='', start=insert_time, stop=insert_time,
+            message=("<New activity added manually on %s>" %
+                     arrow.now().format('YYYY-MM-DD HH:mm'))
+            )
         self.model.client.save()
         self.model.endInsertRows()
 

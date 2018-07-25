@@ -54,20 +54,6 @@ def round_frame_at(client, index, base):
     edit_frame_at(client, index, start=start, stop=stop)
 
 
-def insert_new_frame(client, data, index):
-    """
-    Create a new frame from data and insert it in the client databaset at
-    the given index using data.
-
-    data = [project, start, stop tags=None, id=None,
-            updated_at=None, message=None]
-    """
-    new_frame = client.frames.new_frame(*data)
-
-    client.frames.changed = True
-    client.frames._rows.insert(index, new_frame)
-
-
 def find_where_to_insert_new_frame(client, new_start, where='above'):
     """
     Return the frame index where to insert a new frame according to its
