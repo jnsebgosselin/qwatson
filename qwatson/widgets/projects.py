@@ -244,7 +244,7 @@ class ProjectView(QWidget):
 
 
 if __name__ == '__main__':
-    from qwatson.watson.watsonextends import Watson
+    from qwatson.watson_ext.watsonextends import Watson
     from qwatson import __rootdir__
     import os.path as osp
 
