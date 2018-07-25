@@ -21,7 +21,7 @@ import arrow
 from qwatson.utils.dates import local_arrow_from_tuple
 from qwatson.watson_ext.watsonextends import Watson
 from qwatson.watson_ext.watsonhelpers import (
-    insert_new_frame, round_frame_at, edit_frame_at)
+    round_frame_at, edit_frame_at)
 from qwatson.utils.fileio import delete_file_safely
 
 WORKDIR = osp.dirname(__file__)
@@ -59,9 +59,8 @@ def test_client_frame_insert():
     client = Watson(config_dir=WORKDIR)
     assert len(client.frames) == 2
 
-    data = ['ci-tests', arrow.now(), arrow.now(), None,
-            None, None, THIRDCOMMENT]
-    insert_new_frame(client, data, index=1)
+    client.insert(1, project='ci-tests', start=arrow.now(), stop=arrow.now(),
+                  message=THIRDCOMMENT)
     client.save()
     assert len(client.frames) == 3
 

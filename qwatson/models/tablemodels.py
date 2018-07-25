@@ -128,6 +128,10 @@ class WatsonTableModel(QAbstractTableModel):
     def projects(self):
         return self.client.projects
 
+    def get_project_from_index(self, index):
+        """Return the project of the frame corresponding to the model index."""
+        return self.client.frames[index.row()].project
+
     def get_tags_from_index(self, index):
         """Return a list of tags for the frame from a table index."""
         return self.client.frames[index.row()].tags
@@ -238,7 +242,7 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
         row of the source model is within the specified date_span.
         """
         frame_start = self.sourceModel().client.frames[source_row].start
-        return (frame_start >= date_span[0] and frame_start < date_span[1])
+        return (frame_start >= date_span[0] and frame_start <= date_span[1])
 
     def calcul_total_seconds(self):
         """
@@ -270,6 +274,11 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
     @property
     def projects(self):
         return self.sourceModel().client.projects
+
+    def get_project_from_index(self, proxy_index):
+        """Return the project of the frame corresponding to the model index."""
+        return self.sourceModel().get_project_from_index(
+                   self.mapToSource(proxy_index))
 
     def get_tags_from_index(self, proxy_index):
         """Return a list of tags for the frame from a table index."""

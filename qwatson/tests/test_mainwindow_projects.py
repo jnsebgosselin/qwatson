@@ -27,7 +27,7 @@ from qwatson.utils.fileio import delete_folder_recursively
 
 @pytest.fixture(scope="module")
 def appdir(tmpdir_factory):
-    appdir = osp.join(osp.dirname(__file__), 'appdir')
+    appdir = osp.join(osp.dirname(__file__), 'appdir3')
     delete_folder_recursively(appdir, delroot=True)
     return appdir
 

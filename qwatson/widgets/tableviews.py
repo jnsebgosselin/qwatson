@@ -15,7 +15,7 @@ from math import ceil
 
 import arrow
 from PyQt5.QtCore import pyqtSignal as QSignal
-from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtCore import Qt, QPoint, QModelIndex
 from PyQt5.QtGui import QCursor
 from PyQt5.QtWidgets import (
     QApplication, QGridLayout, QHeaderView, QLabel, QMessageBox, QScrollArea,
@@ -25,7 +25,9 @@ from PyQt5.QtWidgets import (
 
 from qwatson.utils import icons
 from qwatson.utils.dates import arrowspan_to_str, total_seconds_to_hour_min
+from qwatson.watson_ext.watsonhelpers import find_where_to_insert_new_frame
 from qwatson.widgets.layout import ColoredFrame
+from qwatson.widgets.toolbar import QToolButtonBase
 from qwatson.widgets.dates import DateRangeNavigator
 from qwatson.models.tablemodels import WatsonSortFilterProxyModel
 from qwatson.models.delegates import (
@@ -33,14 +35,15 @@ from qwatson.models.delegates import (
     DateTimeDelegate, TagEditDelegate)
 
 
-class WatsonOverviewWidget(QWidget):
+class ActivityOverviewWidget(QWidget):
     """A widget to show and edit activities logged with Watson."""
-    def __init__(self, client, model, parent=None):
-        super(WatsonOverviewWidget, self).__init__(parent)
+    sig_add_activity = QSignal(int, arrow.Arrow, arrow.Arrow)
+
+    def __init__(self, model, parent=None):
+        super(ActivityOverviewWidget, self).__init__(parent)
         self.setWindowIcon(icons.get_icon('master'))
         self.setWindowTitle("Activity Overview")
 
-        self.client = client
         self.model = model
 
         self.setup(model)
@@ -48,17 +51,53 @@ class WatsonOverviewWidget(QWidget):
 
     def setup(self, model):
         """Setup the widget with the provided arguments."""
-        self.table_widg = WatsonDailyTableWidget(model, parent=self)
-
-        self.date_range_nav = DateRangeNavigator()
-        self.date_range_nav.sig_date_span_changed.connect(
-            self.date_span_changed)
+        self.table_widg = WatsonMultiTableWidget(model, parent=self)
+        self.toolbar = self.setup_toolbar()
 
         # ---- Setup the layout
 
         layout = QGridLayout(self)
-        layout.addWidget(self.date_range_nav)
+        layout.addWidget(self.toolbar)
         layout.addWidget(self.table_widg)
+
+    def setup_toolbar(self):
+        """Setup the toolbar of the widget."""
+        self.date_range_nav = DateRangeNavigator()
+        self.date_range_nav.sig_date_span_changed.connect(
+            self.date_span_changed)
+
+        self.add_act_above_btn = QToolButtonBase('insert_above', 'small')
+        self.add_act_above_btn.setToolTip(
+            "<b>Add Activity Above</b><br><br>"
+            "Add a new activity directly above the currently selected"
+            " activity. If no activity is selected, the new activity will"
+            " be added on the first day of the week.")
+        self.add_act_above_btn.clicked.connect(
+            lambda: self.add_new_activity('above'))
+
+        self.add_act_below_btn = QToolButtonBase('insert_below', 'small')
+        self.add_act_below_btn.setToolTip(
+            "<b>Add Activity Below</b><br><br>"
+            "Add a new activity directly below the currently selected"
+            " activity. If no activity is selected, the new activity will"
+            " be added on the last day of the week.")
+        self.add_act_below_btn.clicked.connect(
+            lambda: self.add_new_activity('below'))
+
+        # Setup the layout.
+
+        toolbar = QFrame()
+
+        layout = QHBoxLayout(toolbar)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(1)
+
+        layout.addWidget(self.date_range_nav)
+        layout.addStretch()
+        layout.addWidget(self.add_act_above_btn)
+        layout.addWidget(self.add_act_below_btn)
+
+        return toolbar
 
     def date_span_changed(self):
         """Handle when the range of the date range navigator widget change."""
@@ -66,7 +105,7 @@ class WatsonOverviewWidget(QWidget):
 
     def show(self):
         """Qt method override."""
-        super(WatsonOverviewWidget, self).show()
+        super(ActivityOverviewWidget, self).show()
         if self.windowState() & Qt.WindowMaximized:
             self.setWindowState(Qt.WindowActive | Qt.WindowMaximized)
         else:
@@ -75,10 +114,20 @@ class WatsonOverviewWidget(QWidget):
         self.raise_()
         self.setFocus()
 
+    def add_new_activity(self, where):
+        """
+        Send a signal containing the index, the start time, and stop time of
+        the new activity that needs to be added to Watson's frames.
+        The QWatson mainwindow is in charge of actually adding the activity
+        to Watson's frames.
+        """
+        index, time = self.table_widg.get_new_activity_index_and_time(where)
+        self.sig_add_activity.emit(index, time, time)
+
 
 # ---- TableWidget
 
-class WatsonDailyTableWidget(QFrame):
+class WatsonMultiTableWidget(QFrame):
     """
     A widget that displays Watson activities on a daily basis over a
     given timespan.
@@ -86,7 +135,7 @@ class WatsonDailyTableWidget(QFrame):
 
     def __init__(self, model, date_span=arrow.now().floor('week').span('week'),
                  parent=None):
-        super(WatsonDailyTableWidget, self).__init__(parent)
+        super(WatsonMultiTableWidget, self).__init__(parent)
 
         self.total_seconds = 0
         self.date_span = date_span
@@ -143,9 +192,10 @@ class WatsonDailyTableWidget(QFrame):
 
     def set_date_span(self, date_span):
         """
-        Set the range over which actitivies are displayed in the widget
+        Set the range over which activities are displayed in the widget
         and update the layout accordingly by adding or removing tables.
         """
+        self.clear_focused_table()
         self.date_span = date_span
         total_seconds = round((date_span[1] - date_span[0]).total_seconds())
         ndays = ceil(total_seconds / (60*60*24))
@@ -156,6 +206,8 @@ class WatsonDailyTableWidget(QFrame):
                 self.tables.append(WatsonTableWidget(self.model, parent=self))
                 self.tables[-1].sig_tableview_focused_in.connect(
                     self.tableview_focused_in)
+                self.tables[-1].sig_tableview_cleared.connect(
+                    self.tableview_cleared)
                 self.scene.insertWidget(self.scene.count()-1, self.tables[-1])
             else:
                 self.tables.remove(self.tables[-1])
@@ -180,17 +232,36 @@ class WatsonDailyTableWidget(QFrame):
         self.total_time_labl.setText(
             "Total : %s" % total_seconds_to_hour_min(self.total_seconds))
 
-    def tableview_focused_in(self, table):
-        if self.last_focused_table == table:
-            return
+    # ---- Table focus handlers
 
+    def tableview_focused_in(self, table):
+        """
+        Save the last focused table and unselect the previous focused table.
+        """
+        if self.last_focused_table != table:
+            self.clear_focused_table()
+            table.view.set_selected(True)
+            self.last_focused_table = table
+
+    def tableview_cleared(self, table):
+        """
+        Handle when one of the tables is now empty due to the user deleting
+        one or more of its activities.
+        """
+        if table == self.last_focused_table:
+            self.clear_focused_table()
+
+    def clear_focused_table(self):
+        """Clear the last focused table."""
         if self.last_focused_table is not None:
             self.last_focused_table.view.set_selected(False)
-        table.view.set_selected(True)
-
-        self.last_focused_table = table
+        self.last_focused_table = None
 
     def srollbar_value_changed(self, value):
+        """
+        Handle when the value of the vertical scrollbar changes, so that
+        the mouse hovered highlighted row can be updated correctly.
+        """
         viewport = self.scrollarea.viewport()
         mouse_pos = viewport.mapFromGlobal(QCursor.pos()) + QPoint(0, value)
         # We add the scrollbar value so that we get the mouse cursor
@@ -207,6 +278,30 @@ class WatsonDailyTableWidget(QFrame):
                 row_at = table.view.rowAt(view_mouse_pos.y())
             table.view.set_hovered_row(row_at)
 
+    def get_new_activity_index_and_time(self, where='above'):
+        """
+        Get the index and datetime of the activity that is to be added to
+        Watson's frames.
+        The new activity is in the last focused table if it is not None.
+        If the last focused table is None, the activity is added at the
+        beginning of the first day of the week if where is 'above' and to the
+        beginning of the last day of the week if where is 'below'.
+        """
+        if self.last_focused_table is not None and self.last_focused_table:
+            frame_index = self.last_focused_table.get_selected_frame_index()
+            if where == 'above':
+                insert_time = self.model.client.frames[frame_index].start
+            elif where == 'below':
+                insert_time = self.model.client.frames[frame_index].stop
+                frame_index += 1
+        else:
+            table = self.tables[0] if where == 'above' else self.tables[-1]
+            insert_time = table.date_span[0]
+            frame_index = find_where_to_insert_new_frame(
+                self.model.client, insert_time, 'above')
+
+        return frame_index, insert_time
+
 
 class WatsonTableWidget(QWidget):
     """
@@ -215,6 +310,7 @@ class WatsonTableWidget(QWidget):
     in the table.
     """
     sig_tableview_focused_in = QSignal(object)
+    sig_tableview_cleared = QSignal(object)
 
     def __init__(self, model, parent=None):
         super(WatsonTableWidget, self).__init__(parent)
@@ -231,6 +327,8 @@ class WatsonTableWidget(QWidget):
             self.setup_timecount)
         self.view.sig_focused_in.connect(
             lambda: self.sig_tableview_focused_in.emit(self))
+        self.view.sig_table_cleared.connect(
+            lambda: self.sig_tableview_cleared.emit(self))
 
     def setup_titlebar(self):
         """Setup the titlebar of the table."""
@@ -259,6 +357,10 @@ class WatsonTableWidget(QWidget):
     def date_span(self):
         """Return the arrow span of the filter proxy model."""
         return self.view.proxy_model.date_span
+
+    def rowCount(self):
+        """Return the number of activity shown in the table."""
+        return self.view.proxy_model.get_accepted_row_count()
 
     def set_date_span(self, date_span):
         """Set the date span in the table and title."""
@@ -290,6 +392,7 @@ class BasicWatsonTableView(QTableView):
     A single table view that displays Watson activity log and
     allow sorting and filtering of the data through the use of a proxy model.
     """
+    sig_table_cleared = QSignal(object)
 
     def __init__(self, source_model, parent=None):
         super(BasicWatsonTableView, self).__init__(parent)
@@ -325,13 +428,18 @@ class BasicWatsonTableView(QTableView):
             columns['comment'], QHeaderView.Stretch)
 
     def del_model_row(self, proxy_index):
-        """Delete a row from the model, but ask for confirmation first."""
+        """
+        Ask for confirmation to delete a row and delete or not the row from
+        the model according the answer.
+        """
         frame_id = self.proxy_model.get_frameid_from_index(proxy_index)
         ans = QMessageBox.question(
             self, 'Delete frame', "Do you want to delete frame %s?" % frame_id,
             defaultButton=QMessageBox.No)
         if ans == QMessageBox.Yes:
             self.proxy_model.removeRows(proxy_index)
+            if self.proxy_model.get_accepted_row_count() == 0:
+                self.sig_table_cleared.emit(self)
 
     def set_date_span(self, date_span):
         """Set the date span in the proxy model."""
@@ -399,6 +507,8 @@ class FormatedWatsonTableView(BasicWatsonTableView):
         super(FormatedWatsonTableView, self).set_date_span(date_span)
         self.update_table_height()
 
+    # ---- Row selection
+
     def set_selected(self, value):
         self.is_selected = bool(value)
         self.viewport().update()
@@ -419,10 +529,12 @@ class FormatedWatsonTableView(BasicWatsonTableView):
         there is one, else return None.
         """
         if self.is_selected:
-            return self.proxy_model.mapToSource(
-                self.selectionModel().selectedRows()[0]).row()
-        else:
-            return None
+            selected_row = self.selectionModel().selectedRows()
+            if len(selected_row) > 0:
+                return self.proxy_model.mapToSource(selected_row[0]).row()
+        return None
+
+    # ---- Mouse hovered
 
     def set_hovered_row(self, row):
         if self._hovered_row != row:
@@ -444,8 +556,11 @@ class FormatedWatsonTableView(BasicWatsonTableView):
 if __name__ == '__main__':
     from qwatson.watson_ext.watsonextends import Watson
     from qwatson.models.tablemodels import WatsonTableModel
+    import os.path as osp
+    from qwatson import __rootdir__
 
-    client = Watson()
+    dirname = osp.join(__rootdir__, 'widgets', 'tests', 'appdir')
+    client = Watson(config_dir=dirname)
     model = WatsonTableModel(client)
 
     app = QApplication(sys.argv)
@@ -453,6 +568,6 @@ if __name__ == '__main__':
     from PyQt5.QtWidgets import QStyleFactory
     app.setStyle(QStyleFactory.create('WindowsVista'))
 
-    overview_window = WatsonOverviewWidget(client, model)
+    overview_window = ActivityOverviewWidget(model)
     overview_window.show()
     app.exec_()

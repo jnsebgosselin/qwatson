@@ -89,6 +89,16 @@ class Frames(watson.frames.Frames):
         return Frame(start, stop, project, id, tags=tags,
                      updated_at=updated_at, message=message)
 
+    def insert(self, index, *args, **kwargs):
+        """
+        Create a new frame from the provided arguments and insert it at the
+        specified index.
+        """
+        self.changed = True
+        frame = self.new_frame(*args, **kwargs)
+        self._rows.insert(index, frame)
+        return frame
+
 
 watson.watson.Frames = Frames
 watson.frames.Frames = Frames
@@ -216,6 +226,18 @@ class Watson(watson.watson.Watson):
         )
         self.current = None
 
+        return frame
+
+    # ---- Watson frames extension
+
+    def insert(self, index, project, start, stop, tags=None, id=None,
+               updated_at=None, message=None):
+        """
+        Create a new frame from the specified arguments and insert it in
+        frames at the specified index.
+        """
+        frame = self.frames.insert(index, project, start, stop, tags, id,
+                                   updated_at, message)
         return frame
 
     # ---- Watson project extension
