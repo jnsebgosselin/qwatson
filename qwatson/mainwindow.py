@@ -66,6 +66,10 @@ class QWatsonProjectMixin(object):
         """Return the currently selected project in the project manager."""
         return self.project_manager.currentProject()
 
+    def setCurrentProject(self, poject):
+        """Set the currently selected project in the project manager."""
+        self.project_manager.setCurrentProject(poject)
+
     # ---- Handlers
 
     def project_changed(self, index):
@@ -182,7 +186,32 @@ class QWatsonImportMixin(object):
             self.comment_manager.setText(lastframe.message)
 
 
-class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin):
+class QWatsonActivityMixin(object):
+    """
+    A mixin for the main QWatson class with the necessary methods to handle
+    the management of watson activities.
+    """
+
+    def setup_activity_overview(self):
+        """Setup the widget to show and edit activities."""
+        self.overview_widg = ActivityOverviewWidget(self.model)
+        self.overview_widg.sig_add_activity.connect(self.add_new_activity)
+
+    def add_new_activity(self, index, start, stop):
+        """
+        Add a new activity in frames at index with the specified start and
+        stop times.
+        """
+        self.model.beginInsertRows(QModelIndex(), index, index)
+        self.model.client.insert(
+            index, self.currentProject(), start, stop,
+            tags=self.tag_manager.tags, message=self.comment_manager.text())
+        self.model.client.save()
+        self.model.endInsertRows()
+
+
+class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
+              QWatsonActivityMixin):
 
     def __init__(self, config_dir=None, parent=None):
         super(QWatson, self).__init__(parent)
@@ -207,7 +236,7 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin):
             self.stop_watson(message="last session not closed correctly.",
                              tags=['error'])
 
-        self.overview_widg = ActivityOverviewWidget(self.model)
+        self.setup_activity_overview()
         self.setup()
 
     # ---- Setup layout
