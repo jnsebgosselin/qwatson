@@ -290,7 +290,7 @@ class WatsonMultiTableWidget(QFrame):
 
         self.model.beginInsertRows(QModelIndex(), frame_index, frame_index)
         self.model.client.insert(
-            project='', start=insert_time, stop=insert_time,
+            frame_index, project='', start=insert_time, stop=insert_time,
             message=("<New activity added manually on %s>" %
                      arrow.now().format('YYYY-MM-DD HH:mm'))
             )
