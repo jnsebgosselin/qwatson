@@ -55,7 +55,7 @@ class DelProjectDialog(BaseDialog):
         layout.addWidget(self.button_box)
         layout.setStretch(0, 100)
 
-    def show(self, project, nbr_of_activities):
+    def show(self, project, na):
         """
         Extend show method to update the text of the info box with the
         provided arguments.
@@ -67,9 +67,11 @@ class DelProjectDialog(BaseDialog):
                  if project == '' else
                  "The project \"%s\" and all related activities " % project)
         text += "will be permanently erased from the database.</b><br><br>"
-        text += "%d " % nbr_of_activities
-        text += 'activity' if nbr_of_activities <= 1 else 'activities'
-        text += " will be deleted by this action."
+        text += "%d " % na
+        text += 'activity is' if na <= 1 else 'activities are'
+        text += (" not currently in a project" if project == '' else
+                 " currently in project \"%s\"" % project)
+        text += "."
         self.info_box.setText(text)
 
         super(DelProjectDialog, self).show()
