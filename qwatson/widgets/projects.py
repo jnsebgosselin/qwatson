@@ -75,15 +75,27 @@ class ProjectManager(QWidget):
 
         self.btn_add = QToolButtonSmall('plus')
         self.btn_add.clicked.connect(self.project_cbox.add_project)
-        self.btn_add.setToolTip("Add a new project")
+        self.btn_add.setToolTip(
+            "<b>Add Project</b><br><br>"
+            "Add a new project to the list of availables projects.")
 
         self.btn_rename = QToolButtonSmall('edit')
         self.btn_rename.clicked.connect(self.project_cbox.rename_project)
-        self.btn_rename.setToolTip("Rename the current project")
+        self.btn_rename.setToolTip(
+            "<b>Rename Project</b><br><br>"
+            "Rename the currently selected project and update the project of"
+            " all related activities.<br><br>"
+            "If no project is selected when renaming, set the project of all"
+            " activities that are currently not in a project.")
 
         self.btn_remove = QToolButtonSmall('clear')
         self.btn_remove.clicked.connect(self.btn_remove_isclicked)
-        self.btn_remove.setToolTip("Delete the current project")
+        self.btn_remove.setToolTip(
+            "<b>Delete Project</b><br><br>"
+            "Erase permanently the current project and all related"
+            " activities.<br><br>"
+            "If no project is selected, erase all activities"
+            " that are currently not in a project.")
 
         for item in [self.btn_add, self.btn_rename, self.btn_remove]:
             toolbar.addWidget(item)
