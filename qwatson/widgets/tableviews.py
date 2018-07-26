@@ -104,13 +104,13 @@ class ActivityOverviewWidget(QWidget):
         self.table_widg.set_date_span(self.date_range_nav.current)
 
     def show(self):
-        """Qt method override."""
+        """Qt method override to restore the window when minimized."""
+        self.setWindowState(
+            (self.windowState() & ~(Qt.WindowMinimized | Qt.WindowFullScreen))
+            | Qt.WindowActive)
+        self.setAttribute(Qt.WA_Resized, True)
         super(ActivityOverviewWidget, self).show()
-        if self.windowState() & Qt.WindowMaximized:
-            self.setWindowState(Qt.WindowActive | Qt.WindowMaximized)
-        else:
-            self.setWindowState(Qt.WindowActive)
-        self.activateWindow()
+
         self.raise_()
         self.setFocus()
 
