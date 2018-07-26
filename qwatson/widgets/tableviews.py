@@ -109,8 +109,13 @@ class ActivityOverviewWidget(QWidget):
             (self.windowState() & ~(Qt.WindowMinimized | Qt.WindowFullScreen))
             | Qt.WindowActive)
         self.setAttribute(Qt.WA_Resized, True)
-        super(ActivityOverviewWidget, self).show()
+        # Setting the Qt.WA_Resized attribute to True is required or else the
+        # size of the wigdet will not be updated correctly when restoring the
+        # window from a maximized state and the layout won't be expanded
+        # correctly to the full size of the widget.
+        # See Issue #58 and PR #67.
 
+        super(ActivityOverviewWidget, self).show()
         self.raise_()
         self.setFocus()
 
