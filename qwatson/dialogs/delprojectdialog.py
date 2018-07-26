@@ -90,8 +90,10 @@ class DelProjectDialog(BaseDialog):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    del_proj_dialog = DelProjectDialog()
-    del_proj_dialog.show('', 24)
-    del_proj_dialog2 = DelProjectDialog()
-    del_proj_dialog2.show('Some project', 35)
+    d1 = DelProjectDialog()
+    d1.show('', 24)
+    d1.setFixedSize(300, 162)
+    d2 = DelProjectDialog()
+    d2.show('x', 35)
+    d2.setFixedSize(300, 162)
     app.exec_()
