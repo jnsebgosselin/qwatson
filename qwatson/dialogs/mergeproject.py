@@ -98,10 +98,17 @@ class MergeProjectDialog(BaseDialog):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+
     d1 = MergeProjectDialog()
     d1.show('', 3, 'x', 24)
+    d1.setFixedSize(300, 162)
+
     d2 = MergeProjectDialog()
     d2.show('x', 1, 'y', 4)
+    d2.setFixedSize(300, 162)
+
     d3 = MergeProjectDialog()
     d3.show('x', 27, '', 4)
+    d3.setFixedSize(300, 162)
+
     app.exec_()
