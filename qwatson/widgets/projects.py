@@ -92,7 +92,7 @@ class ProjectManager(QWidget):
         self.btn_remove.clicked.connect(self.btn_remove_isclicked)
         self.btn_remove.setToolTip(
             "<b>Delete Project</b><br><br>"
-            "Erase permanently the current project and all related"
+            "Erase permanently the currently selected project and all related"
             " activities.<br><br>"
             "If no project is selected, erase all activities"
             " that are currently not in a project.")
