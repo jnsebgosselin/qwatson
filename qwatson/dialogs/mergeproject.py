@@ -74,13 +74,12 @@ class MergeProjectDialog(BaseDialog):
         text += 'activity is' if na1 <= 1 else 'activities are'
         text += (" not currently in a project" if proj1 == '' else
                  " currently in project \"%s\"" % proj1)
-        text += ".<br>"
+        text += " and "
         text += "%d " % na2
         text += 'activity is' if na2 <= 1 else 'activities are'
         text += (" not currently in a project" if proj2 == '' else
                  " currently in project \"%s\"" % proj2)
         text += "."
-
         self.info_box.setText(text)
 
         super(MergeProjectDialog, self).show()
@@ -91,7 +90,7 @@ class MergeProjectDialog(BaseDialog):
         """
         if self.main is not None:
             if answer == 'Ok':
-                self.main.del_project(self.project)
+                self.main.rename_project(self.proj1, self.proj2, force=True)
             elif answer == 'Cancel':
                 pass
             self.main.setCurrentIndex(0)
@@ -100,9 +99,9 @@ class MergeProjectDialog(BaseDialog):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     d1 = MergeProjectDialog()
-    d1.show('', 3, 'projectx', 24)
+    d1.show('', 3, 'x', 24)
     d2 = MergeProjectDialog()
-    d2.show('projectx', 1, 'projecty', 4)
+    d2.show('x', 1, 'y', 4)
     d3 = MergeProjectDialog()
-    d3.show('projectx', 27, '', 4)
+    d3.show('x', 27, '', 4)
     app.exec_()
