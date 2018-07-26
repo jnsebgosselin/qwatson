@@ -12,3 +12,4 @@ route user commands to Watson.
 from .importdialog import ImportDialog
 from .datetimedialog import DateTimeInputDialog
 from .closedialog import CloseDialog
+from .delprojectdialog import DelProjectDialog
