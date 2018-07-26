@@ -1,5 +1,5 @@
 sip
-pyqt5
+pyqt5==5.9.2
 td-watson
 arrow
 click
