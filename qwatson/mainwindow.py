@@ -29,7 +29,8 @@ from PyQt5.QtWidgets import (QApplication, QGridLayout, QHBoxLayout,
 from qwatson.utils import icons
 from qwatson.widgets.tags import TagLineEdit
 from qwatson.watson_ext.watsonextends import Watson
-from qwatson.watson_ext.watsonhelpers import round_frame_at, reset_watson
+from qwatson.watson_ext.watsonhelpers import (
+    round_frame_at, reset_watson, get_frame_nbr_for_project)
 from qwatson.widgets.projects import ProjectManager
 from qwatson.widgets.clock import ElapsedTimeLCDNumber
 from qwatson.widgets.tableviews import ActivityOverviewWidget
@@ -37,7 +38,8 @@ from qwatson.widgets.toolbar import (
     OnOffToolButton, QToolButtonSmall, DropDownToolButton)
 from qwatson import __namever__
 from qwatson.models.tablemodels import WatsonTableModel
-from qwatson.dialogs import ImportDialog, DateTimeInputDialog, CloseDialog
+from qwatson.dialogs import (ImportDialog, DateTimeInputDialog, CloseDialog,
+                             DelProjectDialog)
 from qwatson.widgets.layout import ColoredFrame
 
 ROUNDMIN = {'round to 1min': 1, 'round to 5min': 5, 'round to 10min': 10}
@@ -57,10 +59,17 @@ class QWatsonProjectMixin(object):
 
         self.project_manager.sig_rename_project.connect(self.rename_project)
         self.project_manager.sig_add_project.connect(self.add_new_project)
-        self.project_manager.sig_del_project.connect(self.del_project)
+        self.project_manager.sig_del_project.connect(self.ask_to_del_project)
         self.project_manager.sig_project_changed.connect(self.project_changed)
 
         return self.project_manager
+
+    def setup_del_project_dialog(self):
+        """
+        Setup the dialog to ask the user confirmation before deleting a
+        project and its associated frames.
+        """
+        self.del_project_dialog = DelProjectDialog(main=self, parent=self)
 
     def currentProject(self):
         """Return the currently selected project in the project manager."""
@@ -94,18 +103,19 @@ class QWatsonProjectMixin(object):
             self.project_manager.model.endResetModel()
         self.project_manager.setCurrentProject(project)
 
+    def ask_to_del_project(self, project):
+        """
+        Ask confirmation to the user before deleting the specified project.
+        """
+        self.del_project_dialog.show(
+            project, get_frame_nbr_for_project(self.client, project))
+
     def del_project(self, project):
         """
         Ask for confirmation to delete the corresponding project from the
         database and update the model.
         """
-        msg = ("Are you sure that you want to delete project %s and all "
-               " related frames?<br><br>All data will be lost."
-               ) % project
-        ans = QMessageBox.question(self, 'Delete project', msg,
-                                   defaultButton=QMessageBox.No)
-
-        if ans == QMessageBox.Yes and project in self.client.projects:
+        if project in self.client.projects:
             index = self.project_manager.currentProjectIndex()
 
             self.model.beginResetModel()
@@ -245,11 +255,13 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
         """Setup the main widget."""
 
         # Setup the stack widget.
+
         self.stackwidget = QStackedWidget()
         self.setup_activity_tracker()
         self.setup_datetime_input_dialog()
         self.setup_close_dialog()
         self.setup_import_dialog()
+        self.setup_del_project_dialog()
 
         # Setup the main layout of the widget
 
