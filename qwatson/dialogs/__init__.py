@@ -13,3 +13,4 @@ from .importdialog import ImportDialog
 from .datetimedialog import DateTimeInputDialog
 from .closedialog import CloseDialog
 from .delprojectdialog import DelProjectDialog
+from .mergeproject import MergeProjectDialog
