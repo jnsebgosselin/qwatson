@@ -27,7 +27,7 @@ from qwatson.models.delegates import (
     ToolButtonDelegate, TagEditDelegate, LineEditDelegate)
 
 
-APPDIR = osp.join(osp.dirname(__file__), 'appdir')
+APPDIR = osp.join(osp.dirname(__file__), 'appdir1')
 APPDIR2 = osp.join(osp.dirname(__file__), 'appdir2')
 
 
