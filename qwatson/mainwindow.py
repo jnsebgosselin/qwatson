@@ -22,7 +22,7 @@ import arrow
 from PyQt5.QtCore import Qt, QModelIndex
 from PyQt5.QtWidgets import (QApplication, QGridLayout, QHBoxLayout,
                              QLabel, QLineEdit, QSizePolicy, QWidget,
-                             QStackedWidget, QVBoxLayout, QMessageBox)
+                             QStackedWidget, QVBoxLayout)
 
 # ---- Local imports
 
@@ -39,7 +39,7 @@ from qwatson.widgets.toolbar import (
 from qwatson import __namever__
 from qwatson.models.tablemodels import WatsonTableModel
 from qwatson.dialogs import (ImportDialog, DateTimeInputDialog, CloseDialog,
-                             DelProjectDialog)
+                             DelProjectDialog, MergeProjectDialog)
 from qwatson.widgets.layout import ColoredFrame
 
 ROUNDMIN = {'round to 1min': 1, 'round to 5min': 5, 'round to 10min': 10}
@@ -59,7 +59,7 @@ class QWatsonProjectMixin(object):
 
         self.project_manager.sig_rename_project.connect(self.rename_project)
         self.project_manager.sig_add_project.connect(self.add_new_project)
-        self.project_manager.sig_del_project.connect(self.ask_to_del_project)
+        self.project_manager.sig_del_project.connect(self.del_project)
         self.project_manager.sig_project_changed.connect(self.project_changed)
 
         return self.project_manager
@@ -70,6 +70,13 @@ class QWatsonProjectMixin(object):
         project and its associated frames.
         """
         self.del_project_dialog = DelProjectDialog(main=self, parent=self)
+
+    def setup_merge_project_dialog(self):
+        """
+        Setup the dialog to ask the user confirmation before merging a
+        project with another.
+        """
+        self.merge_project_dialog = MergeProjectDialog(main=self, parent=self)
 
     def currentProject(self):
         """Return the currently selected project in the project manager."""
@@ -85,15 +92,34 @@ class QWatsonProjectMixin(object):
         """Handle when the project selection change in the manager."""
         self.btn_startstop.setEnabled(index != -1)
 
-    def rename_project(self, old_name, new_name):
-        """Rename the project with the new provided name."""
-        if old_name != new_name and old_name in self.client.projects:
+    def rename_project(self, old_name, new_name, force=False):
+        """
+        Rename the project with the new provided name. An error will be
+        raised if 'old_name' is not in the list of Watson.project.
+        """
+        if old_name == new_name:
+            self.project_manager.setCurrentProject(new_name)
+            return
+
+        if force is True:
             self.model.beginResetModel()
             self.project_manager.model.beginResetModel()
             self.client.rename_project(old_name, new_name)
             self.model.endResetModel()
             self.project_manager.model.endResetModel()
-        self.project_manager.setCurrentProject(new_name)
+            self.project_manager.setCurrentProject(new_name)
+        elif force is False:
+            na_old = get_frame_nbr_for_project(self.client, old_name)
+            na_new = get_frame_nbr_for_project(self.client, new_name)
+            if na_old > 0 and na_new > 0:
+                # Since the project 'old_name' is not empty and the project
+                # 'new_name' already exists and is not empty, we ask the
+                # the user confirmation before merging all activities
+                # of project 'old_name' with those of project 'new_name'.
+                self.merge_project_dialog.show(
+                    old_name, na_old, new_name, na_new)
+            else:
+                self.rename_project(old_name, new_name, force=True)
 
     def add_new_project(self, project):
         """Add the new project to the database."""
@@ -103,19 +129,18 @@ class QWatsonProjectMixin(object):
             self.project_manager.model.endResetModel()
         self.project_manager.setCurrentProject(project)
 
-    def ask_to_del_project(self, project):
-        """
-        Ask confirmation to the user before deleting the specified project.
-        """
-        self.del_project_dialog.show(
-            project, get_frame_nbr_for_project(self.client, project))
-
-    def del_project(self, project):
+    def del_project(self, project, force=False):
         """
         Ask for confirmation to delete the corresponding project from the
         database and update the model.
+
+        If force is False, a dialog will ask the user before deleting the
+        project.
         """
-        if project in self.client.projects:
+        if force is False:
+            self.del_project_dialog.show(
+                project, get_frame_nbr_for_project(self.client, project))
+        elif force is True and project in self.client.projects:
             index = self.project_manager.currentProjectIndex()
 
             self.model.beginResetModel()
@@ -262,6 +287,7 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
         self.setup_close_dialog()
         self.setup_import_dialog()
         self.setup_del_project_dialog()
+        self.setup_merge_project_dialog()
 
         # Setup the main layout of the widget
 

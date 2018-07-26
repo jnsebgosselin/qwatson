@@ -76,6 +76,15 @@ def test_add_project(qwatson_creator):
     assert qwatson.client.projects == ['', 'p1', 'p2']
     assert qwatson.currentProject() == 'p2'
 
+    # Add a project that already exists.
+
+    qtbot.mouseClick(qwatson.project_manager.btn_add, Qt.LeftButton)
+    qtbot.keyClicks(qwatson.project_manager.project_cbox.linedit, 'p1')
+    qtbot.keyPress(qwatson.project_manager.project_cbox.linedit, Qt.Key_Enter)
+
+    assert qwatson.client.projects == ['', 'p1', 'p2']
+    assert qwatson.currentProject() == 'p1'
+
 
 def test_add_activities(qwatson_creator):
     """Test adding new activities."""
@@ -115,6 +124,8 @@ def test_rename_project(qwatson_creator):
     qwatson.project_manager.setCurrentProject('')
     assert qwatson.currentProject() == ''
 
+    # Rename project '' to project 'p3'
+
     qtbot.mouseClick(qwatson.project_manager.btn_rename, Qt.LeftButton)
     qtbot.keyClicks(qwatson.project_manager.project_cbox.linedit, 'p3')
     qtbot.keyPress(qwatson.project_manager.project_cbox.linedit, Qt.Key_Enter)
@@ -128,18 +139,43 @@ def test_rename_project(qwatson_creator):
 
 
 def test_merge_project(qwatson_creator):
-    """Test merging activities of two projects."""
+    """Test merging activities of two projects that are not empty."""
     qwatson, qtbot, mocker = qwatson_creator
-    qwatson.show()
-    qtbot.waitForWindowShown(qwatson)
 
     assert qwatson.currentProject() == 'p2'
     qwatson.project_manager.setCurrentProject('p3')
     assert qwatson.currentProject() == 'p3'
 
+    # Rename project "p3" to "p2" and click "Cancel" in the dialog.
+
+    assert not qwatson.merge_project_dialog.isVisible()
     qtbot.mouseClick(qwatson.project_manager.btn_rename, Qt.LeftButton)
     qtbot.keyClicks(qwatson.project_manager.project_cbox.linedit, 'p2')
     qtbot.keyPress(qwatson.project_manager.project_cbox.linedit, Qt.Key_Enter)
+    assert qwatson.merge_project_dialog.isVisible()
+    qtbot.mouseClick(
+        qwatson.merge_project_dialog.buttons['Cancel'],  Qt.LeftButton)
+    assert not qwatson.merge_project_dialog.isVisible()
+
+    assert qwatson.client.projects == ['', 'p1', 'p2', 'p3']
+    assert qwatson.currentProject() == 'p3'
+    assert qwatson.client.frames[0].project == 'p3'
+    assert qwatson.client.frames[1].project == 'p3'
+    assert qwatson.client.frames[2].project == 'p1'
+    assert qwatson.client.frames[3].project == 'p1'
+    assert qwatson.client.frames[4].project == 'p2'
+
+    # Rename project "p3" to "p2" and click "Ok" in the dialog.
+
+    assert not qwatson.merge_project_dialog.isVisible()
+    qtbot.mouseClick(qwatson.project_manager.btn_rename, Qt.LeftButton)
+    qtbot.keyClicks(qwatson.project_manager.project_cbox.linedit, 'p2')
+    qtbot.keyPress(qwatson.project_manager.project_cbox.linedit, Qt.Key_Enter)
+    assert qwatson.merge_project_dialog.isVisible()
+    qtbot.mouseClick(
+        qwatson.merge_project_dialog.buttons['Ok'],  Qt.LeftButton)
+    assert not qwatson.merge_project_dialog.isVisible()
+
     assert qwatson.client.projects == ['', 'p1', 'p2']
     assert qwatson.currentProject() == 'p2'
     assert qwatson.client.frames[0].project == 'p2'
@@ -148,14 +184,33 @@ def test_merge_project(qwatson_creator):
     assert qwatson.client.frames[3].project == 'p1'
     assert qwatson.client.frames[4].project == 'p2'
 
+    # Rename project 'p1' to '' to test that the merge dialog is not shown
+    # if either one of the project involved in the merge is empty.
+
+    qwatson.project_manager.setCurrentProject('p1')
+
+    assert not qwatson.merge_project_dialog.isVisible()
+    qtbot.mouseClick(qwatson.project_manager.btn_rename, Qt.LeftButton)
+    qtbot.keyClick(
+        qwatson.project_manager.project_cbox.linedit, Qt.Key_Backspace)
+    qtbot.keyPress(qwatson.project_manager.project_cbox.linedit, Qt.Key_Enter)
+    assert not qwatson.merge_project_dialog.isVisible()
+
+    assert qwatson.client.projects == ['', 'p2']
+    assert qwatson.currentProject() == ''
+    assert qwatson.client.frames[0].project == 'p2'
+    assert qwatson.client.frames[1].project == 'p2'
+    assert qwatson.client.frames[2].project == ''
+    assert qwatson.client.frames[3].project == ''
+    assert qwatson.client.frames[4].project == 'p2'
+
 
 def test_del_project(qwatson_creator):
     """Test deleting a project."""
     qwatson, qtbot, mocker = qwatson_creator
+    qwatson.project_manager.setCurrentProject('')
 
-    # Click to delete the current project, but cancel.
-
-    assert qwatson.currentProject() == 'p2'
+    # Click to delete the project '', but cancel the action.
 
     assert not qwatson.del_project_dialog.isVisible()
     qtbot.mouseClick(qwatson.project_manager.btn_remove, Qt.LeftButton)
@@ -164,13 +219,11 @@ def test_del_project(qwatson_creator):
         qwatson.del_project_dialog.buttons['Cancel'],  Qt.LeftButton)
     assert not qwatson.del_project_dialog.isVisible()
 
-    assert qwatson.currentProject() == 'p2'
-    assert qwatson.client.projects == ['', 'p1', 'p2']
+    assert qwatson.currentProject() == ''
+    assert qwatson.client.projects == ['', 'p2']
     assert len(qwatson.client.frames) == 5
 
-    # Click to delete the current project and accept.
-
-    assert qwatson.currentProject() == 'p2'
+    # Click to delete the project '' and accept the action.
 
     assert not qwatson.del_project_dialog.isVisible()
     qtbot.mouseClick(qwatson.project_manager.btn_remove, Qt.LeftButton)
@@ -178,11 +231,12 @@ def test_del_project(qwatson_creator):
     qtbot.mouseClick(qwatson.del_project_dialog.buttons['Ok'],  Qt.LeftButton)
     assert not qwatson.del_project_dialog.isVisible()
 
-    assert qwatson.currentProject() == 'p1'
-    assert qwatson.client.projects == ['', 'p1']
-    assert len(qwatson.client.frames) == 2
-    assert qwatson.client.frames[0].project == 'p1'
-    assert qwatson.client.frames[1].project == 'p1'
+    assert qwatson.currentProject() == ''
+    assert qwatson.client.projects == ['', 'p2']
+    assert len(qwatson.client.frames) == 3
+    assert qwatson.client.frames[0].project == 'p2'
+    assert qwatson.client.frames[1].project == 'p2'
+    assert qwatson.client.frames[2].project == 'p2'
 
 
 if __name__ == "__main__":

@@ -20,15 +20,15 @@ from qwatson.dialogs.basedialog import BaseDialog
 from qwatson.widgets.layout import InfoBox
 
 
-class DelProjectDialog(BaseDialog):
+class MergeProjectDialog(BaseDialog):
     """
-    A dialog to ask the user to confirm that he truly wants to delete the
-    project and all related frames.
-    The QWatson main is actually in charge of deleting the project.
+    A dialog to ask the user to confirm that he truly wants to merge project
+    x with project y.
+    The QWatson main window is actually in charge of deleting the project.
     """
 
     def __init__(self, main=None, parent=None):
-        super(DelProjectDialog, self).__init__(main, parent)
+        super(MergeProjectDialog, self).__init__(main, parent)
 
     # ---- Setup layout
 
@@ -55,26 +55,34 @@ class DelProjectDialog(BaseDialog):
         layout.addWidget(self.button_box)
         layout.setStretch(0, 100)
 
-    def show(self, project, na):
+    def show(self, proj1, na1, proj2, na2):
         """
         Extend show method to update the text of the info box with the
         provided arguments.
         """
-        self.project = project
+        self.proj1, self.proj2 = proj1, proj2
 
-        text = "<b>"
-        text += ("All activities that are not in a project "
-                 if project == '' else
-                 "The project \"%s\" and all related activities " % project)
-        text += "will be permanently erased from the database.</b><br><br>"
-        text += "%d " % na
-        text += 'activity is' if na <= 1 else 'activities are'
-        text += (" not currently in a project" if project == '' else
-                 " currently in project \"%s\"" % project)
+        text = "<b>All activities "
+        text += ("that are not currently in a project" if proj1 == '' else
+                 "of project \"%s\"" % proj1)
+        text += " will be permanently merged "
+        text += ("with those that are not currently in a project"
+                 if proj2 == '' else
+                 "with those of project \"%s\"" % proj2)
+        text += ".</b><br><br>"
+        text += "%d " % na1
+        text += 'activity is' if na1 <= 1 else 'activities are'
+        text += (" not currently in a project" if proj1 == '' else
+                 " currently in project \"%s\"" % proj1)
+        text += " and "
+        text += "%d " % na2
+        text += 'activity is' if na2 <= 1 else 'activities are'
+        text += (" not currently in a project" if proj2 == '' else
+                 " currently in project \"%s\"" % proj2)
         text += "."
         self.info_box.setText(text)
 
-        super(DelProjectDialog, self).show()
+        super(MergeProjectDialog, self).show()
 
     def receive_answer(self, answer):
         """
@@ -82,7 +90,7 @@ class DelProjectDialog(BaseDialog):
         """
         if self.main is not None:
             if answer == 'Ok':
-                self.main.del_project(self.project, force=True)
+                self.main.rename_project(self.proj1, self.proj2, force=True)
             elif answer == 'Cancel':
                 pass
             self.main.setCurrentIndex(0)
@@ -90,10 +98,17 @@ class DelProjectDialog(BaseDialog):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    d1 = DelProjectDialog()
-    d1.show('', 24)
+
+    d1 = MergeProjectDialog()
+    d1.show('', 3, 'x', 24)
     d1.setFixedSize(300, 162)
-    d2 = DelProjectDialog()
-    d2.show('x', 35)
+
+    d2 = MergeProjectDialog()
+    d2.show('x', 1, 'y', 4)
     d2.setFixedSize(300, 162)
+
+    d3 = MergeProjectDialog()
+    d3.show('x', 27, '', 4)
+    d3.setFixedSize(300, 162)
+
     app.exec_()
