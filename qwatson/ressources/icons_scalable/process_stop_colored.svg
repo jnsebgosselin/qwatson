@@ -35,8 +35,8 @@
      id="namedview8"
      showgrid="false"
      inkscape:zoom="1.8541911"
-     inkscape:cx="97.358405"
-     inkscape:cy="151.64986"
+     inkscape:cx="9.7191104"
+     inkscape:cy="92.950486"
      inkscape:window-x="-8"
      inkscape:window-y="-8"
      inkscape:window-maximized="1"
@@ -49,7 +49,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -62,13 +62,6 @@
      y="80.5"
      rx="5.2836375"
      ry="5.2836375" />
-  <rect
-     x="-7.3242186e-006"
-     y="166"
-     width="90"
-     height="90"
-     style="fill:none"
-     id="rect4616" />
   <ellipse
      cy="128"
      style="color:#000000;fill:none;stroke:#282828;stroke-width:27.87804794;stroke-linejoin:round;stroke-dashoffset:13.80000019;stroke-opacity:1"
