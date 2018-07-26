@@ -96,7 +96,7 @@ class InfoBox(ColoredFrame):
 
         # Setup the layout for the text.
 
-        info_label = QLabel(info_text)
+        self.info_label = info_label = QLabel(info_text)
         info_label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         info_label.setWordWrap(True)
         info_label.setOpenExternalLinks(True)
@@ -118,6 +118,10 @@ class InfoBox(ColoredFrame):
 
         layout.setRowStretch(1, 100)
         layout.setColumnStretch(1, 100)
+
+    def setText(self, text):
+        """Set the text of the info box to the specified text."""
+        self.info_label.setText(text)
 
     def setSpacing(self, x):
         """Set the spacing between the icon and the text."""
