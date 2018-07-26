@@ -59,7 +59,7 @@ class QWatsonProjectMixin(object):
 
         self.project_manager.sig_rename_project.connect(self.rename_project)
         self.project_manager.sig_add_project.connect(self.add_new_project)
-        self.project_manager.sig_del_project.connect(self.ask_to_del_project)
+        self.project_manager.sig_del_project.connect(self.del_project)
         self.project_manager.sig_project_changed.connect(self.project_changed)
 
         return self.project_manager
@@ -103,19 +103,18 @@ class QWatsonProjectMixin(object):
             self.project_manager.model.endResetModel()
         self.project_manager.setCurrentProject(project)
 
-    def ask_to_del_project(self, project):
-        """
-        Ask confirmation to the user before deleting the specified project.
-        """
-        self.del_project_dialog.show(
-            project, get_frame_nbr_for_project(self.client, project))
-
-    def del_project(self, project):
+    def del_project(self, project, force=False):
         """
         Ask for confirmation to delete the corresponding project from the
         database and update the model.
+
+        If force is False, a dialog will ask the user before deleting the
+        project.
         """
-        if project in self.client.projects:
+        if force is False:
+            self.del_project_dialog.show(
+                project, get_frame_nbr_for_project(self.client, project))
+        elif force is True and project in self.client.projects:
             index = self.project_manager.currentProjectIndex()
 
             self.model.beginResetModel()

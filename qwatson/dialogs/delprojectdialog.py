@@ -80,7 +80,7 @@ class DelProjectDialog(BaseDialog):
         """
         if self.main is not None:
             if answer == 'Ok':
-                self.main.del_project(self.project)
+                self.main.del_project(self.project, force=True)
             elif answer == 'Cancel':
                 pass
             self.main.setCurrentIndex(0)
