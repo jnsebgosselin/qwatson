@@ -44,6 +44,11 @@ def edit_frame_at(client, index, start=None, stop=None, project=None,
         project, start, stop, tags, frame.id, updated_at, message]
 
 
+def get_frame_nbr_for_project(client, project):
+    """Return the number of activities associated with a given project."""
+    return len(list(client.frames.filter(projects=[project])))
+
+
 def round_frame_at(client, index, base):
     """Round the start and stop time of the Watson frame at index."""
     frame = client.frames[index]

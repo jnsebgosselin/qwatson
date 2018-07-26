@@ -52,12 +52,15 @@ def get_iconsize(size):
 
 
 def get_standard_icon(constant):
-    """Return a QIcon of a standard pixmap."""
+    """
+    Return a QIcon of a standard pixmap.
+
+    The value of the 'constant' must be either 'question', 'information',
+    'warning', or 'critical'.
+    """
+    constant = getattr(QStyle, 'SP_MessageBox' + constant.title())
     style = QApplication.instance().style()
-    if constant == 'question':
-        return style.standardIcon(QStyle.SP_MessageBoxQuestion)
-    if constant == 'information':
-        return style.standardIcon(QStyle.SP_MessageBoxInformation)
+    return style.standardIcon(constant)
 
 
 def get_standard_iconsize(constant):

@@ -27,7 +27,7 @@ from qwatson.utils.fileio import delete_folder_recursively
 
 @pytest.fixture(scope="module")
 def appdir(tmpdir_factory):
-    appdir = osp.join(osp.dirname(__file__), 'appdir3')
+    appdir = osp.join(osp.dirname(__file__), 'appdir', 'mainwindow_project')
     delete_folder_recursively(appdir, delroot=True)
     return appdir
 
@@ -41,8 +41,12 @@ def now():
 def qwatson_creator(qtbot, mocker, appdir, now):
     mocker.patch('arrow.now', return_value=now)
     qwatson = QWatson(config_dir=appdir)
+
     qtbot.addWidget(qwatson)
+    qwatson.show()
+    qtbot.waitForWindowShown(qwatson)
     yield qwatson, qtbot, mocker
+
     qwatson.close()
 
 
@@ -51,8 +55,6 @@ def qwatson_creator(qtbot, mocker, appdir, now):
 def test_add_project(qwatson_creator):
     """Test adding a new project."""
     qwatson, qtbot, mocker = qwatson_creator
-    qwatson.show()
-    qtbot.waitForWindowShown(qwatson)
 
     assert qwatson.client.projects == ['']
 
@@ -78,8 +80,6 @@ def test_add_project(qwatson_creator):
 def test_add_activities(qwatson_creator):
     """Test adding new activities."""
     qwatson, qtbot, mocker = qwatson_creator
-    qwatson.show()
-    qtbot.waitForWindowShown(qwatson)
 
     assert qwatson.client.projects == ['', 'p1', 'p2']
     assert qwatson.currentProject() == ''
@@ -110,8 +110,6 @@ def test_add_activities(qwatson_creator):
 def test_rename_project(qwatson_creator):
     """Test renaming a project."""
     qwatson, qtbot, mocker = qwatson_creator
-    qwatson.show()
-    qtbot.waitForWindowShown(qwatson)
 
     assert qwatson.currentProject() == 'p2'
     qwatson.project_manager.setCurrentProject('')
@@ -154,13 +152,33 @@ def test_merge_project(qwatson_creator):
 def test_del_project(qwatson_creator):
     """Test deleting a project."""
     qwatson, qtbot, mocker = qwatson_creator
-    qwatson.show()
-    qtbot.waitForWindowShown(qwatson)
+
+    # Click to delete the current project, but cancel.
 
     assert qwatson.currentProject() == 'p2'
 
-    mocker.patch.object(QMessageBox, 'question', return_value=QMessageBox.Yes)
+    assert not qwatson.del_project_dialog.isVisible()
     qtbot.mouseClick(qwatson.project_manager.btn_remove, Qt.LeftButton)
+    assert qwatson.del_project_dialog.isVisible()
+    qtbot.mouseClick(
+        qwatson.del_project_dialog.buttons['Cancel'],  Qt.LeftButton)
+    assert not qwatson.del_project_dialog.isVisible()
+
+    assert qwatson.currentProject() == 'p2'
+    assert qwatson.client.projects == ['', 'p1', 'p2']
+    assert len(qwatson.client.frames) == 5
+
+    # Click to delete the current project and accept.
+
+    assert qwatson.currentProject() == 'p2'
+
+    assert not qwatson.del_project_dialog.isVisible()
+    qtbot.mouseClick(qwatson.project_manager.btn_remove, Qt.LeftButton)
+    assert qwatson.del_project_dialog.isVisible()
+    qtbot.mouseClick(qwatson.del_project_dialog.buttons['Ok'],  Qt.LeftButton)
+    assert not qwatson.del_project_dialog.isVisible()
+
+    assert qwatson.currentProject() == 'p1'
     assert qwatson.client.projects == ['', 'p1']
     assert len(qwatson.client.frames) == 2
     assert qwatson.client.frames[0].project == 'p1'
