@@ -32,10 +32,9 @@ from qwatson.watson_ext.watsonextends import Watson
 from qwatson.watson_ext.watsonhelpers import (
     round_frame_at, reset_watson, get_frame_nbr_for_project)
 from qwatson.widgets.projects import ProjectManager
-from qwatson.widgets.clock import ElapsedTimeLCDNumber
+from qwatson.widgets.clock import StopWatchWidget
 from qwatson.widgets.tableviews import ActivityOverviewWidget
-from qwatson.widgets.toolbar import (
-    OnOffToolButton, QToolButtonSmall, DropDownToolButton)
+from qwatson.widgets.toolbar import QToolButtonSmall, DropDownToolButton
 from qwatson import __namever__
 from qwatson.models.tablemodels import WatsonTableModel
 from qwatson.dialogs import (ImportDialog, DateTimeInputDialog, CloseDialog,
@@ -267,12 +266,14 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
         self.client = Watson(config_dir=config_dir)
         self.model = WatsonTableModel(self.client)
 
-        if self.client.is_started:
-            self.stop_watson(message="last session not closed correctly.",
-                             tags=['error'])
-
         self.setup_activity_overview()
         self.setup()
+
+        if self.client.is_started:
+            self.add_new_project(self.client.current['project'])
+            self.tag_manager.set_tags(['error'])
+            self.comment_manager.setText("last session not closed correctly.")
+            self.stop_watson()
 
     # ---- Setup layout
 
