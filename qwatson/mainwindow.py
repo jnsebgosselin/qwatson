@@ -286,9 +286,9 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
         self.setup_activity_tracker()
         self.setup_datetime_input_dialog()
         self.setup_close_dialog()
-        self.setup_import_dialog()
         self.setup_del_project_dialog()
         self.setup_merge_project_dialog()
+        self.setup_import_dialog()
 
         # Setup the main layout of the widget
 
@@ -311,6 +311,25 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
         """
         self.datetime_input_dial = DateTimeInputDialog(parent=self)
         self.datetime_input_dial.register_dialog_to(self)
+
+    # ---- Main interface
+
+    def setup_activity_tracker(self):
+        """Setup the widget used to start, track, and stop new activity."""
+        stopwatch = self.setup_stopwatch()
+        managers = self.setup_watson_managers()
+        statusbar = self.setup_statusbar()
+
+        tracker = QWidget()
+        layout = QVBoxLayout(tracker)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(stopwatch)
+        layout.addWidget(managers)
+        layout.addWidget(statusbar)
+        layout.setStretch(1, 100)
+
+        self.stackwidget.addWidget(tracker)
 
     def setup_watson_managers(self):
         """
