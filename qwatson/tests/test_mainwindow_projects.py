@@ -128,11 +128,23 @@ def test_rename_project(qwatson_creator):
     """Test renaming a project."""
     qwatson, qtbot, mocker = qwatson_creator
 
+    # Rename project 'p2' to project 'p2' :
+
     assert qwatson.currentProject() == 'p2'
-    qwatson.project_manager.setCurrentProject('')
-    assert qwatson.currentProject() == ''
+    qtbot.mouseClick(qwatson.project_manager.btn_rename, Qt.LeftButton)
+    qtbot.keyClicks(qwatson.project_manager.project_cbox.linedit, 'p2')
+    assert qwatson.currentProject() == 'p2'
+    assert qwatson.client.projects == ['', 'p1', 'p2']
+    assert qwatson.client.frames[0].project == ''
+    assert qwatson.client.frames[1].project == ''
+    assert qwatson.client.frames[2].project == 'p1'
+    assert qwatson.client.frames[3].project == 'p1'
+    assert qwatson.client.frames[4].project == 'p2'
 
     # Rename project '' to project 'p3'
+
+    qwatson.project_manager.setCurrentProject('')
+    assert qwatson.currentProject() == ''
 
     qtbot.mouseClick(qwatson.project_manager.btn_rename, Qt.LeftButton)
     qtbot.keyClicks(qwatson.project_manager.project_cbox.linedit, 'p3')
