@@ -30,6 +30,12 @@ from qwatson.widgets.toolbar import (
 
 
 class StopWatchWidget(ColoredFrame):
+    """
+    A stopwatch widget that consists of a start, stop, and cancel button and
+    a digital clock where is shown the elapse time. Clicking on the buttons
+    emit signals and do not actually start, stop, or cancel the time monitoring
+    of an activity. This is done actually by the mainwindow.
+    """
     sig_btn_start_clicked = QSignal()
     sig_btn_stop_clicked = QSignal()
     sig_btn_cancel_clicked = QSignal()
