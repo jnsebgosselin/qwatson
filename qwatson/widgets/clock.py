@@ -65,13 +65,18 @@ class StopWatchWidget(ColoredFrame):
 
         btn_stop = QToolButtonBase('process_stop', self.__iconsize)
         btn_stop.setToolTip(
-            "<b>Stop</b>")
+            "<b>Stop</b><br><br>"
+            "Stop monitoring the elapsed time for the currently running"
+            " activity and save it to the database using the project,"
+            " tags, and comment specified in the section below.")
         btn_stop.clicked.connect(lambda: self.sig_btn_stop_clicked.emit())
         btn_stop.setEnabled(False)
 
         btn_cancel = QToolButtonBase('process_cancel', self.__iconsize)
         btn_cancel.setToolTip(
-            "<b>Cancel</b>")
+            "<b>Cancel</b><br><br>"
+            "Stop monitoring the elapsed time for the currently running"
+            " activity and do NOT add it to the database.")
         btn_cancel.clicked.connect(lambda: self.sig_btn_cancel_clicked.emit())
         btn_cancel.setEnabled(False)
 
