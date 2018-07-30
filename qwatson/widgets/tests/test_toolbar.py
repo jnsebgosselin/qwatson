@@ -53,9 +53,7 @@ def test_toolbuttons(qtbot):
 
 
 def test_onofftoolbutton(qtbot):
-    """
-    Test that the OnOffToolButton is working as expected.
-    """
+    """Test that the OnOffToolButton is working as expected."""
     onoff_btn = OnOffToolButton('process_start', 'process_stop', 'normal')
     qtbot.addWidget(onoff_btn)
     onoff_btn.show()
@@ -66,9 +64,6 @@ def test_onofftoolbutton(qtbot):
     assert onoff_btn.value() is True
     qtbot.mouseClick(onoff_btn, Qt.LeftButton)
     assert onoff_btn.value() is False
-
-
-# ---- Test DropDownToolButton
 
 
 def test_dropdowntoolbutton(qtbot):

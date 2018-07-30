@@ -106,6 +106,10 @@ class StopWatchWidget(ColoredFrame):
         layout.setContentsMargins(5, 5, 5, 5)
 
     def start(self, startfrom=None):
+        """
+        Set the state of the buttons and start monitoring the elapsed time
+        from the specified startfrom arrow or from arrow.now() if None.
+        """
         self.setStartFrom(startfrom)
         self.buttons['start'].setEnabled(False)
         self.buttons['stop'].setEnabled(True)
@@ -113,12 +117,20 @@ class StopWatchWidget(ColoredFrame):
         self.elap_timer.start(self.startFrom().timestamp)
 
     def stop(self):
+        """
+        Set the state of the buttons and stop monitoring the
+        elapsed time.
+        """
         self.buttons['start'].setEnabled(True)
         self.buttons['stop'].setEnabled(False)
         self.buttons['cancel'].setEnabled(False)
         self.elap_timer.stop()
 
     def cancel(self):
+        """
+        Set the state of the buttons, stop monitoring the elapsed time and
+        reset the time counter.
+        """
         self.buttons['start'].setEnabled(True)
         self.buttons['stop'].setEnabled(False)
         self.buttons['cancel'].setEnabled(False)
