@@ -221,7 +221,6 @@ class ProjectView(QWidget):
         combobox.
         """
         self._edit_mode = None
-        self.linedit.clear()
         self.combobox.setVisible(True)
         self.combobox.setFocus()
         self.linedit.setVisible(False)
@@ -231,26 +230,29 @@ class ProjectView(QWidget):
         Check for events to accept the edits and modify the content of the
         combobox accordingly.
         """
-        is_focusout = event.type() == QEvent.FocusOut
-        is_keypress = event.type() == QEvent.KeyPress
-
-        is_canceled = (
-            is_keypress and event.key() == Qt.Key_Escape
-            ) and self._edit_mode is not None
-        is_accepted = (
-            is_focusout or
-            (is_keypress and event.key() in [Qt.Key_Enter, Qt.Key_Return])
-            ) and self._edit_mode is not None
-
-        new_name = self.linedit.text()
-        if is_accepted and self._edit_mode == 'add':
-            self.sig_add_project.emit(new_name)
-        elif is_accepted and self._edit_mode == 'rename':
-            old_name = self.combobox.currentText()
-            self.sig_rename_project.emit(old_name, new_name)
-
-        if is_accepted or is_canceled:
-            self._leave_edit_mode()
+        if event.type() == QEvent.KeyPress:
+            # When pressing the Enter, Return, or Excape key, we set
+            # programmatically the focus back to the combobox. This will
+            # trigger a FocusOut event on the linedit. This is where we will
+            # emit the sig_add_project or sig_rename_project signals.
+            if event.key() in [Qt.Key_Enter, Qt.Key_Return]:
+                self.combobox.setVisible(True)
+                self.combobox.setFocus()
+                self.linedit.setVisible(False)
+                event.accept()
+                return True
+            elif event.key() == Qt.Key_Escape:
+                self._leave_edit_mode()
+                event.accept()
+                return True
+        elif event.type() == QEvent.FocusOut:
+            if self._edit_mode == 'add':
+                self.sig_add_project.emit(self.linedit.text())
+                self._leave_edit_mode()
+            elif self._edit_mode == 'rename':
+                self.sig_rename_project.emit(
+                    self.combobox.currentText(), self.linedit.text())
+                self._leave_edit_mode()
 
         return QWidget.eventFilter(self, widget, event)
 
