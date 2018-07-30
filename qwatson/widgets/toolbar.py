@@ -15,7 +15,8 @@ import sys
 from PyQt5.QtCore import pyqtSignal as QSignal
 from PyQt5.QtCore import QSize, Qt, QEvent
 from PyQt5.QtWidgets import (QApplication, QGridLayout, QToolButton, QWidget,
-                             QMenu, QListWidget, QStyle, QSizePolicy)
+                             QMenu, QListWidget, QStyle, QSizePolicy,
+                             QStyleOptionToolButton)
 
 # ---- Local imports
 
@@ -47,27 +48,27 @@ class QToolButtonBase(QToolButton):
         self.setAutoRaise(True)
         self.setFocusPolicy(Qt.NoFocus)
         if icon is not None:
-            icon = icons.get_icon(icon) if isinstance(icon, str) else icon
-            self.setIcon(icon)
-            self.setIconSize(icons.get_iconsize(iconsize))
+            self.setIcon(
+                icons.get_icon(icon) if isinstance(icon, str) else icon)
+            self.setIconSize(
+                icons.get_iconsize(iconsize) if isinstance(iconsize, str)
+                else iconsize)
 
 
 class QToolButtonNormal(QToolButtonBase):
-    def __init__(self, Qicon, *args, **kargs):
-        super(QToolButtonNormal, self).__init__(Qicon, *args, **kargs)
-        self.setIconSize(icons.get_iconsize('normal'))
+    def __init__(self, icon, *args, **kargs):
+        super(QToolButtonNormal, self).__init__(icon, 'normal', *args, **kargs)
 
 
 class QToolButtonSmall(QToolButtonBase):
-    def __init__(self, Qicon, *args, **kargs):
-        super(QToolButtonSmall, self).__init__(Qicon, *args, **kargs)
-        self.setIconSize(icons.get_iconsize('small'))
+    def __init__(self, icon, *args, **kargs):
+        super(QToolButtonSmall, self).__init__(icon, 'small', *args, **kargs)
 
 
 class QToolButtonVRectSmall(QToolButtonBase):
-    def __init__(self, Qicon, *args, **kargs):
-        super(QToolButtonVRectSmall, self).__init__(Qicon, *args, **kargs)
-        self.setIconSize(QSize(8, 20))
+    def __init__(self, icon, *args, **kargs):
+        super(QToolButtonVRectSmall, self).__init__(icon, QSize(8, 20),
+                                                    *args, **kargs)
 
 
 class OnOffToolButton(QToolButtonBase):
@@ -237,12 +238,20 @@ if __name__ == '__main__':
                             'round to 5min',
                             'round to 10min'])
 
-    onoff_button = OnOffToolButton('process_start', 'process_stop')
-    onoff_button.setIconSize(icons.get_iconsize('normal'))
+    onoff_button = OnOffToolButton('process_start', 'process_stop', 'normal')
+
+    btn_normal = QToolButtonNormal('home')
 
     toolbar = ToolBarWidget()
     toolbar.addWidget(onoff_button)
     toolbar.addWidget(drop_down_btn)
+    toolbar.addWidget(btn_normal)
     toolbar.show()
+
+    size = toolbar.style().sizeFromContents(
+        QStyle.CT_ToolButton,
+        QStyleOptionToolButton(),
+        icons.get_iconsize('normal'))
+    print(size)
 
     sys.exit(app.exec_())
