@@ -15,7 +15,7 @@ import sys
 
 import arrow
 from PyQt5.QtCore import pyqtSignal as QSignal
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtWidgets import (QLCDNumber, QApplication, QGridLayout, QStyle,
                              QStyleOptionToolButton)
 
@@ -47,12 +47,23 @@ class StopWatchWidget(ColoredFrame):
         self.setup()
 
     def setup(self):
-        """Setup the widget layout and child widgets."""
+        btn_toolbar = self.setup_buttons()
+        elap_timer = self.setup_elapsed_timer()
+
+        layout = QGridLayout(self)
+        layout.addLayout(btn_toolbar, 0, 0)
+        layout.setColumnStretch(0, 100)
+        layout.addWidget(elap_timer, 0, 2)
+        layout.setSpacing(15)
+        layout.setContentsMargins(10, 10, 0, 10)
+
+    def setup_buttons(self):
+        """Setup the start, stop, and cancel buttons."""
         btn_start = QToolButtonBase('process_start', self.__iconsize)
         btn_start.setToolTip(
             "<b>Start</b><br><br>"
-            "Start monitoring the elapsed time for an activity.<br><br>"
-            " The \"Start from\" menu located in the statusbar below can be"
+            "Start monitoring the time elapsed for an activity.<br><br>"
+            " The \"Start from\" menu located in the bottom toolbar can be"
             " used to specify a different start time for the activity."
             " The project, tags, and comment for the activity can be specified"
             " in the section below.<br><br>"
@@ -66,16 +77,17 @@ class StopWatchWidget(ColoredFrame):
         btn_stop = QToolButtonBase('process_stop', self.__iconsize)
         btn_stop.setToolTip(
             "<b>Stop</b><br><br>"
-            "Stop monitoring the elapsed time for the currently running"
-            " activity and save it to the database using the project,"
-            " tags, and comment specified in the section below.")
+            "Stop monitoring the time elapsed for the currently running"
+            " activity and save it to the database.<br><br>"
+            "The activity is saved using the specified project, tags,"
+            " and comment in the section below.")
         btn_stop.clicked.connect(lambda: self.sig_btn_stop_clicked.emit())
         btn_stop.setEnabled(False)
 
         btn_cancel = QToolButtonBase('process_cancel', self.__iconsize)
         btn_cancel.setToolTip(
             "<b>Cancel</b><br><br>"
-            "Stop monitoring the elapsed time for the currently running"
+            "Cancel monitoring the time elapsed for the currently running"
             " activity and do NOT add it to the database.")
         btn_cancel.clicked.connect(lambda: self.sig_btn_cancel_clicked.emit())
         btn_cancel.setEnabled(False)
@@ -85,30 +97,38 @@ class StopWatchWidget(ColoredFrame):
                         'cancel': btn_cancel}
 
         btn_toolbar = QGridLayout()
-        btn_toolbar.setSpacing(1)
+        btn_toolbar.setSpacing(3)
         btn_toolbar.setContentsMargins(0, 0, 0, 0)
-        btn_toolbar.addWidget(btn_start, 1, 0)
-        btn_toolbar.addWidget(btn_stop, 1, 1)
-        btn_toolbar.addWidget(btn_cancel, 1, 2)
+        btn_toolbar.addWidget(btn_start, 1, 1)
+        btn_toolbar.addWidget(btn_stop, 1, 2)
+        btn_toolbar.addWidget(btn_cancel, 1, 3)
         btn_toolbar.setRowStretch(0, 100)
         btn_toolbar.setRowStretch(2, 100)
+        btn_toolbar.setColumnStretch(4, 100)
 
+        return btn_toolbar
+
+    def setup_elapsed_timer(self):
+        """Setup a digital clock to show the elpased time."""
         self.elap_timer = ElapsedTimeLCDNumber()
+        self.elap_timer.setToolTip(
+            "<b>Elapsed Time</b><br><br>"
+            "Time elapsed since the start of the activity currently"
+            " being monitored.<br><br>"
+            "The reference time used to calculate the elapsed time depends"
+            " on the option selected in the \"Start from\" menu located in"
+            " the bottom toolbar."
+            )
         size_hint = self.elap_timer.sizeHint()
         size_ratio = size_hint.width()/size_hint.height()
-        fix_height = btn_start.style().sizeFromContents(
+        fix_height = self.buttons['start'].style().sizeFromContents(
             QStyle.CT_ToolButton, QStyleOptionToolButton(),
             icons.get_iconsize(self.__iconsize)
             ).height()
         fix_width = fix_height * size_ratio
         self.elap_timer.setFixedSize(fix_width, fix_height)
 
-        layout = QGridLayout(self)
-        layout.addLayout(btn_toolbar, 0, 0)
-        layout.setRowStretch(1, 100)
-        layout.addWidget(self.elap_timer, 0, 2)
-        layout.setSpacing(15)
-        layout.setContentsMargins(5, 5, 5, 5)
+        return self.elap_timer
 
     def start(self, startfrom=None):
         """

@@ -284,6 +284,7 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
         # Setup the stack widget.
 
         self.stackwidget = QStackedWidget()
+
         self.setup_activity_tracker()
         self.setup_datetime_input_dialog()
         self.setup_close_dialog()
