@@ -87,7 +87,7 @@ def test_init_and_defaults(qwatson_creator):
     assert stopwatch.buttons['start'].isEnabled()
     assert not stopwatch.buttons['stop'].isEnabled()
     assert not stopwatch.buttons['cancel'].isEnabled()
-    assert stopwatch.elap_timer.is_started is False
+    assert stopwatch.isRunning() is False
     assert stopwatch.elap_timer._elapsed_time == 0
     assert qwatson.startFrom() == 'now'
     assert qwatson.roundTo() == 5
@@ -107,7 +107,7 @@ def test_startstop(qwatson_creator, now):
     assert not stopwatch.buttons['start'].isEnabled()
     assert stopwatch.buttons['stop'].isEnabled()
     assert stopwatch.buttons['cancel'].isEnabled()
-    assert stopwatch.elap_timer.is_started is True
+    assert stopwatch.isRunning() is True
     assert stopwatch.elap_timer._elapsed_time == 0
 
     # Setup project, tags, and comment.
@@ -127,7 +127,7 @@ def test_startstop(qwatson_creator, now):
     assert stopwatch.buttons['start'].isEnabled()
     assert not stopwatch.buttons['stop'].isEnabled()
     assert not stopwatch.buttons['cancel'].isEnabled()
-    assert stopwatch.elap_timer.is_started is False
+    assert stopwatch.isRunning() is False
     assert stopwatch.elap_timer._elapsed_time == 3*60*60
 
     assert len(qwatson.client.frames) == 1
@@ -165,7 +165,7 @@ def test_startcancel(qwatson_creator, now):
     assert stopwatch.buttons['start'].isEnabled()
     assert not stopwatch.buttons['stop'].isEnabled()
     assert not stopwatch.buttons['cancel'].isEnabled()
-    assert stopwatch.elap_timer.is_started is False
+    assert stopwatch.isRunning() is False
     assert stopwatch.elap_timer._elapsed_time == 0
 
     assert len(qwatson.client.frames) == 1
