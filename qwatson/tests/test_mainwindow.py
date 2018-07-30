@@ -727,50 +727,5 @@ def test_edit_tags(qtbot, mocker):
             '[tag1r] [tag2r] [tag3r]')
 
 
-def test_edit_comment(qtbot, mocker):
-    """
-    Test editing the comment in the activity overview table.
-    """
-    now = local_arrow_from_tuple((2018, 6, 14, 23, 59, 0))
-    mocker.patch('arrow.now', return_value=now)
-
-    mainwindow = QWatson(APPDIR2)
-    qtbot.addWidget(mainwindow)
-    qtbot.addWidget(mainwindow.overview_widg)
-    mainwindow.show()
-
-    qtbot.mouseClick(mainwindow.btn_report, Qt.LeftButton)
-    qtbot.waitForWindowShown(mainwindow.overview_widg)
-
-    table = mainwindow.overview_widg.table_widg.tables[3]
-    col = table.view.proxy_model.sourceModel().COLUMNS['comment']
-    assert mainwindow.client.frames[0].message == 'First activity'
-    assert table.view.proxy_model.index(0, col).data() == 'First activity'
-
-    # ---- Edit frame comment in the overview table
-
-    index = table.view.proxy_model.index(0, col)
-    delegate = table.view.itemDelegate(index)
-    assert isinstance(delegate, LineEditDelegate)
-
-    # Assert the delegate editor displays value.
-
-    table.view.edit(index)
-    assert delegate.editor.text() == 'First activity'
-
-    # Enter a new comment for the activity.
-
-    qtbot.keyClicks(delegate.editor, 'Edited comment for the first activity')
-    with qtbot.waitSignal(table.view.proxy_model.sig_sourcemodel_changed):
-        qtbot.keyPress(delegate.editor, Qt.Key_Enter)
-
-    # Assert the comment was correctly set in the database.
-
-    frame = mainwindow.client.frames[0]
-    assert frame.message == 'Edited comment for the first activity'
-    assert (table.view.proxy_model.index(0, col).data() ==
-            'Edited comment for the first activity')
-
-
 if __name__ == "__main__":
     pytest.main(['-x', os.path.basename(__file__), '-v', '-rw'])

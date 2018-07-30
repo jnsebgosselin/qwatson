@@ -24,7 +24,7 @@ from qwatson.mainwindow import QWatson
 from qwatson.utils.dates import local_arrow_from_tuple
 from qwatson.utils.fileio import delete_folder_recursively
 from qwatson.utils.dates import qdatetime_from_str
-from qwatson.models.delegates import DateTimeDelegate
+from qwatson.models.delegates import DateTimeDelegate, LineEditDelegate
 
 
 # ---- Fixtures and utilities
@@ -296,8 +296,6 @@ def test_edit_start_datetime(overview_creator):
 def test_edit_stop_datetime(overview_creator):
     """Test editing the stop date in the activity overview table."""
     overview, qtbot, mocker = overview_creator
-    overview.show()
-    qtbot.waitForWindowShown(overview)
 
     # Edit the stop date of the first frame of the third table
 
@@ -306,7 +304,7 @@ def test_edit_stop_datetime(overview_creator):
     delegate = table.view.itemDelegate(table.view.proxy_model.index(0, 1))
     assert isinstance(delegate, DateTimeDelegate)
 
-    # Check that the stop value is constraint by the start value of the frame.
+    # Check that the stop value is constraint by the start value of the frame
 
     table.view.edit(index)
     assert delegate.editor.isVisible()
@@ -334,6 +332,41 @@ def test_edit_stop_datetime(overview_creator):
 
     assert (overview.model.client.frames[4].stop.format('YYYY-MM-DD HH:mm') ==
             '2018-06-13 18:00')
+
+
+def test_edit_comment(overview_creator):
+    """
+    Test editing the comment in the activity overview table.
+    """
+    overview, qtbot, mocker = overview_creator
+
+    # Edit the comment of the second entry in the fourth table :
+
+    table = overview.table_widg.tables[3]
+    col = table.view.proxy_model.sourceModel().COLUMNS['comment']
+    index = table.view.proxy_model.index(1, col)
+    delegate = table.view.itemDelegate(table.view.proxy_model.index(0, 1))
+    assert isinstance(delegate, DateTimeDelegate)
+
+    frame = table.view.proxy_model.get_frame_from_index(index)
+    assert frame.message == 'activity #7'
+
+    # Edit the frame comment in the overview table :
+
+    delegate = table.view.itemDelegate(index)
+    table.view.edit(index)
+    assert isinstance(delegate, LineEditDelegate)
+    assert delegate.editor.text() == 'activity #7'
+
+    # Enter a new comment for the activity.
+
+    qtbot.keyClicks(delegate.editor, 'activity #7 (edited)')
+    with qtbot.waitSignal(table.view.proxy_model.sig_sourcemodel_changed):
+        qtbot.keyPress(delegate.editor, Qt.Key_Enter)
+
+    frame = table.view.proxy_model.get_frame_from_index(index)
+    assert frame.message == 'activity #7 (edited)'
+    assert index.data() == 'activity #7 (edited)'
 
 
 if __name__ == "__main__":
