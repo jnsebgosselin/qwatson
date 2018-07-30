@@ -16,6 +16,7 @@ import json
 
 import pytest
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QMessageBox
 
 # ---- Local imports
 
@@ -25,7 +26,7 @@ from qwatson.utils.dates import local_arrow_from_tuple
 from qwatson.utils.fileio import delete_folder_recursively
 from qwatson.utils.dates import qdatetime_from_str
 from qwatson.models.delegates import (DateTimeDelegate, LineEditDelegate,
-                                      TagEditDelegate)
+                                      TagEditDelegate, ToolButtonDelegate)
 
 
 # ---- Fixtures and utilities
@@ -372,7 +373,7 @@ def test_edit_tags(overview_creator):
     """Test editing the tags in the activity overview table."""
     overview, qtbot, mocker = overview_creator
 
-    # We test this on the first entry in the fifth table :
+    # We will test this on the first entry of the fifth table :
 
     table = overview.table_widg.tables[4]
     col = table.view.proxy_model.sourceModel().COLUMNS['tags']
@@ -400,6 +401,47 @@ def test_edit_tags(overview_creator):
     frame = table.view.proxy_model.get_frame_from_index(index)
     assert frame.tags == ['tag1', 'tag2', 'tag3']
     assert index.data() == '[tag1] [tag2] [tag3]'
+
+
+def test_delete_frame(overview_creator):
+    """
+    Test that deleting a frame from the activity overview table work correctly.
+    """
+    overview, qtbot, mocker = overview_creator
+
+    # We will test this on the last entry of the last table :
+
+    table = overview.table_widg.tables[-1]
+    col = table.view.proxy_model.sourceModel().COLUMNS['icons']
+    index = table.view.proxy_model.index(1, col)
+
+    frame = table.view.proxy_model.get_frame_from_index(index)
+    assert frame.message == 'activity #13'
+    assert isinstance(table.view.itemDelegate(index), ToolButtonDelegate)
+
+    # Click to delete last frame and answer No :
+
+    visual_rect = table.view.visualRect(index)
+
+    mocker.patch.object(QMessageBox, 'question', return_value=QMessageBox.No)
+    with qtbot.waitSignal(table.view.proxy_model.sig_btn_delrow_clicked):
+        qtbot.mouseClick(table.view.viewport(), Qt.LeftButton,
+                         pos=visual_rect.center())
+
+    assert table.view.proxy_model.get_accepted_row_count() == 2
+    assert len(overview.model.client.frames) == 14
+    assert overview.model.client.frames[-1].message == 'activity #13'
+
+    # Click to delete last frame and answer Yes.
+
+    mocker.patch.object(QMessageBox, 'question', return_value=QMessageBox.Yes)
+    with qtbot.waitSignal(table.view.proxy_model.sig_btn_delrow_clicked):
+        qtbot.mouseClick(table.view.viewport(), Qt.LeftButton,
+                         pos=visual_rect.center())
+
+    assert table.view.proxy_model.get_accepted_row_count() == 1
+    assert len(overview.model.client.frames) == 13
+    assert overview.model.client.frames[-1].message == 'activity #12'
 
 
 if __name__ == "__main__":
