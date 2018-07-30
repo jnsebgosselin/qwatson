@@ -16,14 +16,13 @@ import sys
 import arrow
 from PyQt5.QtCore import pyqtSignal as QSignal
 from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QLCDNumber, QApplication, QGridLayout, QProxyStyle, QStyle
+from PyQt5.QtWidgets import QLCDNumber, QApplication, QGridLayout
 
 # ---- Local imports
 
 from qwatson.utils import icons
 from qwatson.widgets.layout import ColoredFrame
-from qwatson.widgets.toolbar import (
-    OnOffToolButton, QToolButtonSmall, QToolButtonBase, DropDownToolButton)
+from qwatson.widgets.toolbar import QToolButtonBase
 
 # https://stackoverflow.com/questions/14478574/
 # changing-the-digit-color-of-qlcd-number
