@@ -173,6 +173,7 @@ class QWatsonImportMixin(object):
                 self.import_dialog.show()
             else:
                 self.create_empty_frames_file()
+                self.import_dialog = None
         else:
             self.import_dialog = None
 
