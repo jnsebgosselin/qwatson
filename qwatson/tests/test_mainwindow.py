@@ -680,52 +680,5 @@ def test_delete_frame(qtbot, mocker):
     mainwindow.close()
 
 
-def test_edit_tags(qtbot, mocker):
-    """
-    Test editing the tags in the activity overview table.
-    """
-    now = local_arrow_from_tuple((2018, 6, 14, 23, 59, 0))
-    mocker.patch('arrow.now', return_value=now)
-
-    mainwindow = QWatson(APPDIR2)
-    qtbot.addWidget(mainwindow)
-    qtbot.addWidget(mainwindow.overview_widg)
-    mainwindow.show()
-
-    qtbot.mouseClick(mainwindow.btn_report, Qt.LeftButton)
-    qtbot.waitForWindowShown(mainwindow.overview_widg)
-
-    table = mainwindow.overview_widg.table_widg.tables[3]
-    col = table.view.proxy_model.sourceModel().COLUMNS['tags']
-    assert mainwindow.client.frames[0].tags == ['tag1', 'tag2', 'tag3']
-    assert (table.view.proxy_model.index(0, col).data() ==
-            '[tag1] [tag2] [tag3]')
-
-    # ---- Edit frame tags in the overview table
-
-    index = table.view.proxy_model.index(0, col)
-    delegate = table.view.itemDelegate(index)
-    assert isinstance(delegate, TagEditDelegate)
-
-    # Assert the delegate editor displays value.
-
-    table.view.edit(index)
-    assert delegate.editor.tags == ['tag1', 'tag2', 'tag3']
-    assert delegate.editor.text() == 'tag1, tag2, tag3'
-
-    # Enter a new list of tags for the activity.
-
-    qtbot.keyClicks(delegate.editor, 'tag1r,tag2r,  tag3r')
-    with qtbot.waitSignal(table.view.proxy_model.sig_sourcemodel_changed):
-        qtbot.keyPress(delegate.editor, Qt.Key_Enter)
-
-    # Assert the tags were correctly set in the database.
-
-    frame = mainwindow.client.frames[0]
-    assert frame.tags == ['tag1r', 'tag2r', 'tag3r']
-    assert (table.view.proxy_model.index(0, col).data() ==
-            '[tag1r] [tag2r] [tag3r]')
-
-
 if __name__ == "__main__":
     pytest.main(['-x', os.path.basename(__file__), '-v', '-rw'])
