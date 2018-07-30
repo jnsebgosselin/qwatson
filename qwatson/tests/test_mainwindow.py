@@ -19,12 +19,9 @@ from PyQt5.QtCore import Qt
 
 # ---- Local imports
 
-from qwatson.widgets.tableviews import QMessageBox
 from qwatson.mainwindow import QWatson
 from qwatson.utils.fileio import delete_folder_recursively
 from qwatson.utils.dates import local_arrow_from_tuple, qdatetime_from_str
-from qwatson.models.delegates import (
-    ToolButtonDelegate, TagEditDelegate, LineEditDelegate)
 
 
 APPDIR = osp.join(osp.dirname(__file__), 'appdir1')
@@ -35,7 +32,7 @@ APPDIR2 = osp.join(osp.dirname(__file__), 'appdir2')
 
 def test_mainwindow_init(qtbot):
     """
-    Test that the QWatson main widget and avtivity overview widgets are
+    Test that the QWatson main widget and activity overview widgets are
     started correctly.
     """
     delete_folder_recursively(APPDIR, delroot=True)
@@ -45,6 +42,12 @@ def test_mainwindow_init(qtbot):
     qtbot.addWidget(qwatson.overview_widg)
     qwatson.show()
     qtbot.waitForWindowShown(qwatson)
+
+    # Cancel the imports of data from Watson :
+
+    if qwatson.import_dialog is not None:
+        qtbot.mouseClick(qwatson.import_dialog.buttons['Cancel'],
+                         Qt.LeftButton)
 
     assert qwatson
     assert qwatson.client.frames_file == osp.join(APPDIR, 'frames')
@@ -101,14 +104,14 @@ def test_add_first_project(qtbot, mocker):
     # Start the activity timer
     start = local_arrow_from_tuple((2018, 6, 14, 15, 59, 54))
     mocker.patch('arrow.now', return_value=start)
-    qtbot.mouseClick(qwatson.btn_startstop, Qt.LeftButton)
-    assert qwatson.elap_timer.is_started
+    qtbot.mouseClick(qwatson.stopwatch.buttons['start'], Qt.LeftButton)
+    assert qwatson.stopwatch.elap_timer.is_started
 
     # Stop the activity timer
     stop = local_arrow_from_tuple((2018, 6, 14, 17, 12, 35))
     mocker.patch('arrow.now', return_value=stop)
-    qtbot.mouseClick(qwatson.btn_startstop, Qt.LeftButton)
-    assert not qwatson.elap_timer.is_started
+    qtbot.mouseClick(qwatson.stopwatch.buttons['stop'], Qt.LeftButton)
+    assert not qwatson.stopwatch.elap_timer.is_started
 
     # Assert frame logged data
     assert len(qwatson.client.frames) == 1
@@ -210,14 +213,14 @@ def test_start_from_last_when_later_than_now(qtbot, mocker):
 
     # Start the activity
 
-    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
-    assert mainwindow.elap_timer.is_started
-    assert round(mainwindow.elap_timer._elapsed_time) == 0
+    qtbot.mouseClick(mainwindow.stopwatch.buttons['start'], Qt.LeftButton)
+    assert mainwindow.stopwatch.elap_timer.is_started
+    assert round(mainwindow.stopwatch.elap_timer._elapsed_time) == 0
 
     # Stop the activity
 
-    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
-    assert not mainwindow.elap_timer.is_started
+    qtbot.mouseClick(mainwindow.stopwatch.buttons['stop'], Qt.LeftButton)
+    assert not mainwindow.stopwatch.elap_timer.is_started
 
     frame = mainwindow.client.frames[-1]
     assert frame.start.format('YYYY-MM-DD HH:mm') == '2018-06-14 17:15'
@@ -240,10 +243,10 @@ def test_start_from_last(qtbot, mocker):
     assert mainwindow.start_from.text() == 'start from last'
 
     # Start and stop the activity timer
-    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
-    assert mainwindow.elap_timer.is_started
-    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
-    assert not mainwindow.elap_timer.is_started
+    qtbot.mouseClick(mainwindow.stopwatch.buttons['start'], Qt.LeftButton)
+    assert mainwindow.stopwatch.elap_timer.is_started
+    qtbot.mouseClick(mainwindow.stopwatch.buttons['stop'], Qt.LeftButton)
+    assert not mainwindow.stopwatch.elap_timer.is_started
 
     frame = mainwindow.client.frames[-1]
     assert frame.start.format('YYYY-MM-DD HH:mm') == '2018-06-14 17:15'
@@ -271,8 +274,8 @@ def test_start_from_other(qtbot, mocker):
 
     # Start the activity timer and assert the datetime dialog is shown
 
-    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
-    assert not mainwindow.elap_timer.is_started
+    qtbot.mouseClick(mainwindow.stopwatch.buttons['start'], Qt.LeftButton)
+    assert not mainwindow.stopwatch.elap_timer.is_started
     assert datetime_dial.isVisible()
     datetime_arrow = datetime_dial.get_datetime_arrow()
     assert datetime_arrow.format('YYYY-MM-DD HH:mm') == '2018-06-14 19:12'
@@ -282,15 +285,15 @@ def test_start_from_other(qtbot, mocker):
     # Cancel the dialog and assert it is working as expected.
 
     qtbot.mouseClick(datetime_dial.buttons['Cancel'], Qt.LeftButton)
-    assert not mainwindow.elap_timer.is_started
+    assert not mainwindow.stopwatch.elap_timer.is_started
     assert not datetime_dial.isVisible()
     assert not mainwindow.client.is_started
     assert len(mainwindow.client.frames) == initial_frames_len
 
     # Start the activity timer again and assert the datetime dialog is shown
 
-    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
-    assert not mainwindow.elap_timer.is_started
+    qtbot.mouseClick(mainwindow.stopwatch.buttons['start'], Qt.LeftButton)
+    assert not mainwindow.stopwatch.elap_timer.is_started
     assert datetime_dial.isVisible()
 
     # Change the datetime below the minimum value.
@@ -313,14 +316,14 @@ def test_start_from_other(qtbot, mocker):
     datetime_dial.datetime_edit.setDateTime(
         qdatetime_from_str('2018-06-14 19:01'))
     qtbot.mouseClick(datetime_dial.buttons['Ok'], Qt.LeftButton)
-    assert mainwindow.elap_timer.is_started
+    assert mainwindow.stopwatch.elap_timer.is_started
     assert not datetime_dial.isVisible()
     assert mainwindow.client.is_started
 
     # Stop the activity and assert it was saved correctly.
 
-    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
-    assert not mainwindow.elap_timer.is_started
+    qtbot.mouseClick(mainwindow.stopwatch.buttons['stop'], Qt.LeftButton)
+    assert not mainwindow.stopwatch.elap_timer.is_started
     assert not mainwindow.client.is_started
     assert len(mainwindow.client.frames) == initial_frames_len + 1
     frame = mainwindow.client.frames[-1]
@@ -347,7 +350,7 @@ def test_close_when_running(qtbot, mocker):
     mainwindow.start_from.setCurrentIndex(1)
     assert mainwindow.start_from.text() == 'start from last'
 
-    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
+    qtbot.mouseClick(mainwindow.stopwatch.buttons['start'], Qt.LeftButton)
     assert mainwindow.currentIndex() == 0
     assert mainwindow.client.is_started
 
@@ -379,7 +382,7 @@ def test_close_when_running(qtbot, mocker):
 
     mainwindow.show()
     qtbot.waitForWindowShown(mainwindow)
-    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
+    qtbot.mouseClick(mainwindow.stopwatch.buttons['start'], Qt.LeftButton)
     assert mainwindow.currentIndex() == 0
     assert mainwindow.client.is_started
 

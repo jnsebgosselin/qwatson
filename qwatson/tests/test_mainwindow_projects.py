@@ -19,14 +19,15 @@ from PyQt5.QtCore import Qt
 
 # ---- Local imports
 
-from qwatson.widgets.tableviews import QMessageBox
 from qwatson.mainwindow import QWatson
 from qwatson.utils.dates import local_arrow_from_tuple
 from qwatson.utils.fileio import delete_folder_recursively
 
 
 @pytest.fixture(scope="module")
-def appdir(tmpdir_factory):
+def appdir():
+    # We do not use the tmpdir_factory fixture because we use the files
+    # produces by the tests to test QWatson locally.
     appdir = osp.join(osp.dirname(__file__), 'appdir', 'mainwindow_project')
     delete_folder_recursively(appdir, delroot=True)
     return appdir
@@ -45,6 +46,13 @@ def qwatson_creator(qtbot, mocker, appdir, now):
     qtbot.addWidget(qwatson)
     qwatson.show()
     qtbot.waitForWindowShown(qwatson)
+
+    # Cancel the imports of data from Watson :
+
+    if qwatson.import_dialog is not None:
+        qtbot.mouseClick(qwatson.import_dialog.buttons['Cancel'],
+                         Qt.LeftButton)
+
     yield qwatson, qtbot, mocker
 
     qwatson.close()
@@ -100,7 +108,7 @@ def test_add_activities(qwatson_creator):
         assert qwatson.currentProject() == project
 
         # Start Watson.
-        qtbot.mouseClick(qwatson.btn_startstop, Qt.LeftButton)
+        qtbot.mouseClick(qwatson.stopwatch.buttons['start'], Qt.LeftButton)
 
         # Setup the comment.
         comment = 'Activity #%d' % i
@@ -111,7 +119,7 @@ def test_add_activities(qwatson_creator):
 
         # Stop Watson.
         mocker.patch('arrow.now', return_value=arrow.now().shift(hours=1))
-        qtbot.mouseClick(qwatson.btn_startstop, Qt.LeftButton)
+        qtbot.mouseClick(qwatson.stopwatch.buttons['stop'], Qt.LeftButton)
         assert qwatson.client.frames[-1].project == project
     assert len(qwatson.client.frames) == 5
 
