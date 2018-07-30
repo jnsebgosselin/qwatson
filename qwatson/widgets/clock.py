@@ -16,7 +16,8 @@ import sys
 import arrow
 from PyQt5.QtCore import pyqtSignal as QSignal
 from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QLCDNumber, QApplication, QGridLayout
+from PyQt5.QtWidgets import (QLCDNumber, QApplication, QGridLayout, QStyle,
+                             QStyleOptionToolButton)
 
 # ---- Local imports
 
@@ -42,11 +43,12 @@ class StopWatchWidget(ColoredFrame):
     def __init__(self, parent=None):
         super().__init__('window', parent)
         self._startfrom = None
+        self.__iconsize = 'normal'
         self.setup()
 
     def setup(self):
         """Setup the widget layout and child widgets."""
-        btn_start = QToolButtonBase('process_start', 'normal')
+        btn_start = QToolButtonBase('process_start', self.__iconsize)
         btn_start.setToolTip(
             "<b>Start</b><br><br>"
             "Start monitoring the elapsed time for an activity.<br><br>"
@@ -61,13 +63,13 @@ class StopWatchWidget(ColoredFrame):
             )
         btn_start.clicked.connect(lambda: self.sig_btn_start_clicked.emit())
 
-        btn_stop = QToolButtonBase(icon='process_stop', iconsize='normal')
+        btn_stop = QToolButtonBase('process_stop', self.__iconsize)
         btn_stop.setToolTip(
             "<b>Stop</b>")
         btn_stop.clicked.connect(lambda: self.sig_btn_stop_clicked.emit())
         btn_stop.setEnabled(False)
 
-        btn_cancel = QToolButtonBase(icon='process_cancel', iconsize='normal')
+        btn_cancel = QToolButtonBase('process_cancel', self.__iconsize)
         btn_cancel.setToolTip(
             "<b>Cancel</b>")
         btn_cancel.clicked.connect(lambda: self.sig_btn_cancel_clicked.emit())
@@ -89,8 +91,12 @@ class StopWatchWidget(ColoredFrame):
         self.elap_timer = ElapsedTimeLCDNumber()
         size_hint = self.elap_timer.sizeHint()
         size_ratio = size_hint.width()/size_hint.height()
-        self.elap_timer.setFixedHeight(icons.get_iconsize('large').height())
-        self.elap_timer.setMinimumWidth(self.elap_timer.height() * size_ratio)
+        fix_height = btn_start.style().sizeFromContents(
+            QStyle.CT_ToolButton, QStyleOptionToolButton(),
+            icons.get_iconsize(self.__iconsize)
+            ).height()
+        fix_width = fix_height * size_ratio
+        self.elap_timer.setFixedSize(fix_width, fix_height)
 
         layout = QGridLayout(self)
         layout.addLayout(btn_toolbar, 0, 0)
