@@ -16,7 +16,7 @@
    version="1.1"
    inkscape:version="0.92.2 (5c3e80d, 2017-08-06)"
    sodipodi:docname="process_start_colored.svg"
-   inkscape:export-filename="D:\qwatson\qwatson\ressources\icons_png\process_start.png"
+   inkscape:export-filename="C:\Users\User\qwatson\qwatson\ressources\icons_png\process_start.png"
    inkscape:export-xdpi="96"
    inkscape:export-ydpi="96">
   <defs
@@ -35,7 +35,7 @@
      id="namedview8"
      showgrid="false"
      inkscape:zoom="1.3111111"
-     inkscape:cx="110.11874"
+     inkscape:cx="208.88993"
      inkscape:cy="113.28494"
      inkscape:window-x="-8"
      inkscape:window-y="-8"
@@ -67,9 +67,9 @@
      id="rect4616" />
   <ellipse
      cy="128"
-     style="color:#000000;fill:none;stroke:#282828;stroke-width:27.87804794;stroke-linejoin:round;stroke-dashoffset:13.80000019;stroke-opacity:1"
+     style="color:#000000;fill:#000000;stroke:#282828;stroke-width:23.00000191;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:13.80000019;stroke-opacity:1;fill-opacity:0"
      cx="128"
      id="circle4620"
-     rx="113.06098"
-     ry="113.06097" />
+     rx="115.5"
+     ry="115.49998" />
 </svg>

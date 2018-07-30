@@ -14,11 +14,14 @@ import os.path as osp
 # ---- Third party imports
 
 import pytest
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSize
 
 # ---- Local imports
 
-from qwatson.widgets.toolbar import DropDownToolButton
+from qwatson.utils.icons import ICON_SIZES
+from qwatson.widgets.toolbar import (
+    DropDownToolButton, QToolButtonNormal, QToolButtonSmall,
+    QToolButtonVRectSmall, ToolBarWidget, OnOffToolButton)
 
 
 WORKDIR = osp.dirname(__file__)
@@ -26,7 +29,42 @@ FRAMEFILE = osp.join(WORKDIR, 'frames')
 STATEFILE = osp.join(WORKDIR, 'state')
 
 
-# ---- Test DropDownToolButton
+def test_toolbuttons(qtbot):
+    """
+    Test that the toolbutton classes init correctly and have the right size.
+    """
+    toolbar = ToolBarWidget()
+
+    btn_normal = QToolButtonNormal('home')
+    btn_small = QToolButtonSmall('home')
+    btn_vrect = QToolButtonVRectSmall('home')
+
+    toolbar.addWidget(btn_normal)
+    toolbar.addWidget(btn_small)
+    toolbar.addWidget(btn_vrect)
+
+    toolbar.show()
+    qtbot.addWidget(toolbar)
+    qtbot.waitForWindowShown(toolbar)
+
+    assert btn_normal.iconSize() == QSize(*ICON_SIZES['normal'])
+    assert btn_small.iconSize() == QSize(*ICON_SIZES['small'])
+    assert btn_vrect.iconSize() == QSize(8, 20)
+
+
+def test_onofftoolbutton(qtbot):
+    """Test that the OnOffToolButton is working as expected."""
+    onoff_btn = OnOffToolButton('process_start', 'process_stop', 'normal')
+    qtbot.addWidget(onoff_btn)
+    onoff_btn.show()
+    qtbot.waitForWindowShown(onoff_btn)
+
+    assert onoff_btn.value() is False
+    qtbot.mouseClick(onoff_btn, Qt.LeftButton)
+    assert onoff_btn.value() is True
+    qtbot.mouseClick(onoff_btn, Qt.LeftButton)
+    assert onoff_btn.value() is False
+
 
 def test_dropdowntoolbutton(qtbot):
     drop_down_btn = DropDownToolButton(style=('text_beside'))

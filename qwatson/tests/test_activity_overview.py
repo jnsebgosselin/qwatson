@@ -16,6 +16,7 @@ import json
 
 import pytest
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QMessageBox
 
 # ---- Local imports
 
@@ -24,7 +25,8 @@ from qwatson.mainwindow import QWatson
 from qwatson.utils.dates import local_arrow_from_tuple
 from qwatson.utils.fileio import delete_folder_recursively
 from qwatson.utils.dates import qdatetime_from_str
-from qwatson.models.delegates import DateTimeDelegate
+from qwatson.models.delegates import (DateTimeDelegate, LineEditDelegate,
+                                      TagEditDelegate, ToolButtonDelegate)
 
 
 # ---- Fixtures and utilities
@@ -296,8 +298,6 @@ def test_edit_start_datetime(overview_creator):
 def test_edit_stop_datetime(overview_creator):
     """Test editing the stop date in the activity overview table."""
     overview, qtbot, mocker = overview_creator
-    overview.show()
-    qtbot.waitForWindowShown(overview)
 
     # Edit the stop date of the first frame of the third table
 
@@ -306,7 +306,7 @@ def test_edit_stop_datetime(overview_creator):
     delegate = table.view.itemDelegate(table.view.proxy_model.index(0, 1))
     assert isinstance(delegate, DateTimeDelegate)
 
-    # Check that the stop value is constraint by the start value of the frame.
+    # Check that the stop value is constraint by the start value of the frame
 
     table.view.edit(index)
     assert delegate.editor.isVisible()
@@ -334,6 +334,114 @@ def test_edit_stop_datetime(overview_creator):
 
     assert (overview.model.client.frames[4].stop.format('YYYY-MM-DD HH:mm') ==
             '2018-06-13 18:00')
+
+
+def test_edit_comment(overview_creator):
+    """
+    Test editing the comment in the activity overview table.
+    """
+    overview, qtbot, mocker = overview_creator
+
+    # Edit the comment of the second entry in the fourth table :
+
+    table = overview.table_widg.tables[3]
+    col = table.view.proxy_model.sourceModel().COLUMNS['comment']
+    index = table.view.proxy_model.index(1, col)
+
+    frame = table.view.proxy_model.get_frame_from_index(index)
+    assert frame.message == 'activity #7'
+
+    # Edit the frame comment in the overview table :
+
+    delegate = table.view.itemDelegate(index)
+    table.view.edit(index)
+    assert isinstance(delegate, LineEditDelegate)
+    assert delegate.editor.text() == 'activity #7'
+
+    # Enter a new comment for the activity.
+
+    qtbot.keyClicks(delegate.editor, 'activity #7 (edited)')
+    with qtbot.waitSignal(table.view.proxy_model.sig_sourcemodel_changed):
+        qtbot.keyPress(delegate.editor, Qt.Key_Enter)
+
+    frame = table.view.proxy_model.get_frame_from_index(index)
+    assert frame.message == 'activity #7 (edited)'
+    assert index.data() == 'activity #7 (edited)'
+
+
+def test_edit_tags(overview_creator):
+    """Test editing the tags in the activity overview table."""
+    overview, qtbot, mocker = overview_creator
+
+    # We will test this on the first entry of the fifth table :
+
+    table = overview.table_widg.tables[4]
+    col = table.view.proxy_model.sourceModel().COLUMNS['tags']
+    index = table.view.proxy_model.index(0, col)
+
+    frame = table.view.proxy_model.get_frame_from_index(index)
+    assert frame.message == 'activity #8'
+    assert frame.tags == []
+    assert index.data() == ''
+
+    # Start editing the tags in the overview table :
+
+    delegate = table.view.itemDelegate(index)
+    table.view.edit(index)
+    assert isinstance(delegate, TagEditDelegate)
+    assert delegate.editor.tags == []
+    assert delegate.editor.text() == ''
+
+    # Enter a new list of tags for the activity :
+
+    qtbot.keyClicks(delegate.editor, 'tag1,tag3,  tag2')
+    with qtbot.waitSignal(table.view.proxy_model.sig_sourcemodel_changed):
+        qtbot.keyPress(delegate.editor, Qt.Key_Enter)
+
+    frame = table.view.proxy_model.get_frame_from_index(index)
+    assert frame.tags == ['tag1', 'tag2', 'tag3']
+    assert index.data() == '[tag1] [tag2] [tag3]'
+
+
+def test_delete_frame(overview_creator):
+    """
+    Test that deleting a frame from the activity overview table work correctly.
+    """
+    overview, qtbot, mocker = overview_creator
+
+    # We will test this on the last entry of the last table :
+
+    table = overview.table_widg.tables[-1]
+    col = table.view.proxy_model.sourceModel().COLUMNS['icons']
+    index = table.view.proxy_model.index(1, col)
+
+    frame = table.view.proxy_model.get_frame_from_index(index)
+    assert frame.message == 'activity #13'
+    assert isinstance(table.view.itemDelegate(index), ToolButtonDelegate)
+
+    # Click to delete last frame and answer No :
+
+    visual_rect = table.view.visualRect(index)
+
+    mocker.patch.object(QMessageBox, 'question', return_value=QMessageBox.No)
+    with qtbot.waitSignal(table.view.proxy_model.sig_btn_delrow_clicked):
+        qtbot.mouseClick(table.view.viewport(), Qt.LeftButton,
+                         pos=visual_rect.center())
+
+    assert table.view.proxy_model.get_accepted_row_count() == 2
+    assert len(overview.model.client.frames) == 14
+    assert overview.model.client.frames[-1].message == 'activity #13'
+
+    # Click to delete last frame and answer Yes.
+
+    mocker.patch.object(QMessageBox, 'question', return_value=QMessageBox.Yes)
+    with qtbot.waitSignal(table.view.proxy_model.sig_btn_delrow_clicked):
+        qtbot.mouseClick(table.view.viewport(), Qt.LeftButton,
+                         pos=visual_rect.center())
+
+    assert table.view.proxy_model.get_accepted_row_count() == 1
+    assert len(overview.model.client.frames) == 13
+    assert overview.model.client.frames[-1].message == 'activity #12'
 
 
 if __name__ == "__main__":

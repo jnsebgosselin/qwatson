@@ -32,10 +32,9 @@ from qwatson.watson_ext.watsonextends import Watson
 from qwatson.watson_ext.watsonhelpers import (
     round_frame_at, reset_watson, get_frame_nbr_for_project)
 from qwatson.widgets.projects import ProjectManager
-from qwatson.widgets.clock import ElapsedTimeLCDNumber
+from qwatson.widgets.clock import StopWatchWidget
 from qwatson.widgets.tableviews import ActivityOverviewWidget
-from qwatson.widgets.toolbar import (
-    OnOffToolButton, QToolButtonSmall, DropDownToolButton)
+from qwatson.widgets.toolbar import QToolButtonSmall, DropDownToolButton
 from qwatson import __namever__
 from qwatson.models.tablemodels import WatsonTableModel
 from qwatson.dialogs import (ImportDialog, DateTimeInputDialog, CloseDialog,
@@ -90,7 +89,7 @@ class QWatsonProjectMixin(object):
 
     def project_changed(self, index):
         """Handle when the project selection change in the manager."""
-        self.btn_startstop.setEnabled(index != -1)
+        pass
 
     def rename_project(self, old_name, new_name, force=False):
         """
@@ -174,6 +173,7 @@ class QWatsonImportMixin(object):
                 self.import_dialog.show()
             else:
                 self.create_empty_frames_file()
+                self.import_dialog = None
         else:
             self.import_dialog = None
 
@@ -267,12 +267,14 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
         self.client = Watson(config_dir=config_dir)
         self.model = WatsonTableModel(self.client)
 
-        if self.client.is_started:
-            self.stop_watson(message="last session not closed correctly.",
-                             tags=['error'])
-
         self.setup_activity_overview()
         self.setup()
+
+        if self.client.is_started:
+            self.add_new_project(self.client.current['project'])
+            self.tag_manager.set_tags(['error'])
+            self.comment_manager.setText("last session not closed correctly.")
+            self.stop_watson()
 
     # ---- Setup layout
 
@@ -282,37 +284,19 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
         # Setup the stack widget.
 
         self.stackwidget = QStackedWidget()
+
         self.setup_activity_tracker()
         self.setup_datetime_input_dialog()
         self.setup_close_dialog()
-        self.setup_import_dialog()
         self.setup_del_project_dialog()
         self.setup_merge_project_dialog()
+        self.setup_import_dialog()
 
         # Setup the main layout of the widget
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.stackwidget)
-
-    def setup_activity_tracker(self):
-        """Setup the widget used to start, track, and stop new activity."""
-        timebar = self.setup_timebar()
-        managers = self.setup_watson_managers()
-        statusbar = self.setup_statusbar()
-
-        # ---- Setup the layout of the main widget
-
-        tracker = QWidget()
-        layout = QVBoxLayout(tracker)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
-        layout.addWidget(timebar)
-        layout.addWidget(managers)
-        layout.addWidget(statusbar)
-        layout.setStretch(1, 100)
-
-        self.stackwidget.addWidget(tracker)
 
     def setup_close_dialog(self):
         """
@@ -329,6 +313,25 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
         """
         self.datetime_input_dial = DateTimeInputDialog(parent=self)
         self.datetime_input_dial.register_dialog_to(self)
+
+    # ---- Main interface
+
+    def setup_activity_tracker(self):
+        """Setup the widget used to start, track, and stop new activity."""
+        stopwatch = self.setup_stopwatch()
+        managers = self.setup_watson_managers()
+        statusbar = self.setup_statusbar()
+
+        tracker = QWidget()
+        layout = QVBoxLayout(tracker)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(stopwatch)
+        layout.addWidget(managers)
+        layout.addWidget(statusbar)
+        layout.setStretch(1, 100)
+
+        self.stackwidget.addWidget(tracker)
 
     def setup_watson_managers(self):
         """
@@ -365,37 +368,18 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
 
         return managers
 
-    def setup_timebar(self):
+    def setup_stopwatch(self):
         """
         Setup the widget that contains a button to start/stop Watson and a
         digital clock that shows the elapsed amount of time since Watson
         was started.
         """
-        self.btn_startstop = OnOffToolButton('process_start', 'process_stop')
-        self.btn_startstop.setIconSize(icons.get_iconsize('large'))
-        self.btn_startstop.setToolTip(
-            "Start or stop monitoring time for the given project")
-        self.btn_startstop.sig_value_changed.connect(
-            self.btn_startstop_isclicked)
+        self.stopwatch = StopWatchWidget()
+        self.stopwatch.sig_btn_start_clicked.connect(self.start_watson)
+        self.stopwatch.sig_btn_stop_clicked.connect(self.stop_watson)
+        self.stopwatch.sig_btn_cancel_clicked.connect(self.cancel_watson)
 
-        self.elap_timer = ElapsedTimeLCDNumber()
-        size_hint = self.elap_timer.sizeHint()
-        size_ratio = size_hint.width()/size_hint.height()
-        self.elap_timer.setFixedHeight(icons.get_iconsize('large').height())
-        self.elap_timer.setMinimumWidth(self.elap_timer.height() * size_ratio)
-
-        # ---- Setup layout
-
-        timebar = ColoredFrame()
-        timebar.set_background_color('window')
-
-        layout = QGridLayout(timebar)
-        layout.addWidget(self.btn_startstop, 0, 0)
-        layout.addWidget(self.elap_timer, 0, 1)
-        layout.setContentsMargins(5, 5, 5, 5)
-        layout.setColumnStretch(2, 100)
-
-        return timebar
+        return self.stopwatch
 
     def setup_statusbar(self):
         """Setup the toolbar located at the bottom of the main widget."""
@@ -443,7 +427,21 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
 
         return statusbar
 
-    # ---- Layout handlers
+    def roundTo(self):
+        """
+        Return the start and stop rounding time factor, in minutes, that
+        corresponds to the option selected in the round_time_btn.
+        """
+        return ROUNDMIN[self.round_time_btn.text()]
+
+    def startFrom(self):
+        """
+        Return the mode to use to determine at what reference time the activity
+        must refer to calculate its elapsed time.
+        """
+        return STARTFROM[self.start_from.text()]
+
+    # ---- Stackwidget handlers
 
     def addWidget(self, widget):
         """
@@ -467,54 +465,46 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
 
     # ---- Toolbar handlers
 
-    def btn_startstop_isclicked(self):
-        """Handle when the button to start and stop Watson is clicked."""
-        if self.btn_startstop.value():
+    def start_watson(self, start_time=None):
+        """Start monitoring a new activity with the Watson client."""
+        if isinstance(start_time, arrow.Arrow):
+            self.stopwatch.start(start_time)
+            self.client.start(self.currentProject())
+            self.client._current['start'] = start_time
+        else:
             frames = self.client.frames
-            start_from = STARTFROM[self.start_from.text()]
-            if start_from == 'now':
-                self.start_watson()
-            elif start_from == 'last' and len(frames) > 0:
+            if self.startFrom() == 'now':
+                self.start_watson(arrow.now())
+            elif self.startFrom() == 'last' and len(frames) > 0:
                 self.start_watson(min(frames[-1].stop, arrow.now()))
             else:
                 self.datetime_input_dial.show()
-        else:
-            self.elap_timer.stop()
-            self.stop_watson(message=self.comment_manager.text(),
-                             project=self.currentProject(),
-                             tags=self.tag_manager.tags,
-                             round_to=ROUNDMIN[self.round_time_btn.text()])
-
-    def start_watson(self, start_time=None):
-        """Start monitoring a new activity with the Watson client."""
-        self.client.start(self.currentProject())
-        if start_time is not None:
-            self.client._current['start'] = start_time
-            self.elap_timer.start(start_time.timestamp)
-        else:
-            self.elap_timer.start()
 
     def cancel_watson(self):
         """Cancel the Watson client if it is running and reset the UI."""
+        self.stopwatch.cancel()
         if self.client.is_started:
             self.client.cancel()
-        self.btn_startstop.setValue(False, silent=True)
 
-    def stop_watson(self, message=None, project=None, tags=None, round_to=5):
+    def stop_watson(self, message=None, project=None, tags=None,
+                    round_to=None):
         """Stop Watson and update the table model."""
-        if message is not None:
-            self.client._current['message'] = message
-        if project is not None:
-            self.client._current['project'] = project
-        if tags is not None:
-            self.client._current['tags'] = tags
+        self.stopwatch.stop()
+
+        self.client._current['message'] = \
+            self.comment_manager.text() if message is None else message
+        self.client._current['project'] = \
+            self.currentProject() if project is None else project
+        self.client._current['tags'] = \
+            self.tag_manager.tags if tags is None else tags
 
         self.model.beginInsertRows(
             QModelIndex(), len(self.client.frames), len(self.client.frames))
         self.client.stop()
 
         # Round the start and stop times of the last added frame.
-        round_frame_at(self.client, -1, round_to)
+        round_frame_at(self.client, -1,
+                       self.roundTo() if round_to is None else round_to)
 
         self.client.save()
         self.model.endInsertRows()

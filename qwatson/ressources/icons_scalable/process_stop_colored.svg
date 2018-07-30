@@ -16,7 +16,7 @@
    version="1.1"
    inkscape:version="0.92.2 (5c3e80d, 2017-08-06)"
    sodipodi:docname="process_stop_colored.svg"
-   inkscape:export-filename="D:\qwatson\qwatson\ressources\icons_png\process_stop.png"
+   inkscape:export-filename="C:\Users\User\qwatson\qwatson\ressources\icons_png\process_stop.png"
    inkscape:export-xdpi="96"
    inkscape:export-ydpi="96">
   <defs
@@ -35,8 +35,8 @@
      id="namedview8"
      showgrid="false"
      inkscape:zoom="1.8541911"
-     inkscape:cx="97.358405"
-     inkscape:cy="151.64986"
+     inkscape:cx="99.785339"
+     inkscape:cy="105.89414"
      inkscape:window-x="-8"
      inkscape:window-y="-8"
      inkscape:window-maximized="1"
@@ -49,10 +49,17 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
+  <ellipse
+     cy="128"
+     style="color:#000000;fill:#000000;stroke:#282828;stroke-width:23.00000191;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:13.80000019;stroke-opacity:1;fill-opacity:0"
+     cx="128"
+     id="circle4620"
+     rx="115.5"
+     ry="115.49998" />
   <rect
      style="fill:#aa0000;fill-opacity:1;stroke:none;stroke-width:91.08837891;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
      id="rect816"
@@ -62,18 +69,4 @@
      y="80.5"
      rx="5.2836375"
      ry="5.2836375" />
-  <rect
-     x="-7.3242186e-006"
-     y="166"
-     width="90"
-     height="90"
-     style="fill:none"
-     id="rect4616" />
-  <ellipse
-     cy="128"
-     style="color:#000000;fill:none;stroke:#282828;stroke-width:27.87804794;stroke-linejoin:round;stroke-dashoffset:13.80000019;stroke-opacity:1"
-     cx="128"
-     id="circle4620"
-     rx="113.06098"
-     ry="113.06097" />
 </svg>

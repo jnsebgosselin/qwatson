@@ -66,7 +66,7 @@ class CloseDialog(BaseDialog):
         """
         if self.main is not None:
             if answer == 'Yes':
-                self.main.btn_startstop.setValue(False)
+                self.main.stop_watson()
                 self.main.close()
             elif answer == 'No':
                 self.main.cancel_watson()

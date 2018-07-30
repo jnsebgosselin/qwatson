@@ -19,12 +19,9 @@ from PyQt5.QtCore import Qt
 
 # ---- Local imports
 
-from qwatson.widgets.tableviews import QMessageBox
 from qwatson.mainwindow import QWatson
 from qwatson.utils.fileio import delete_folder_recursively
 from qwatson.utils.dates import local_arrow_from_tuple, qdatetime_from_str
-from qwatson.models.delegates import (
-    ToolButtonDelegate, TagEditDelegate, LineEditDelegate)
 
 
 APPDIR = osp.join(osp.dirname(__file__), 'appdir1')
@@ -35,7 +32,7 @@ APPDIR2 = osp.join(osp.dirname(__file__), 'appdir2')
 
 def test_mainwindow_init(qtbot):
     """
-    Test that the QWatson main widget and avtivity overview widgets are
+    Test that the QWatson main widget and activity overview widgets are
     started correctly.
     """
     delete_folder_recursively(APPDIR, delroot=True)
@@ -45,6 +42,12 @@ def test_mainwindow_init(qtbot):
     qtbot.addWidget(qwatson.overview_widg)
     qwatson.show()
     qtbot.waitForWindowShown(qwatson)
+
+    # Cancel the imports of data from Watson :
+
+    if qwatson.import_dialog is not None:
+        qtbot.mouseClick(qwatson.import_dialog.buttons['Cancel'],
+                         Qt.LeftButton)
 
     assert qwatson
     assert qwatson.client.frames_file == osp.join(APPDIR, 'frames')
@@ -101,14 +104,14 @@ def test_add_first_project(qtbot, mocker):
     # Start the activity timer
     start = local_arrow_from_tuple((2018, 6, 14, 15, 59, 54))
     mocker.patch('arrow.now', return_value=start)
-    qtbot.mouseClick(qwatson.btn_startstop, Qt.LeftButton)
-    assert qwatson.elap_timer.is_started
+    qtbot.mouseClick(qwatson.stopwatch.buttons['start'], Qt.LeftButton)
+    assert qwatson.stopwatch.elap_timer.is_started
 
     # Stop the activity timer
     stop = local_arrow_from_tuple((2018, 6, 14, 17, 12, 35))
     mocker.patch('arrow.now', return_value=stop)
-    qtbot.mouseClick(qwatson.btn_startstop, Qt.LeftButton)
-    assert not qwatson.elap_timer.is_started
+    qtbot.mouseClick(qwatson.stopwatch.buttons['stop'], Qt.LeftButton)
+    assert not qwatson.stopwatch.elap_timer.is_started
 
     # Assert frame logged data
     assert len(qwatson.client.frames) == 1
@@ -139,58 +142,6 @@ def test_load_config(qtbot, mocker):
     qwatson.close()
 
 
-def test_rename_project(qtbot, mocker):
-    """Test that renaming a project works as expected."""
-    qwatson = QWatson(APPDIR)
-    qtbot.addWidget(qwatson)
-    qwatson.show()
-    project_manager = qwatson.project_manager
-
-    # Enter edit mode, but do not change the project name.
-
-    qtbot.mouseClick(project_manager.btn_rename, Qt.LeftButton)
-
-    assert project_manager.project_cbox.linedit.isVisible()
-    assert not project_manager.project_cbox.combobox.isVisible()
-    qtbot.keyPress(project_manager.project_cbox.linedit, Qt.Key_Enter)
-    assert not project_manager.project_cbox.linedit.isVisible()
-    assert project_manager.project_cbox.combobox.isVisible()
-
-    assert qwatson.currentProject() == 'project1'
-    assert qwatson.client.frames[0].project == 'project1'
-
-    # Enter edit mode and change the project name.
-
-    qtbot.mouseClick(project_manager.btn_rename, Qt.LeftButton)
-
-    assert project_manager.project_cbox.linedit.isVisible()
-    assert not project_manager.project_cbox.combobox.isVisible()
-    qtbot.keyPress(project_manager.project_cbox.linedit, Qt.Key_End)
-    qtbot.keyClicks(project_manager.project_cbox.linedit, '_renamed')
-    qtbot.keyPress(project_manager.project_cbox.linedit, Qt.Key_Enter)
-    assert not project_manager.project_cbox.linedit.isVisible()
-    assert project_manager.project_cbox.combobox.isVisible()
-
-    assert qwatson.currentProject() == 'project1_renamed'
-    assert qwatson.client.frames[0].project == 'project1_renamed'
-
-    # Cancel the renaming of a project by pressing Escape
-
-    qtbot.mouseClick(project_manager.btn_rename, Qt.LeftButton)
-
-    assert project_manager.project_cbox.linedit.isVisible()
-    assert not project_manager.project_cbox.combobox.isVisible()
-    qtbot.keyClicks(project_manager.project_cbox.linedit, 'dummy')
-    qtbot.keyPress(project_manager.project_cbox.linedit, Qt.Key_Escape)
-    assert not project_manager.project_cbox.linedit.isVisible()
-    assert project_manager.project_cbox.combobox.isVisible()
-
-    assert qwatson.currentProject() == 'project1_renamed'
-    assert qwatson.client.frames[0].project == 'project1_renamed'
-
-    qwatson.close()
-
-
 def test_start_from_last_when_later_than_now(qtbot, mocker):
     """
     Test that starting a new activity with the option 'start from' set to
@@ -210,14 +161,14 @@ def test_start_from_last_when_later_than_now(qtbot, mocker):
 
     # Start the activity
 
-    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
-    assert mainwindow.elap_timer.is_started
-    assert round(mainwindow.elap_timer._elapsed_time) == 0
+    qtbot.mouseClick(mainwindow.stopwatch.buttons['start'], Qt.LeftButton)
+    assert mainwindow.stopwatch.elap_timer.is_started
+    assert round(mainwindow.stopwatch.elap_timer._elapsed_time) == 0
 
     # Stop the activity
 
-    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
-    assert not mainwindow.elap_timer.is_started
+    qtbot.mouseClick(mainwindow.stopwatch.buttons['stop'], Qt.LeftButton)
+    assert not mainwindow.stopwatch.elap_timer.is_started
 
     frame = mainwindow.client.frames[-1]
     assert frame.start.format('YYYY-MM-DD HH:mm') == '2018-06-14 17:15'
@@ -240,10 +191,10 @@ def test_start_from_last(qtbot, mocker):
     assert mainwindow.start_from.text() == 'start from last'
 
     # Start and stop the activity timer
-    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
-    assert mainwindow.elap_timer.is_started
-    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
-    assert not mainwindow.elap_timer.is_started
+    qtbot.mouseClick(mainwindow.stopwatch.buttons['start'], Qt.LeftButton)
+    assert mainwindow.stopwatch.elap_timer.is_started
+    qtbot.mouseClick(mainwindow.stopwatch.buttons['stop'], Qt.LeftButton)
+    assert not mainwindow.stopwatch.elap_timer.is_started
 
     frame = mainwindow.client.frames[-1]
     assert frame.start.format('YYYY-MM-DD HH:mm') == '2018-06-14 17:15'
@@ -271,8 +222,8 @@ def test_start_from_other(qtbot, mocker):
 
     # Start the activity timer and assert the datetime dialog is shown
 
-    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
-    assert not mainwindow.elap_timer.is_started
+    qtbot.mouseClick(mainwindow.stopwatch.buttons['start'], Qt.LeftButton)
+    assert not mainwindow.stopwatch.elap_timer.is_started
     assert datetime_dial.isVisible()
     datetime_arrow = datetime_dial.get_datetime_arrow()
     assert datetime_arrow.format('YYYY-MM-DD HH:mm') == '2018-06-14 19:12'
@@ -282,15 +233,15 @@ def test_start_from_other(qtbot, mocker):
     # Cancel the dialog and assert it is working as expected.
 
     qtbot.mouseClick(datetime_dial.buttons['Cancel'], Qt.LeftButton)
-    assert not mainwindow.elap_timer.is_started
+    assert not mainwindow.stopwatch.elap_timer.is_started
     assert not datetime_dial.isVisible()
     assert not mainwindow.client.is_started
     assert len(mainwindow.client.frames) == initial_frames_len
 
     # Start the activity timer again and assert the datetime dialog is shown
 
-    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
-    assert not mainwindow.elap_timer.is_started
+    qtbot.mouseClick(mainwindow.stopwatch.buttons['start'], Qt.LeftButton)
+    assert not mainwindow.stopwatch.elap_timer.is_started
     assert datetime_dial.isVisible()
 
     # Change the datetime below the minimum value.
@@ -313,14 +264,14 @@ def test_start_from_other(qtbot, mocker):
     datetime_dial.datetime_edit.setDateTime(
         qdatetime_from_str('2018-06-14 19:01'))
     qtbot.mouseClick(datetime_dial.buttons['Ok'], Qt.LeftButton)
-    assert mainwindow.elap_timer.is_started
+    assert mainwindow.stopwatch.elap_timer.is_started
     assert not datetime_dial.isVisible()
     assert mainwindow.client.is_started
 
     # Stop the activity and assert it was saved correctly.
 
-    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
-    assert not mainwindow.elap_timer.is_started
+    qtbot.mouseClick(mainwindow.stopwatch.buttons['stop'], Qt.LeftButton)
+    assert not mainwindow.stopwatch.elap_timer.is_started
     assert not mainwindow.client.is_started
     assert len(mainwindow.client.frames) == initial_frames_len + 1
     frame = mainwindow.client.frames[-1]
@@ -347,7 +298,7 @@ def test_close_when_running(qtbot, mocker):
     mainwindow.start_from.setCurrentIndex(1)
     assert mainwindow.start_from.text() == 'start from last'
 
-    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
+    qtbot.mouseClick(mainwindow.stopwatch.buttons['start'], Qt.LeftButton)
     assert mainwindow.currentIndex() == 0
     assert mainwindow.client.is_started
 
@@ -379,7 +330,7 @@ def test_close_when_running(qtbot, mocker):
 
     mainwindow.show()
     qtbot.waitForWindowShown(mainwindow)
-    qtbot.mouseClick(mainwindow.btn_startstop, Qt.LeftButton)
+    qtbot.mouseClick(mainwindow.stopwatch.buttons['start'], Qt.LeftButton)
     assert mainwindow.currentIndex() == 0
     assert mainwindow.client.is_started
 
@@ -508,7 +459,7 @@ def test_accept_import_from_watson(qtbot, mocker):
     assert len(qwatson.client.frames) == 5
     assert table.view.proxy_model.get_accepted_row_count() == 5
 
-    assert qwatson.currentProject() == 'project1_renamed'
+    assert qwatson.currentProject() == 'project1'
     assert qwatson.comment_manager.text() == 'First activity'
     assert qwatson.tag_manager.tags == ['tag1', 'tag2', 'tag3']
 
@@ -613,163 +564,6 @@ def test_show_overview_table(qtbot):
     assert not overview_window.isMinimized()
     assert overview_window.isActiveWindow()
     assert overview_window.hasFocus()
-
-
-def test_delete_frame(qtbot, mocker):
-    """
-    Test that deleting a frame from the activity overview table work correctly.
-    """
-    now = local_arrow_from_tuple((2018, 6, 14, 23, 59, 0))
-    mocker.patch('arrow.now', return_value=now)
-
-    mainwindow = QWatson(APPDIR2)
-    qtbot.addWidget(mainwindow)
-    qtbot.addWidget(mainwindow.overview_widg)
-    mainwindow.show()
-    expected_rowcount = len(mainwindow.client.frames)
-
-    qtbot.mouseClick(mainwindow.btn_report, Qt.LeftButton)
-    qtbot.waitForWindowShown(mainwindow.overview_widg)
-    assert mainwindow.overview_widg.isVisible()
-
-    # Find the table where the last frame is stored.
-
-    table_widg = mainwindow.overview_widg.table_widg
-    fstart_day = mainwindow.client.frames[-1].start.floor('day')
-    for i, table in enumerate(table_widg.tables):
-        if table.date_span[0] == fstart_day:
-            break
-    assert i == 3
-    assert table.view.proxy_model.get_accepted_row_count() == expected_rowcount
-    assert 'error' in mainwindow.client.tags
-
-    row = expected_rowcount - 1
-    col = table.view.proxy_model.sourceModel().COLUMNS['icons']
-    index = table.view.proxy_model.index(row, col)
-    delegate = table.view.itemDelegate(index)
-    assert isinstance(delegate, ToolButtonDelegate)
-
-    # Create an event to simulate a mouss press because it is not working
-    # when using qtbot.mousePress.
-
-    visual_rect = table.view.visualRect(index)
-
-    # Click to delete last frame and answer No.
-
-    mocker.patch.object(QMessageBox, 'question', return_value=QMessageBox.No)
-    with qtbot.waitSignal(table.view.proxy_model.sig_btn_delrow_clicked):
-        qtbot.mouseClick(table.view.viewport(), Qt.LeftButton,
-                         pos=visual_rect.center())
-
-    assert table.view.proxy_model.get_accepted_row_count() == expected_rowcount
-    assert len(mainwindow.client.frames) == expected_rowcount
-    assert 'error' in mainwindow.client.tags
-
-    # Click to delete last frame and answer Yes.
-
-    expected_rowcount += -1
-    mocker.patch.object(QMessageBox, 'question', return_value=QMessageBox.Yes)
-    with qtbot.waitSignal(table.view.proxy_model.sig_btn_delrow_clicked):
-        qtbot.mouseClick(table.view.viewport(), Qt.LeftButton,
-                         pos=visual_rect.center())
-
-    assert table.view.proxy_model.get_accepted_row_count() == expected_rowcount
-    assert len(mainwindow.client.frames) == expected_rowcount
-    assert 'error' not in mainwindow.client.tags
-
-    mainwindow.close()
-
-
-def test_edit_tags(qtbot, mocker):
-    """
-    Test editing the tags in the activity overview table.
-    """
-    now = local_arrow_from_tuple((2018, 6, 14, 23, 59, 0))
-    mocker.patch('arrow.now', return_value=now)
-
-    mainwindow = QWatson(APPDIR2)
-    qtbot.addWidget(mainwindow)
-    qtbot.addWidget(mainwindow.overview_widg)
-    mainwindow.show()
-
-    qtbot.mouseClick(mainwindow.btn_report, Qt.LeftButton)
-    qtbot.waitForWindowShown(mainwindow.overview_widg)
-
-    table = mainwindow.overview_widg.table_widg.tables[3]
-    col = table.view.proxy_model.sourceModel().COLUMNS['tags']
-    assert mainwindow.client.frames[0].tags == ['tag1', 'tag2', 'tag3']
-    assert (table.view.proxy_model.index(0, col).data() ==
-            '[tag1] [tag2] [tag3]')
-
-    # ---- Edit frame tags in the overview table
-
-    index = table.view.proxy_model.index(0, col)
-    delegate = table.view.itemDelegate(index)
-    assert isinstance(delegate, TagEditDelegate)
-
-    # Assert the delegate editor displays value.
-
-    table.view.edit(index)
-    assert delegate.editor.tags == ['tag1', 'tag2', 'tag3']
-    assert delegate.editor.text() == 'tag1, tag2, tag3'
-
-    # Enter a new list of tags for the activity.
-
-    qtbot.keyClicks(delegate.editor, 'tag1r,tag2r,  tag3r')
-    with qtbot.waitSignal(table.view.proxy_model.sig_sourcemodel_changed):
-        qtbot.keyPress(delegate.editor, Qt.Key_Enter)
-
-    # Assert the tags were correctly set in the database.
-
-    frame = mainwindow.client.frames[0]
-    assert frame.tags == ['tag1r', 'tag2r', 'tag3r']
-    assert (table.view.proxy_model.index(0, col).data() ==
-            '[tag1r] [tag2r] [tag3r]')
-
-
-def test_edit_comment(qtbot, mocker):
-    """
-    Test editing the comment in the activity overview table.
-    """
-    now = local_arrow_from_tuple((2018, 6, 14, 23, 59, 0))
-    mocker.patch('arrow.now', return_value=now)
-
-    mainwindow = QWatson(APPDIR2)
-    qtbot.addWidget(mainwindow)
-    qtbot.addWidget(mainwindow.overview_widg)
-    mainwindow.show()
-
-    qtbot.mouseClick(mainwindow.btn_report, Qt.LeftButton)
-    qtbot.waitForWindowShown(mainwindow.overview_widg)
-
-    table = mainwindow.overview_widg.table_widg.tables[3]
-    col = table.view.proxy_model.sourceModel().COLUMNS['comment']
-    assert mainwindow.client.frames[0].message == 'First activity'
-    assert table.view.proxy_model.index(0, col).data() == 'First activity'
-
-    # ---- Edit frame comment in the overview table
-
-    index = table.view.proxy_model.index(0, col)
-    delegate = table.view.itemDelegate(index)
-    assert isinstance(delegate, LineEditDelegate)
-
-    # Assert the delegate editor displays value.
-
-    table.view.edit(index)
-    assert delegate.editor.text() == 'First activity'
-
-    # Enter a new comment for the activity.
-
-    qtbot.keyClicks(delegate.editor, 'Edited comment for the first activity')
-    with qtbot.waitSignal(table.view.proxy_model.sig_sourcemodel_changed):
-        qtbot.keyPress(delegate.editor, Qt.Key_Enter)
-
-    # Assert the comment was correctly set in the database.
-
-    frame = mainwindow.client.frames[0]
-    assert frame.message == 'Edited comment for the first activity'
-    assert (table.view.proxy_model.index(0, col).data() ==
-            'Edited comment for the first activity')
 
 
 if __name__ == "__main__":

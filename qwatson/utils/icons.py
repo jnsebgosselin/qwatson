@@ -22,6 +22,7 @@ dirname = os.path.join(__rootdir__, 'ressources', 'icons_png')
 ICON_NAMES = {'master': 'qwatson',
               'process_start': 'process_start',
               'process_stop': 'process_stop',
+              'process_cancel': 'process_cancel',
               'plus': 'plus_sign',
               'minus': 'minus_sign',
               'clear': 'clear-search',
