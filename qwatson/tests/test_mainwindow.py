@@ -142,58 +142,6 @@ def test_load_config(qtbot, mocker):
     qwatson.close()
 
 
-def test_rename_project(qtbot, mocker):
-    """Test that renaming a project works as expected."""
-    qwatson = QWatson(APPDIR)
-    qtbot.addWidget(qwatson)
-    qwatson.show()
-    project_manager = qwatson.project_manager
-
-    # Enter edit mode, but do not change the project name.
-
-    qtbot.mouseClick(project_manager.btn_rename, Qt.LeftButton)
-
-    assert project_manager.project_cbox.linedit.isVisible()
-    assert not project_manager.project_cbox.combobox.isVisible()
-    qtbot.keyPress(project_manager.project_cbox.linedit, Qt.Key_Enter)
-    assert not project_manager.project_cbox.linedit.isVisible()
-    assert project_manager.project_cbox.combobox.isVisible()
-
-    assert qwatson.currentProject() == 'project1'
-    assert qwatson.client.frames[0].project == 'project1'
-
-    # Enter edit mode and change the project name.
-
-    qtbot.mouseClick(project_manager.btn_rename, Qt.LeftButton)
-
-    assert project_manager.project_cbox.linedit.isVisible()
-    assert not project_manager.project_cbox.combobox.isVisible()
-    qtbot.keyPress(project_manager.project_cbox.linedit, Qt.Key_End)
-    qtbot.keyClicks(project_manager.project_cbox.linedit, '_renamed')
-    qtbot.keyPress(project_manager.project_cbox.linedit, Qt.Key_Enter)
-    assert not project_manager.project_cbox.linedit.isVisible()
-    assert project_manager.project_cbox.combobox.isVisible()
-
-    assert qwatson.currentProject() == 'project1_renamed'
-    assert qwatson.client.frames[0].project == 'project1_renamed'
-
-    # Cancel the renaming of a project by pressing Escape
-
-    qtbot.mouseClick(project_manager.btn_rename, Qt.LeftButton)
-
-    assert project_manager.project_cbox.linedit.isVisible()
-    assert not project_manager.project_cbox.combobox.isVisible()
-    qtbot.keyClicks(project_manager.project_cbox.linedit, 'dummy')
-    qtbot.keyPress(project_manager.project_cbox.linedit, Qt.Key_Escape)
-    assert not project_manager.project_cbox.linedit.isVisible()
-    assert project_manager.project_cbox.combobox.isVisible()
-
-    assert qwatson.currentProject() == 'project1_renamed'
-    assert qwatson.client.frames[0].project == 'project1_renamed'
-
-    qwatson.close()
-
-
 def test_start_from_last_when_later_than_now(qtbot, mocker):
     """
     Test that starting a new activity with the option 'start from' set to
@@ -511,7 +459,7 @@ def test_accept_import_from_watson(qtbot, mocker):
     assert len(qwatson.client.frames) == 5
     assert table.view.proxy_model.get_accepted_row_count() == 5
 
-    assert qwatson.currentProject() == 'project1_renamed'
+    assert qwatson.currentProject() == 'project1'
     assert qwatson.comment_manager.text() == 'First activity'
     assert qwatson.tag_manager.tags == ['tag1', 'tag2', 'tag3']
 
