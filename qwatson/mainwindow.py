@@ -468,6 +468,7 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
     def start_watson(self, start_time=None):
         """Start monitoring a new activity with the Watson client."""
         if isinstance(start_time, arrow.Arrow):
+            self.btn_startfrom.setEnabled(False)
             self.stopwatch.start(start_time)
             self.client.start(self.currentProject())
             self.client._current['start'] = start_time
@@ -482,6 +483,7 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
 
     def cancel_watson(self):
         """Cancel the Watson client if it is running and reset the UI."""
+        self.btn_startfrom.setEnabled(True)
         self.stopwatch.cancel()
         if self.client.is_started:
             self.client.cancel()
@@ -489,6 +491,7 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
     def stop_watson(self, message=None, project=None, tags=None,
                     round_to=None):
         """Stop Watson and update the table model."""
+        self.btn_startfrom.setEnabled(True)
         self.stopwatch.stop()
 
         self.client._current['message'] = \
