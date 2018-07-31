@@ -80,7 +80,7 @@ def qwatson_creator(qtbot, mocker, appdir, now):
     qwatson.close()
 
 
-# ---- Test Start / Stop / Cancel
+# ---- Test Init and Defaults
 
 
 def test_init_and_defaults(qwatson_creator):
@@ -103,6 +103,13 @@ def test_init_and_defaults(qwatson_creator):
     assert frame.message == 'First activity'
     assert frame.tags == ["tag1", "tag2", "tag3"]
     assert frame.project == 'p1'
+
+    assert qwatson.currentProject() == 'p1'
+    assert qwatson.tag_manager.tags == ['tag1', 'tag2', 'tag3']
+    assert qwatson.comment_manager.text() == 'First activity'
+
+
+# ---- Test Start / Stop / Cancel
 
 
 def test_startstop(qwatson_creator, now):
