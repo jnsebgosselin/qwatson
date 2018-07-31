@@ -15,7 +15,7 @@ import sys
 
 import arrow
 from PyQt5.QtCore import pyqtSignal as QSignal
-from PyQt5.QtCore import QTimer, Qt
+from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import (QLCDNumber, QApplication, QGridLayout, QStyle,
                              QStyleOptionToolButton)
 
@@ -67,7 +67,7 @@ class StopWatchWidget(ColoredFrame):
             " used to specify a different start time for the activity."
             " The project, tags, and comment for the activity can be specified"
             " in the section below.<br><br>"
-            " Note that the start time, project, tags, and comment are saved"
+            " Note that the project, tags, and comment are saved"
             " to the database only when the button \"Stop\" is clicked."
             " It is thus possible to modify the value of these parameters"
             " while the activity is being monitored."
@@ -79,15 +79,15 @@ class StopWatchWidget(ColoredFrame):
             "<b>Stop</b><br><br>"
             "Stop monitoring the time elapsed for the currently running"
             " activity and save it to the database.<br><br>"
-            "The activity is saved using the specified project, tags,"
-            " and comment in the section below.")
+            "The activity is saved using the project, tags,"
+            " and comment specified in the section below.")
         btn_stop.clicked.connect(lambda: self.sig_btn_stop_clicked.emit())
         btn_stop.setEnabled(False)
 
         btn_cancel = QToolButtonBase('process_cancel', self.__iconsize)
         btn_cancel.setToolTip(
             "<b>Cancel</b><br><br>"
-            "Cancel monitoring the time elapsed for the currently running"
+            "Stop monitoring the time elapsed for the currently running"
             " activity and do NOT add it to the database.")
         btn_cancel.clicked.connect(lambda: self.sig_btn_cancel_clicked.emit())
         btn_cancel.setEnabled(False)
