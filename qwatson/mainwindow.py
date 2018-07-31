@@ -263,7 +263,10 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
                 myappid)
 
-        config_dir = config_dir or click.get_app_dir('QWatson')
+        config_dir = (config_dir or
+                      os.environ.get('QWATSON_DIR') or
+                      click.get_app_dir('QWatson'))
+
         self.client = Watson(config_dir=config_dir)
         self.model = WatsonTableModel(self.client)
 
