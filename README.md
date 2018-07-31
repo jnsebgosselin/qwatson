@@ -21,13 +21,13 @@ https://tailordev.fr/blog/2017/06/07/le-lab-5-crick-a-backend-for-watson-time-tr
 ## Installation
 
 **Windows**<br>
-An installer and a binary for the Windows platform are available for download [here](https://github.com/jnsebgosselin/qwatson/releases/latest) or you can run it directly from source by cloning the repository and installing the required dependencies ([arrow](https://arrow.readthedocs.io/en/latest/), [click](http://click.pocoo.org/5/), [requests](http://docs.python-requests.org/en/master/), and [pyqt5](https://www.riverbankcomputing.com/software/pyqt/intro)).
+An installer and a binary for the Windows platform are available for download [here](https://github.com/jnsebgosselin/qwatson/releases/latest) or you can run it directly from source by cloning the repository and installing the required [dependencies](./requirements.txt).
 
 **MacOSX and Linux**<br>
-Unfortunately, QWatson is not being tested and no binary is available for the MacOSX and Linux platforms. However, it should be possible to run QWatson on those platforms directly from the source code, provided that the required dependecies are installed correctly.
+Unfortunately, QWatson is not being tested and no binary is available for the MacOSX and Linux platforms. However, it should be possible to run QWatson on those platforms directly from the source code, provided that the required [dependencies](./requirements.txt) are installed correctly.
 
 **Important:**<br>
-In order to support the addition of log messages/comments to the activity frames, QWatson is distributed with a forked version of Watson (see [Pull Request #1](https://github.com/jnsebgosselin/qwatson/pull/1)). This means that until this feature is officially supported in Watson, frames edited with QWatson won't be readable nor editable with the Watson CLI (see [Issue #37](https://github.com/jnsebgosselin/qwatson/issues/37)).
+In order to support the addition of log messages/comments to the activity frames, QWatson is distributed with an extended version of Watson (see Pull Request [#1](https://github.com/jnsebgosselin/qwatson/pull/1) and [#59](https://github.com/jnsebgosselin/qwatson/pull/59)). This means that until this feature is officially supported in Watson, frames edited with QWatson won't be readable nor editable with the Watson CLI (see [Issue #37](https://github.com/jnsebgosselin/qwatson/issues/37)).
 
 For this reason, the default path for the QWatson application folder is set differently from that of Watson, so that one does not unknowingly make its whole activity database incompatible with the Watson CLI while trying out QWatson. On first startup, QWatson will ask if you want to import your settings and data from Watson.
 
