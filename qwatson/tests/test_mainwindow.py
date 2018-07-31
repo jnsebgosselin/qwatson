@@ -101,13 +101,15 @@ def test_add_first_project(qtbot, mocker):
 
     assert len(qwatson.client.frames) == 0
 
-    # Start the activity timer
+    # Start the activity timer :
+
     start = local_arrow_from_tuple((2018, 6, 14, 15, 59, 54))
     mocker.patch('arrow.now', return_value=start)
     qtbot.mouseClick(qwatson.stopwatch.buttons['start'], Qt.LeftButton)
     assert qwatson.stopwatch.elap_timer.is_started
 
-    # Stop the activity timer
+    # Stop the activity timer :
+
     stop = local_arrow_from_tuple((2018, 6, 14, 17, 12, 35))
     mocker.patch('arrow.now', return_value=stop)
     qtbot.mouseClick(qwatson.stopwatch.buttons['stop'], Qt.LeftButton)
