@@ -127,6 +127,23 @@ def test_add_first_project(qtbot, mocker):
     qwatson.close()
 
 
+def test_load_config(qtbot, mocker):
+    """
+    Test that the activity fields are set correctly when starting QWatson and
+    a frames file already exists.
+    """
+    qwatson = QWatson(APPDIR)
+    qtbot.addWidget(qwatson)
+    assert len(qwatson.client.frames) == 1
+    qwatson.show()
+
+    assert qwatson.currentProject() == 'project1'
+    assert qwatson.tag_manager.tags == ['tag1', 'tag2', 'tag3']
+    assert qwatson.comment_manager.text() == 'First activity'
+    assert qwatson.round_time_btn.text() == 'round to 5min'
+    qwatson.close()
+
+
 def test_close_when_running(qtbot, mocker):
     """
     Test that the dialog that ask the user what to do when closing QWatson
@@ -195,7 +212,7 @@ def test_close_when_running(qtbot, mocker):
 
     frame = mainwindow.client.frames[-1]
     assert len(mainwindow.client.frames) == expected_framelen + 1
-    assert frame.start.format('YYYY-MM-DD HH:mm') == '2018-06-14 19:15'
+    assert frame.start.format('YYYY-MM-DD HH:mm') == '2018-06-14 17:15'
     assert frame.stop.format('YYYY-MM-DD HH:mm') == '2018-06-14 19:35'
 
 
@@ -304,8 +321,8 @@ def test_accept_import_from_watson(qtbot, mocker):
     assert qwatson.currentIndex() == 0
 
     table = qwatson.overview_widg.table_widg.tables[3]
-    assert len(qwatson.client.frames) == 5
-    assert table.view.proxy_model.get_accepted_row_count() == 5
+    assert len(qwatson.client.frames) == 2
+    assert table.view.proxy_model.get_accepted_row_count() == 2
 
     assert qwatson.currentProject() == 'project1'
     assert qwatson.comment_manager.text() == 'First activity'
