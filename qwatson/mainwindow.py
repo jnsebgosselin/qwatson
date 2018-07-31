@@ -399,13 +399,13 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
             "Round start and stop times to the nearest"
             " multiple of the selected factor.")
 
-        self.start_from = DropDownToolButton(style='text_only')
-        self.start_from.setSizePolicy(
+        self.btn_startfrom = DropDownToolButton(style='text_only')
+        self.btn_startfrom.setSizePolicy(
             QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred))
-        self.start_from.addItems(
+        self.btn_startfrom.addItems(
             ['start from now', 'start from last', 'start from other'])
-        self.start_from.setCurrentIndex(0)
-        self.start_from.setToolTip(
+        self.btn_startfrom.setCurrentIndex(0)
+        self.btn_startfrom.setToolTip(
             "<b>Start From</b><br><br>"
             "Set whether the current activity starts"
             " from the current time (now),"
@@ -421,7 +421,7 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
         layout.setSpacing(0)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.round_time_btn)
-        layout.addWidget(self.start_from)
+        layout.addWidget(self.btn_startfrom)
         layout.addStretch(100)
         layout.addWidget(self.btn_report)
 
@@ -439,7 +439,7 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
         Return the mode to use to determine at what reference time the activity
         must refer to calculate its elapsed time.
         """
-        return STARTFROM[self.start_from.text()]
+        return STARTFROM[self.btn_startfrom.text()]
 
     # ---- Stackwidget handlers
 
