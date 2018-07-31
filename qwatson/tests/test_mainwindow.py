@@ -265,7 +265,7 @@ def test_start_from_other(qtbot, mocker):
 
     datetime_dial.datetime_edit.setDateTime(
         qdatetime_from_str('2018-06-14 19:01'))
-    qtbot.mouseClick(datetime_dial.buttons['Ok'], Qt.LeftButton)
+    qtbot.mouseClick(datetime_dial.buttons['Start'], Qt.LeftButton)
     assert mainwindow.stopwatch.elap_timer.is_started
     assert not datetime_dial.isVisible()
     assert mainwindow.client.is_started

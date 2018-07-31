@@ -15,9 +15,8 @@ import sys
 import arrow
 from PyQt5.QtCore import pyqtSlot as QSlot
 from PyQt5.QtCore import QDateTime, Qt
-from PyQt5.QtWidgets import (QApplication, QDateTimeEdit, QDialogButtonBox,
-                             QLabel, QVBoxLayout, QStyleOption, QHBoxLayout,
-                             QPushButton)
+from PyQt5.QtWidgets import (QApplication, QDateTimeEdit, QLabel, QVBoxLayout,
+                             QHBoxLayout, QPushButton)
 
 # ---- Local imports
 
@@ -46,7 +45,7 @@ class DateTimeInputDialog(BaseDialog):
 
         # Add buttons to the dialog
 
-        self.add_dialog_button(QPushButton('Ok'), 'Ok', True)
+        self.add_dialog_button(QPushButton('Start'), 'Start', True)
         self.add_dialog_button(QPushButton('Cancel'), 'Cancel')
 
         # Setup the info box
@@ -116,7 +115,7 @@ class DateTimeInputDialog(BaseDialog):
         or canceled by the user.
         """
         if self.main is not None:
-            if answer == 'Ok':
+            if answer == 'Start':
                 self.main.start_watson(start_time=self.get_datetime_arrow())
             elif answer == 'Cancel':
                 self.main.cancel_watson()
