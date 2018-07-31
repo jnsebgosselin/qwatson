@@ -104,6 +104,7 @@ def test_startstop(qwatson_creator, now):
     # Start monitoring an activity.
 
     qtbot.mouseClick(stopwatch.buttons['start'], Qt.LeftButton)
+    assert not qwatson.btn_startfrom.isEnabled()
     assert not stopwatch.buttons['start'].isEnabled()
     assert stopwatch.buttons['stop'].isEnabled()
     assert stopwatch.buttons['cancel'].isEnabled()
@@ -124,6 +125,7 @@ def test_startstop(qwatson_creator, now):
     assert stopwatch.elap_timer._elapsed_time == 3*60*60
 
     qtbot.mouseClick(stopwatch.buttons['stop'], Qt.LeftButton)
+    assert qwatson.btn_startfrom.isEnabled()
     assert stopwatch.buttons['start'].isEnabled()
     assert not stopwatch.buttons['stop'].isEnabled()
     assert not stopwatch.buttons['cancel'].isEnabled()
@@ -162,6 +164,7 @@ def test_startcancel(qwatson_creator, now):
     assert stopwatch.elap_timer._elapsed_time == 3*60*60
 
     qtbot.mouseClick(stopwatch.buttons['cancel'], Qt.LeftButton)
+    assert qwatson.btn_startfrom.isEnabled()
     assert stopwatch.buttons['start'].isEnabled()
     assert not stopwatch.buttons['stop'].isEnabled()
     assert not stopwatch.buttons['cancel'].isEnabled()
