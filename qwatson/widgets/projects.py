@@ -88,7 +88,7 @@ class ProjectManager(QWidget):
             "If no project is selected when renaming, set the project of all"
             " activities that are currently not in a project.")
 
-        self.btn_remove = QToolButtonSmall('clear')
+        self.btn_remove = QToolButtonSmall('minus')
         self.btn_remove.clicked.connect(self.btn_remove_isclicked)
         self.btn_remove.setToolTip(
             "<b>Delete Project</b><br><br>"
