@@ -86,7 +86,7 @@ class ProjectManager(QWidget):
             "Rename the currently selected project and update the project of"
             " all related activities.<br><br>"
             "If the new name matches that of an already existing project,"
-            " merge the activities of both project toghether.<br><br>"
+            " merge the activities of both projects toghether.<br><br>"
             "If no project is selected when renaming, set the project of all"
             " activities that are not currently in a project or merge them"
             " with those of an already existing project if applicable."
