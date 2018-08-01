@@ -444,10 +444,6 @@ def test_import_from_watson_noshow(qwatson_bot, newdir):
     assert qwatson.comment_manager.text() == ''
     assert qwatson.tag_manager.tags == []
 
-    # Clear the appdir for next test :
-
-    delete_folder_recursively(newdir)
-
 
 def test_accept_import_from_watson(qwatson_bot, newdir):
     """
@@ -455,6 +451,7 @@ def test_accept_import_from_watson(qwatson_bot, newdir):
     time QWatson is started is working as expected when the import is
     accepted by the user.
     """
+    delete_folder_recursively(newdir, delroot=True)
     qwatson, qtbot, mocker = qwatson_bot(qwatson_dir=newdir)
 
     # Assert that the import dialog it shown.
