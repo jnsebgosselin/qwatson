@@ -97,7 +97,7 @@ class ProjectManager(QWidget):
             "If no project is selected, erase all activities"
             " that are currently not in a project.")
 
-        for item in [self.btn_add, self.btn_rename, self.btn_remove]:
+        for item in [self.btn_add, self.btn_remove, self.btn_rename]:
             toolbar.addWidget(item)
 
         return toolbar
