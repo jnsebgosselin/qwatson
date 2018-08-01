@@ -85,10 +85,14 @@ class ProjectManager(QWidget):
             "<b>Rename Project</b><br><br>"
             "Rename the currently selected project and update the project of"
             " all related activities.<br><br>"
+            "If the new name matches that of an already existing project,"
+            " merge the activities of both project toghether.<br><br>"
             "If no project is selected when renaming, set the project of all"
-            " activities that are currently not in a project.")
+            " activities that are not currently in a project or merge them"
+            " with those of an already existing project if applicable."
+            )
 
-        self.btn_remove = QToolButtonSmall('clear')
+        self.btn_remove = QToolButtonSmall('minus')
         self.btn_remove.clicked.connect(self.btn_remove_isclicked)
         self.btn_remove.setToolTip(
             "<b>Delete Project</b><br><br>"
@@ -97,7 +101,7 @@ class ProjectManager(QWidget):
             "If no project is selected, erase all activities"
             " that are currently not in a project.")
 
-        for item in [self.btn_add, self.btn_rename, self.btn_remove]:
+        for item in [self.btn_add, self.btn_remove, self.btn_rename]:
             toolbar.addWidget(item)
 
         return toolbar
