@@ -177,7 +177,7 @@ class StopWatchWidget(ColoredFrame):
         Set the reference arrow used to calcul the elapsed time when the stop
         watch is running.
         """
-        self._startfrom
+        self._startfrom = x
 
 
 class ElapsedTimeLCDNumber(QLCDNumber):
