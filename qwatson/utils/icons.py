@@ -41,7 +41,8 @@ ICON_SIZES = {'huge': (128, 128),
               'Large': (64, 64),
               'large': (32, 32),
               'normal': (28, 28),
-              'small': (20, 20)}
+              'small': (20, 20),
+              'tiny': (12, 12)}
 
 
 def get_icon(name):
