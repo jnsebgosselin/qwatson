@@ -14,32 +14,46 @@ import sys
 
 from PyQt5.QtCore import pyqtSignal as QSignal
 from PyQt5.QtCore import QSize, Qt, QEvent
-from PyQt5.QtWidgets import (QApplication, QGridLayout, QToolButton, QWidget,
-                             QMenu, QListWidget, QStyle, QSizePolicy,
-                             QStyleOptionToolButton)
+from PyQt5.QtWidgets import (QApplication, QToolButton, QMenu, QListWidget,
+                             QStyle, QSizePolicy, QStyleOptionToolButton,
+                             QHBoxLayout)
 
 # ---- Local imports
 
 from qwatson.utils import icons
-from qwatson.widgets.layout import VSep
+from qwatson.widgets.layout import VSep, ColoredFrame
 
 
-class ToolBarWidget(QWidget):
+class ToolBarWidget(ColoredFrame):
     """A standard toolbar with some layout specifics."""
-    def __init__(self, parent=None):
-        super(ToolBarWidget, self).__init__(parent)
-        layout = QGridLayout(self)
+    def __init__(self, color=None, parent=None):
+        super(ToolBarWidget, self).__init__(color, parent)
+        self.widgets = []
+        layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(5)
 
     def addWidget(self, widget):
         """Add the widget to the toolbar layout."""
-        lay = self.layout()
-        if widget is None:
-            widget = VSep()
-        lay.setColumnStretch(lay.columnCount()-1, 0)
-        lay.addWidget(widget, 0, lay.columnCount())
-        lay.setColumnStretch(lay.columnCount(), 100)
+        widget = VSep() if widget is None else widget
+        self.widgets.append(widget)
+        self.layout().addWidget(widget)
+
+    def addStretch(self, stretch):
+        self.layout().addStretch(stretch)
+
+    def setSpacing(self, spacing):
+        """Set the spacing between the item of the toolbar."""
+        self.layout().setSpacing(spacing)
+
+    def setSizePolicy(self, policy):
+        """
+        Extend Qt method to set the size policy of all toolbar items also.
+        """
+        for widget in self.widgets:
+            widget.setSizePolicy(policy)
+        super().setSizePolicy(policy)
+
 
 
 class QToolButtonBase(QToolButton):
