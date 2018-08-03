@@ -337,17 +337,22 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
 
         self.stackwidget.addWidget(tracker)
 
+    # ---- Project, Tags and Comment
+
     def setup_watson_managers(self):
         """
         Setup the embedded dialog to setup the current activity parameters.
         """
         project_manager = self.setup_project_manager()
+        project_manager.sig_project_changed.connect(self._settings_changed)
 
         self.tag_manager = TagLineEdit()
         self.tag_manager.setPlaceholderText("Tags (comma separated)")
+        self.tag_manager.textChanged.connect(self._settings_changed)
 
         self.comment_manager = QLineEdit()
         self.comment_manager.setPlaceholderText("Comment")
+        self.comment_manager.textChanged.connect(self._settings_changed)
 
         # ---- Setup the layout
 
