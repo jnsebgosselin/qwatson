@@ -20,9 +20,8 @@ import json
 import click
 import arrow
 from PyQt5.QtCore import Qt, QModelIndex
-from PyQt5.QtWidgets import (QApplication, QGridLayout, QHBoxLayout,
-                             QLabel, QLineEdit, QSizePolicy, QWidget,
-                             QStackedWidget, QVBoxLayout)
+from PyQt5.QtWidgets import (QApplication, QGridLayout, QLabel, QLineEdit,
+                             QSizePolicy, QWidget, QStackedWidget, QVBoxLayout)
 
 # ---- Local imports
 
@@ -34,7 +33,8 @@ from qwatson.watson_ext.watsonhelpers import (
 from qwatson.widgets.projects import ProjectManager
 from qwatson.widgets.clock import StopWatchWidget
 from qwatson.widgets.tableviews import ActivityOverviewWidget
-from qwatson.widgets.toolbar import QToolButtonSmall, DropDownToolButton
+from qwatson.widgets.toolbar import (QToolButtonSmall, DropDownToolButton,
+                                     HistoryNavigationWidget, ToolBarWidget)
 from qwatson import __namever__
 from qwatson.models.tablemodels import WatsonTableModel
 from qwatson.dialogs import (ImportDialog, DateTimeInputDialog, CloseDialog,
