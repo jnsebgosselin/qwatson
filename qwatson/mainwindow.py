@@ -372,17 +372,56 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
         return managers
 
     def setup_stopwatch(self):
+    def _settings_changed(self):
+        """Handle when either the current project, tags an comment change."""
+        self.btn_navig_settings.reset()
+        self._settings = {'project': self.currentProject(),
+                          'tags': self.tag_manager.tags,
+                          'comment': self.comment_manager.text()}
+
+    def set_settings_from_index(self, index):
         """
         Setup the widget that contains a button to start/stop Watson and a
         digital clock that shows the elapsed amount of time since Watson
         was started.
+        Load the settings in the manager from the data of the frame saved
+        at index.
         """
         self.stopwatch = StopWatchWidget()
         self.stopwatch.sig_btn_start_clicked.connect(self.start_watson)
         self.stopwatch.sig_btn_stop_clicked.connect(self.stop_watson)
         self.stopwatch.sig_btn_cancel_clicked.connect(self.cancel_watson)
+        if index == 0:
+            self.project_manager.blockSignals(True)
+            self.project_manager.setCurrentProject(self._settings['project'])
+            self.project_manager.blockSignals(False)
 
         return self.stopwatch
+            self.tag_manager.blockSignals(True)
+            self.tag_manager.set_tags(self._settings['tags'])
+            self.tag_manager.blockSignals(False)
+
+            self.comment_manager.blockSignals(True)
+            self.comment_manager.setText(self._settings['comment'])
+            self.comment_manager.blockSignals(False)
+        else:
+            try:
+                frame = self.client.frames[index]
+                self.project_manager.blockSignals(True)
+                self.project_manager.setCurrentProject(frame.project)
+                self.project_manager.blockSignals(False)
+
+                self.tag_manager.blockSignals(True)
+                self.tag_manager.set_tags(frame.tags)
+                self.tag_manager.blockSignals(False)
+
+                self.comment_manager.blockSignals(True)
+                self.comment_manager.setText(frame.message)
+                self.comment_manager.blockSignals(False)
+            except IndexError:
+                print("IndexError: list index out of range")
+
+    # ---- Bottom Toolbar
 
     def setup_statusbar(self):
         """Setup the toolbar located at the bottom of the main widget."""
