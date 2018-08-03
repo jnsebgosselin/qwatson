@@ -103,6 +103,9 @@ class ActivityOverviewWidget(QWidget):
 
     def show(self):
         """Qt method override to restore the window when minimized."""
+        self.table_widg.scrollarea.widget().hide()
+        # We show and hide the table_widg scrollarea to avoid flickering.
+
         self.setWindowState(
             (self.windowState() & ~(Qt.WindowMinimized | Qt.WindowFullScreen))
             | Qt.WindowActive)
@@ -117,6 +120,9 @@ class ActivityOverviewWidget(QWidget):
         self.raise_()
         self.setFocus()
 
+        self.table_widg.scrollarea.widget().show()
+        # We show and hide the table_widg scrollarea to avoid flickering.
+
     def add_new_activity(self, where):
         """
         Send a signal containing the index, the start time, and stop time of
@@ -129,6 +135,7 @@ class ActivityOverviewWidget(QWidget):
 
 
 # ---- TableWidget
+
 
 class WatsonMultiTableWidget(QFrame):
     """
