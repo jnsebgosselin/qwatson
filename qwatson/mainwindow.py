@@ -280,7 +280,6 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
             self.stop_watson(tags=['error'],
                              comment="last session not closed correctly.")
         self.set_settings_from_index(-1)
-        self._settings_changed()
 
     # ---- Setup layout
 
@@ -346,15 +345,12 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
         Setup the embedded dialog to setup the current activity parameters.
         """
         project_manager = self.setup_project_manager()
-        project_manager.sig_project_changed.connect(self._settings_changed)
 
         self.tag_manager = TagLineEdit()
         self.tag_manager.setPlaceholderText("Tags (comma separated)")
-        self.tag_manager.textChanged.connect(self._settings_changed)
 
         self.comment_manager = QLineEdit()
         self.comment_manager.setPlaceholderText("Comment")
-        self.comment_manager.textChanged.connect(self._settings_changed)
 
         # ---- Setup the layout
 
@@ -372,12 +368,6 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
         layout.addWidget(QLabel('comment :'), 2, 0)
 
         return managers
-
-    def _settings_changed(self):
-        """Handle when either the current project, tags an comment change."""
-        self._settings = {'project': self.currentProject(),
-                          'tags': self.tag_manager.tags,
-                          'comment': self.comment_manager.text()}
 
     def set_settings_from_index(self, index):
         """
