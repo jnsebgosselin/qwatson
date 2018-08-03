@@ -34,7 +34,7 @@ from qwatson.widgets.projects import ProjectManager
 from qwatson.widgets.clock import StopWatchWidget
 from qwatson.widgets.tableviews import ActivityOverviewWidget
 from qwatson.widgets.toolbar import (QToolButtonSmall, DropDownToolButton,
-                                     HistoryNavigationWidget, ToolBarWidget)
+                                     ToolBarWidget)
 from qwatson import __namever__
 from qwatson.models.tablemodels import WatsonTableModel
 from qwatson.dialogs import (ImportDialog, DateTimeInputDialog, CloseDialog,
@@ -227,6 +227,8 @@ class QWatsonActivityMixin(object):
         """Setup the widget to show and edit activities."""
         self.overview_widg = ActivityOverviewWidget(self.model)
         self.overview_widg.sig_add_activity.connect(self.add_new_activity)
+        self.overview_widg.sig_load_settings.connect(
+            self.set_settings_from_index)
 
     def add_new_activity(self, index, start, stop):
         """
@@ -369,12 +371,10 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
         layout.addWidget(QLabel('tags :'), 1, 0)
         layout.addWidget(QLabel('comment :'), 2, 0)
 
-
         return managers
 
     def _settings_changed(self):
         """Handle when either the current project, tags an comment change."""
-        self.btn_navig_settings.reset()
         self._settings = {'project': self.currentProject(),
                           'tags': self.tag_manager.tags,
                           'comment': self.comment_manager.text()}
@@ -384,19 +384,7 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
         Load the settings in the manager from the data of the frame saved
         at index.
         """
-        if index == 0:
-            self.project_manager.blockSignals(True)
-            self.project_manager.setCurrentProject(self._settings['project'])
-            self.project_manager.blockSignals(False)
-
-            self.tag_manager.blockSignals(True)
-            self.tag_manager.set_tags(self._settings['tags'])
-            self.tag_manager.blockSignals(False)
-
-            self.comment_manager.blockSignals(True)
-            self.comment_manager.setText(self._settings['comment'])
-            self.comment_manager.blockSignals(False)
-        else:
+        if index is not None:
             try:
                 frame = self.client.frames[index]
                 self.project_manager.blockSignals(True)
@@ -442,11 +430,6 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
             " from the stop time of the last logged activity (last),"
             " or from a user defined time (other).")
 
-        self.btn_navig_settings = HistoryNavigationWidget(
-            len(self.client.frames), 'tiny')
-        self.btn_navig_settings.sig_clicked.connect(
-            self.set_settings_from_index)
-
         # Setup the layout of the statusbar
 
         statusbar = ToolBarWidget('window')
@@ -455,7 +438,6 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
         statusbar.addWidget(self.btn_startfrom)
         statusbar.addStretch(100)
         statusbar.addWidget(self.btn_report)
-        statusbar.addWidget(self.btn_navig_settings)
         statusbar.setSizePolicy(
             QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred))
 
