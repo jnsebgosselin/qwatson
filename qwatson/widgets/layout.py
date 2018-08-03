@@ -86,7 +86,8 @@ class InfoBox(ColoredFrame):
 
         # Setup the icon.
 
-        icon = icons.get_standard_icon(icon) if isinstance(icon, str) else icon
+        icon = (icons.get_standard_icon('SP_MessageBox' + icon.title()) if
+                isinstance(icon, str) else icon)
         iconsize = (icons.get_standard_iconsize(iconsize) if
                     isinstance(iconsize, str) else iconsize)
 

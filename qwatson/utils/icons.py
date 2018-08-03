@@ -57,10 +57,10 @@ def get_standard_icon(constant):
     """
     Return a QIcon of a standard pixmap.
 
-    The value of the 'constant' must be either 'question', 'information',
-    'warning', or 'critical'.
+    See the link below for a list of valid constants:
+    https://srinikom.github.io/pyside-docs/PySide/QtGui/QStyle.html
     """
-    constant = getattr(QStyle, 'SP_MessageBox' + constant.title())
+    constant = getattr(QStyle, constant)
     style = QApplication.instance().style()
     return style.standardIcon(constant)
 
