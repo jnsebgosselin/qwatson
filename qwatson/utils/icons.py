@@ -35,7 +35,8 @@ ICON_NAMES = {'master': 'qwatson',
               'go-previous': 'go-previous',
               'info': 'info',
               'insert_above': 'insert_row_above',
-              'insert_below': 'insert_row_below'}
+              'insert_below': 'insert_row_below',
+              'copy_over': 'copy_over'}
 
 ICON_SIZES = {'huge': (128, 128),
               'Large': (64, 64),
