@@ -423,8 +423,6 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
             "Open the activity overview window.")
 
         self.round_time_btn = DropDownToolButton(style='text_only')
-        self.round_time_btn.setSizePolicy(
-            QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred))
         self.round_time_btn.addItems(list(ROUNDMIN.keys()))
         self.round_time_btn.setCurrentIndex(1)
         self.round_time_btn.setToolTip(
@@ -433,8 +431,6 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
             " multiple of the selected factor.")
 
         self.btn_startfrom = DropDownToolButton(style='text_only')
-        self.btn_startfrom.setSizePolicy(
-            QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred))
         self.btn_startfrom.addItems(
             ['start from now', 'start from last', 'start from other'])
         self.btn_startfrom.setCurrentIndex(0)
@@ -445,18 +441,22 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
             " from the stop time of the last logged activity (last),"
             " or from a user defined time (other).")
 
+        self.btn_navig_settings = HistoryNavigationWidget(
+            len(self.client.frames), 'tiny')
+        self.btn_navig_settings.sig_clicked.connect(
+            self.set_settings_from_index)
+
         # Setup the layout of the statusbar
 
-        statusbar = ColoredFrame()
-        statusbar.set_background_color('window')
-
-        layout = QHBoxLayout(statusbar)
-        layout.setSpacing(0)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.round_time_btn)
-        layout.addWidget(self.btn_startfrom)
-        layout.addStretch(100)
-        layout.addWidget(self.btn_report)
+        statusbar = ToolBarWidget('window')
+        statusbar.setSpacing(0)
+        statusbar.addWidget(self.round_time_btn)
+        statusbar.addWidget(self.btn_startfrom)
+        statusbar.addStretch(100)
+        statusbar.addWidget(self.btn_report)
+        statusbar.addWidget(self.btn_navig_settings)
+        statusbar.setSizePolicy(
+            QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred))
 
         return statusbar
 
