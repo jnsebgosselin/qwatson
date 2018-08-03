@@ -27,7 +27,7 @@ from qwatson.utils import icons
 from qwatson.utils.dates import arrowspan_to_str, total_seconds_to_hour_min
 from qwatson.watson_ext.watsonhelpers import find_where_to_insert_new_frame
 from qwatson.widgets.layout import ColoredFrame
-from qwatson.widgets.toolbar import QToolButtonBase
+from qwatson.widgets.toolbar import QToolButtonBase, ToolBarWidget
 from qwatson.widgets.dates import DateRangeNavigator
 from qwatson.models.tablemodels import WatsonSortFilterProxyModel
 from qwatson.models.delegates import (
@@ -84,18 +84,16 @@ class ActivityOverviewWidget(QWidget):
         self.add_act_below_btn.clicked.connect(
             lambda: self.add_new_activity('below'))
 
+
         # Setup the layout.
 
-        toolbar = QFrame()
+        toolbar = ToolBarWidget()
+        toolbar.setSpacing(1)
 
-        layout = QHBoxLayout(toolbar)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(1)
-
-        layout.addWidget(self.date_range_nav)
-        layout.addStretch()
-        layout.addWidget(self.add_act_above_btn)
-        layout.addWidget(self.add_act_below_btn)
+        toolbar.addWidget(self.date_range_nav)
+        toolbar.addStretch(100)
+        toolbar.addWidget(self.add_act_above_btn)
+        toolbar.addWidget(self.add_act_below_btn)
 
         return toolbar
 
