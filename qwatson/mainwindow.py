@@ -214,11 +214,7 @@ class QWatsonImportMixin(object):
         reset_watson(self.client)
         self.project_manager.model.modelReset.emit()
         self.model.modelReset.emit()
-        if len(self.client.frames) > 0:
-            lastframe = self.client.frames[-1]
-            self.project_manager.setCurrentProject(lastframe.project)
-            self.tag_manager.set_tags(lastframe.tags)
-            self.comment_manager.setText(lastframe.message)
+        self.set_settings_from_index(-1)
 
 
 class QWatsonActivityMixin(object):
@@ -267,6 +263,10 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
                       os.environ.get('QWATSON_DIR') or
                       click.get_app_dir('QWatson'))
 
+        self._settings = {'project': '',
+                          'tags': [],
+                          'comment': ''}
+
         self.client = Watson(config_dir=config_dir)
         self.model = WatsonTableModel(self.client)
 
@@ -275,9 +275,10 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
 
         if self.client.is_started:
             self.add_new_project(self.client.current['project'])
-            self.tag_manager.set_tags(['error'])
-            self.comment_manager.setText("last session not closed correctly.")
-            self.stop_watson()
+            self.stop_watson(tags=['error'],
+                             comment="last session not closed correctly.")
+        self.set_settings_from_index(-1)
+        self._settings_changed()
 
     # ---- Setup layout
 
@@ -363,11 +364,6 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
         layout.addWidget(QLabel('tags :'), 1, 0)
         layout.addWidget(QLabel('comment :'), 2, 0)
 
-        # Set current activity inputs to the last ones saved in the database.
-        if len(self.client.frames) > 0:
-            project_manager.setCurrentProject(self.client.frames[-1][2])
-            self.tag_manager.set_tags(self.client.frames[-1].tags)
-            self.comment_manager.setText(self.client.frames[-1].message)
 
         return managers
 
