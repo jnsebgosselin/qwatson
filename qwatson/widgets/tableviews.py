@@ -38,6 +38,7 @@ from qwatson.models.delegates import (
 class ActivityOverviewWidget(QWidget):
     """A widget to show and edit activities logged with Watson."""
     sig_add_activity = QSignal(int, arrow.Arrow, arrow.Arrow)
+    sig_load_settings = QSignal(object)
 
     def __init__(self, model, parent=None):
         super(ActivityOverviewWidget, self).__init__(parent)
@@ -84,6 +85,10 @@ class ActivityOverviewWidget(QWidget):
         self.add_act_below_btn.clicked.connect(
             lambda: self.add_new_activity('below'))
 
+        self.btn_load_row_settings = QToolButtonBase('copy_over', 'small')
+        self.btn_load_row_settings.clicked.connect(
+            lambda: self.sig_load_settings.emit(
+                self.table_widg.selectedFrame()))
 
         # Setup the layout.
 
@@ -92,6 +97,7 @@ class ActivityOverviewWidget(QWidget):
 
         toolbar.addWidget(self.date_range_nav)
         toolbar.addStretch(100)
+        toolbar.addWidget(self.btn_load_row_settings)
         toolbar.addWidget(self.add_act_above_btn)
         toolbar.addWidget(self.add_act_below_btn)
 
