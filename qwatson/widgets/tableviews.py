@@ -267,6 +267,16 @@ class WatsonMultiTableWidget(QFrame):
             self.last_focused_table.view.set_selected(False)
         self.last_focused_table = None
 
+    def selectedFrame(self):
+        """
+        Return the index of the frame corresponding to the selected row
+        in the table if any or else return None.
+        """
+        if self.last_focused_table is not None:
+            return self.last_focused_table.get_selected_frame_index()
+        else:
+            return None
+
     def srollbar_value_changed(self, value):
         """
         Handle when the value of the vertical scrollbar changes, so that
