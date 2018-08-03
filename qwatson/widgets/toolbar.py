@@ -55,62 +55,6 @@ class ToolBarWidget(ColoredFrame):
         super().setSizePolicy(policy)
 
 
-class HistoryNavigationWidget(ToolBarWidget):
-    sig_clicked = QSignal(object)
-
-    def __init__(self, count=None, iconsize='normal',
-                 parent=None):
-        super(HistoryNavigationWidget, self).__init__(parent)
-        self.setup(iconsize)
-        self.setSpacing(0)
-
-        self.counter = 0
-        self.count = count
-        self._update_btn_state()
-
-    def setup(self, iconsize):
-        """Setup the layout of the widget."""
-        self.btn_next = QToolButtonBase('go-next', iconsize)
-        self.btn_next.clicked.connect(self.go_next)
-
-        self.btn_prev = QToolButtonBase('go-previous', iconsize)
-        self.btn_prev.clicked.connect(self.go_prev)
-
-        self.addWidget(self.btn_prev)
-        self.addWidget(self.btn_next)
-
-    def go_next(self):
-        """Go next one step in the history."""
-        self.counter = self.counter+1
-        self._update_btn_state()
-        self.sig_clicked.emit(self.counter)
-
-    def go_prev(self):
-        """Go back one step in the history."""
-        self.counter += -1
-        self._update_btn_state()
-        self.sig_clicked.emit(self.counter)
-
-    def reset(self):
-        """Reset the counter to its initial state."""
-        self.counter = 0
-        self._update_btn_state()
-
-    def setCount(self, x):
-        """Set the max number of item in the history."""
-        self.count = x
-        self._update_btn_state()
-
-    def _update_btn_state(self):
-        """
-        Set the enabled state of each button depending on the value of the
-        counter and the history count.
-        """
-        self.btn_next.setEnabled(self.counter < 0)
-        self.btn_prev.setEnabled(self.count is None or
-                                 abs(self.counter) < self.count)
-
-
 class QToolButtonBase(QToolButton):
     def __init__(self, icon=None, iconsize='normal', parent=None):
         super(QToolButtonBase, self).__init__(parent)
