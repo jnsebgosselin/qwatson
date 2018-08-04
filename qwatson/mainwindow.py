@@ -265,10 +265,6 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
                       os.environ.get('QWATSON_DIR') or
                       click.get_app_dir('QWatson'))
 
-        self._settings = {'project': '',
-                          'tags': [],
-                          'comment': ''}
-
         self.client = Watson(config_dir=config_dir)
         self.model = WatsonTableModel(self.client)
 
@@ -278,7 +274,7 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
         if self.client.is_started:
             self.add_new_project(self.client.current['project'])
             self.stop_watson(tags=['error'],
-                             comment="last session not closed correctly.")
+                             message="last session not closed correctly.")
         self.set_settings_from_index(-1)
 
     # ---- Setup layout
