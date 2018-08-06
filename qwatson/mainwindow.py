@@ -20,9 +20,8 @@ import json
 import click
 import arrow
 from PyQt5.QtCore import Qt, QModelIndex
-from PyQt5.QtWidgets import (QApplication, QGridLayout, QHBoxLayout,
-                             QLabel, QLineEdit, QSizePolicy, QWidget,
-                             QStackedWidget, QVBoxLayout)
+from PyQt5.QtWidgets import (QApplication, QGridLayout, QLabel, QLineEdit,
+                             QSizePolicy, QWidget, QStackedWidget, QVBoxLayout)
 
 # ---- Local imports
 
@@ -34,7 +33,8 @@ from qwatson.watson_ext.watsonhelpers import (
 from qwatson.widgets.projects import ProjectManager
 from qwatson.widgets.clock import StopWatchWidget
 from qwatson.widgets.tableviews import ActivityOverviewWidget
-from qwatson.widgets.toolbar import QToolButtonSmall, DropDownToolButton
+from qwatson.widgets.toolbar import (QToolButtonSmall, DropDownToolButton,
+                                     ToolBarWidget)
 from qwatson import __namever__
 from qwatson.models.tablemodels import WatsonTableModel
 from qwatson.dialogs import (ImportDialog, DateTimeInputDialog, CloseDialog,
@@ -214,11 +214,7 @@ class QWatsonImportMixin(object):
         reset_watson(self.client)
         self.project_manager.model.modelReset.emit()
         self.model.modelReset.emit()
-        if len(self.client.frames) > 0:
-            lastframe = self.client.frames[-1]
-            self.project_manager.setCurrentProject(lastframe.project)
-            self.tag_manager.set_tags(lastframe.tags)
-            self.comment_manager.setText(lastframe.message)
+        self.set_settings_from_index(-1)
 
 
 class QWatsonActivityMixin(object):
@@ -231,6 +227,8 @@ class QWatsonActivityMixin(object):
         """Setup the widget to show and edit activities."""
         self.overview_widg = ActivityOverviewWidget(self.model)
         self.overview_widg.sig_add_activity.connect(self.add_new_activity)
+        self.overview_widg.sig_load_settings.connect(
+            self.set_settings_from_index)
 
     def add_new_activity(self, index, start, stop):
         """
@@ -275,9 +273,9 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
 
         if self.client.is_started:
             self.add_new_project(self.client.current['project'])
-            self.tag_manager.set_tags(['error'])
-            self.comment_manager.setText("last session not closed correctly.")
-            self.stop_watson()
+            self.stop_watson(tags=['error'],
+                             message="last session not closed correctly.")
+        self.set_settings_from_index(-1)
 
     # ---- Setup layout
 
@@ -336,6 +334,8 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
 
         self.stackwidget.addWidget(tracker)
 
+    # ---- Project, Tags and Comment
+
     def setup_watson_managers(self):
         """
         Setup the embedded dialog to setup the current activity parameters.
@@ -363,26 +363,31 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
         layout.addWidget(QLabel('tags :'), 1, 0)
         layout.addWidget(QLabel('comment :'), 2, 0)
 
-        # Set current activity inputs to the last ones saved in the database.
-        if len(self.client.frames) > 0:
-            project_manager.setCurrentProject(self.client.frames[-1][2])
-            self.tag_manager.set_tags(self.client.frames[-1].tags)
-            self.comment_manager.setText(self.client.frames[-1].message)
-
         return managers
 
-    def setup_stopwatch(self):
+    def set_settings_from_index(self, index):
         """
-        Setup the widget that contains a button to start/stop Watson and a
-        digital clock that shows the elapsed amount of time since Watson
-        was started.
+        Load the settings in the manager from the data of the frame saved
+        at index.
         """
-        self.stopwatch = StopWatchWidget()
-        self.stopwatch.sig_btn_start_clicked.connect(self.start_watson)
-        self.stopwatch.sig_btn_stop_clicked.connect(self.stop_watson)
-        self.stopwatch.sig_btn_cancel_clicked.connect(self.cancel_watson)
+        if index is not None:
+            try:
+                frame = self.client.frames[index]
+                self.project_manager.blockSignals(True)
+                self.project_manager.setCurrentProject(frame.project)
+                self.project_manager.blockSignals(False)
 
-        return self.stopwatch
+                self.tag_manager.blockSignals(True)
+                self.tag_manager.set_tags(frame.tags)
+                self.tag_manager.blockSignals(False)
+
+                self.comment_manager.blockSignals(True)
+                self.comment_manager.setText(frame.message)
+                self.comment_manager.blockSignals(False)
+            except IndexError:
+                print("IndexError: list index out of range")
+
+    # ---- Bottom Toolbar
 
     def setup_statusbar(self):
         """Setup the toolbar located at the bottom of the main widget."""
@@ -393,8 +398,6 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
             "Open the activity overview window.")
 
         self.round_time_btn = DropDownToolButton(style='text_only')
-        self.round_time_btn.setSizePolicy(
-            QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred))
         self.round_time_btn.addItems(list(ROUNDMIN.keys()))
         self.round_time_btn.setCurrentIndex(1)
         self.round_time_btn.setToolTip(
@@ -403,8 +406,6 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
             " multiple of the selected factor.")
 
         self.btn_startfrom = DropDownToolButton(style='text_only')
-        self.btn_startfrom.setSizePolicy(
-            QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred))
         self.btn_startfrom.addItems(
             ['start from now', 'start from last', 'start from other'])
         self.btn_startfrom.setCurrentIndex(0)
@@ -417,16 +418,14 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
 
         # Setup the layout of the statusbar
 
-        statusbar = ColoredFrame()
-        statusbar.set_background_color('window')
-
-        layout = QHBoxLayout(statusbar)
-        layout.setSpacing(0)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.round_time_btn)
-        layout.addWidget(self.btn_startfrom)
-        layout.addStretch(100)
-        layout.addWidget(self.btn_report)
+        statusbar = ToolBarWidget('window')
+        statusbar.setSpacing(0)
+        statusbar.addWidget(self.round_time_btn)
+        statusbar.addWidget(self.btn_startfrom)
+        statusbar.addStretch(100)
+        statusbar.addWidget(self.btn_report)
+        statusbar.setSizePolicy(
+            QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred))
 
         return statusbar
 
@@ -466,7 +465,20 @@ class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
         """Set the current index of the stackwidget."""
         self.stackwidget.setCurrentIndex(index)
 
-    # ---- Toolbar handlers
+    # ---- Stop, Start, and Cancel
+
+    def setup_stopwatch(self):
+        """
+        Setup the widget that contains a button to start/stop Watson and a
+        digital clock that shows the elapsed amount of time since Watson
+        was started.
+        """
+        self.stopwatch = StopWatchWidget()
+        self.stopwatch.sig_btn_start_clicked.connect(self.start_watson)
+        self.stopwatch.sig_btn_stop_clicked.connect(self.stop_watson)
+        self.stopwatch.sig_btn_cancel_clicked.connect(self.cancel_watson)
+
+        return self.stopwatch
 
     def start_watson(self, start_time=None):
         """Start monitoring a new activity with the Watson client."""

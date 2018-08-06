@@ -35,13 +35,15 @@ ICON_NAMES = {'master': 'qwatson',
               'go-previous': 'go-previous',
               'info': 'info',
               'insert_above': 'insert_row_above',
-              'insert_below': 'insert_row_below'}
+              'insert_below': 'insert_row_below',
+              'copy_over': 'copy_over'}
 
 ICON_SIZES = {'huge': (128, 128),
               'Large': (64, 64),
               'large': (32, 32),
               'normal': (28, 28),
-              'small': (20, 20)}
+              'small': (20, 20),
+              'tiny': (12, 12)}
 
 
 def get_icon(name):
@@ -56,10 +58,10 @@ def get_standard_icon(constant):
     """
     Return a QIcon of a standard pixmap.
 
-    The value of the 'constant' must be either 'question', 'information',
-    'warning', or 'critical'.
+    See the link below for a list of valid constants:
+    https://srinikom.github.io/pyside-docs/PySide/QtGui/QStyle.html
     """
-    constant = getattr(QStyle, 'SP_MessageBox' + constant.title())
+    constant = getattr(QStyle, constant)
     style = QApplication.instance().style()
     return style.standardIcon(constant)
 

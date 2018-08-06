@@ -27,7 +27,7 @@ from qwatson.utils import icons
 from qwatson.utils.dates import arrowspan_to_str, total_seconds_to_hour_min
 from qwatson.watson_ext.watsonhelpers import find_where_to_insert_new_frame
 from qwatson.widgets.layout import ColoredFrame
-from qwatson.widgets.toolbar import QToolButtonBase
+from qwatson.widgets.toolbar import QToolButtonBase, ToolBarWidget
 from qwatson.widgets.dates import DateRangeNavigator
 from qwatson.models.tablemodels import WatsonSortFilterProxyModel
 from qwatson.models.delegates import (
@@ -38,6 +38,7 @@ from qwatson.models.delegates import (
 class ActivityOverviewWidget(QWidget):
     """A widget to show and edit activities logged with Watson."""
     sig_add_activity = QSignal(int, arrow.Arrow, arrow.Arrow)
+    sig_load_settings = QSignal(object)
 
     def __init__(self, model, parent=None):
         super(ActivityOverviewWidget, self).__init__(parent)
@@ -84,18 +85,25 @@ class ActivityOverviewWidget(QWidget):
         self.add_act_below_btn.clicked.connect(
             lambda: self.add_new_activity('below'))
 
+        self.btn_load_row_settings = QToolButtonBase('copy_over', 'small')
+        self.btn_load_row_settings.setToolTip(
+            "<b>Setup Mainwindow from Activity</b><br><br>"
+            "Set the project, tags, and comment in the mainwindow"
+            " to the values of the currently selected actitivy.")
+        self.btn_load_row_settings.clicked.connect(
+            lambda: self.sig_load_settings.emit(
+                self.table_widg.selectedFrame()))
+
         # Setup the layout.
 
-        toolbar = QFrame()
+        toolbar = ToolBarWidget()
+        toolbar.setSpacing(1)
 
-        layout = QHBoxLayout(toolbar)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(1)
-
-        layout.addWidget(self.date_range_nav)
-        layout.addStretch()
-        layout.addWidget(self.add_act_above_btn)
-        layout.addWidget(self.add_act_below_btn)
+        toolbar.addWidget(self.date_range_nav)
+        toolbar.addStretch(100)
+        toolbar.addWidget(self.btn_load_row_settings)
+        toolbar.addWidget(self.add_act_above_btn)
+        toolbar.addWidget(self.add_act_below_btn)
 
         return toolbar
 
@@ -105,6 +113,9 @@ class ActivityOverviewWidget(QWidget):
 
     def show(self):
         """Qt method override to restore the window when minimized."""
+        self.table_widg.scrollarea.widget().hide()
+        # We show and hide the table_widg scrollarea to avoid flickering.
+
         self.setWindowState(
             (self.windowState() & ~(Qt.WindowMinimized | Qt.WindowFullScreen))
             | Qt.WindowActive)
@@ -119,6 +130,9 @@ class ActivityOverviewWidget(QWidget):
         self.raise_()
         self.setFocus()
 
+        self.table_widg.scrollarea.widget().show()
+        # We show and hide the table_widg scrollarea to avoid flickering.
+
     def add_new_activity(self, where):
         """
         Send a signal containing the index, the start time, and stop time of
@@ -131,6 +145,7 @@ class ActivityOverviewWidget(QWidget):
 
 
 # ---- TableWidget
+
 
 class WatsonMultiTableWidget(QFrame):
     """
@@ -261,6 +276,16 @@ class WatsonMultiTableWidget(QFrame):
         if self.last_focused_table is not None:
             self.last_focused_table.view.set_selected(False)
         self.last_focused_table = None
+
+    def selectedFrame(self):
+        """
+        Return the index of the frame corresponding to the selected row
+        in the table if any or else return None.
+        """
+        if self.last_focused_table is not None:
+            return self.last_focused_table.get_selected_frame_index()
+        else:
+            return None
 
     def srollbar_value_changed(self, value):
         """

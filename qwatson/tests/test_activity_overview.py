@@ -58,10 +58,11 @@ def appdir(now, span):
     frames = Frames()
     i = 1
     while True:
-        frame = frames.add(project='test_overview',
+        frame = frames.add(project='p%d' % (i//2),
                            start=span[0].shift(hours=i*6).timestamp,
                            stop=span[0].shift(hours=(i+1)*6).timestamp,
-                           message='activity #%s' % (i//2),
+                           message='activity #%d' % (i//2),
+                           tags=['CI', 'test', '#%d' % (i//2)],
                            updated_at=now
                            )
         if frame.stop >= span[1]:
@@ -75,7 +76,7 @@ def appdir(now, span):
 
 
 @pytest.fixture
-def overview_creator(qtbot, mocker, appdir, now):
+def qwatson_bot(qtbot, mocker, appdir, now):
     mocker.patch('arrow.now', return_value=now)
     qwatson = QWatson(config_dir=appdir)
 
@@ -87,15 +88,15 @@ def overview_creator(qtbot, mocker, appdir, now):
     qtbot.mouseClick(qwatson.btn_report, Qt.LeftButton)
     qtbot.waitForWindowShown(qwatson.overview_widg)
 
-    return qwatson.overview_widg, qtbot, mocker
+    return qwatson, qwatson.overview_widg, qtbot, mocker
 
 
 # ---- Tests
 
 
-def test_overview_init(overview_creator, span):
+def test_overview_init(qwatson_bot, span):
     """Test that the overview is initialized correctly."""
-    overview, qtbot, mocker = overview_creator
+    qwatson, overview, qtbot, mocker = qwatson_bot
 
     assert overview.isVisible()
     assert overview.table_widg.total_seconds == 7*(2*6)*60*60
@@ -109,11 +110,11 @@ def test_overview_init(overview_creator, span):
     assert row_counts == [2, 2, 2, 2, 2, 2, 2]
 
 
-def test_overview_row_selection(overview_creator):
+def test_overview_row_selection(qwatson_bot):
     """
     Test that table and row selection is working as expected.
     """
-    overview, qtbot, mocker = overview_creator
+    qwatson, overview, qtbot, mocker = qwatson_bot
     tables = overview.table_widg.tables
 
     # Mouse click on the second row of the second table.
@@ -156,11 +157,11 @@ def test_overview_row_selection(overview_creator):
             assert table.get_selected_frame_index() == 2 + 2 + 1 - 1
 
 
-def test_mouse_hovered_row(overview_creator):
+def test_mouse_hovered_row(qwatson_bot):
     """
     Test that the highlighting of mouse hovered row is working as expected.
     """
-    overview, qtbot, mocker = overview_creator
+    qwatson, overview, qtbot, mocker = qwatson_bot
     tables = overview.table_widg.tables
 
     # Mouse hover the second row of the second table.
@@ -187,12 +188,12 @@ def test_mouse_hovered_row(overview_creator):
     assert tables[4].view._hovered_row == 0
 
 
-def test_daterange_navigation(overview_creator, span):
+def test_daterange_navigation(qwatson_bot, span):
     """
     Test that the widget to change the datespan of the activity overview is
     working as expected.
     """
-    overview, qtbot, mocker = overview_creator
+    qwatson, overview, qtbot, mocker = qwatson_bot
     assert not overview.date_range_nav.btn_next.isEnabled()
 
     # Move back one week.
@@ -224,12 +225,12 @@ def test_daterange_navigation(overview_creator, span):
     assert not overview.date_range_nav.btn_next.isEnabled()
 
 
-def test_selected_row_is_cleared_when_navigating(overview_creator):
+def test_selected_row_is_cleared_when_navigating(qwatson_bot):
     """
     Test that the selected row is cleared when changing the date span of the
     overview table with the date range navigator widget.
     """
-    overview, qtbot, mocker = overview_creator
+    qwatson, overview, qtbot, mocker = qwatson_bot
     table = overview.table_widg.tables[1]
 
     # Select the second row of the second table.
@@ -251,12 +252,56 @@ def test_selected_row_is_cleared_when_navigating(overview_creator):
         assert table.get_selected_row() is None
 
 
+def test_import_frame_settings_to_mainwindow(qwatson_bot):
+    """
+    Test that copying over the selected frame data to the mainwindow is
+    working as expected.
+    """
+    qwatson, overview, qtbot, mocker = qwatson_bot
+
+    assert qwatson.currentProject() == 'p13'
+    assert qwatson.tag_manager.tags == ['#13', 'CI', 'test']
+    assert qwatson.comment_manager.text() == 'activity #13'
+
+    overview = qwatson.overview_widg
+    qtbot.mouseClick(qwatson.btn_report, Qt.LeftButton)
+    qtbot.waitForWindowShown(overview)
+    assert overview.hasFocus()
+
+    # Click on the btn to copy over selected frame data to mainwindow when no
+    # frame is selected.
+
+    assert overview.table_widg.last_focused_table is None
+    qtbot.mouseClick(overview.btn_load_row_settings, Qt.LeftButton)
+
+    assert qwatson.currentProject() == 'p13'
+    assert qwatson.tag_manager.tags == ['#13', 'CI', 'test']
+    assert qwatson.comment_manager.text() == 'activity #13'
+
+    # Select the second row of the second table.
+
+    table = overview.table_widg.tables[1]
+    visual_rect = table.view.visualRect(table.view.proxy_model.index(1, 0))
+    qtbot.mouseClick(
+        table.view.viewport(), Qt.LeftButton, pos=visual_rect.center())
+    assert table.get_selected_row() == 1
+    assert overview.table_widg.last_focused_table == table
+
+    # Click to copy over selected frame data to mainwindow.
+
+    qtbot.mouseClick(overview.btn_load_row_settings, Qt.LeftButton)
+
+    assert qwatson.currentProject() == 'p3'
+    assert qwatson.tag_manager.tags == ['#3', 'CI', 'test']
+    assert qwatson.comment_manager.text() == 'activity #3'
+
+
 # ---- Test Edits
 
 
-def test_edit_start_datetime(overview_creator):
+def test_edit_start_datetime(qwatson_bot):
     """Test editing the start date in the activity overview table."""
-    overview, qtbot, mocker = overview_creator
+    qwatson, overview, qtbot, mocker = qwatson_bot
 
     # Edit the start date of the first frame in the first table.
 
@@ -295,9 +340,9 @@ def test_edit_start_datetime(overview_creator):
             '2018-06-11 07:16')
 
 
-def test_edit_stop_datetime(overview_creator):
+def test_edit_stop_datetime(qwatson_bot):
     """Test editing the stop date in the activity overview table."""
-    overview, qtbot, mocker = overview_creator
+    qwatson, overview, qtbot, mocker = qwatson_bot
 
     # Edit the stop date of the first frame of the third table
 
@@ -336,11 +381,11 @@ def test_edit_stop_datetime(overview_creator):
             '2018-06-13 18:00')
 
 
-def test_edit_comment(overview_creator):
+def test_edit_comment(qwatson_bot):
     """
     Test editing the comment in the activity overview table.
     """
-    overview, qtbot, mocker = overview_creator
+    qwatson, overview, qtbot, mocker = qwatson_bot
 
     # Edit the comment of the second entry in the fourth table :
 
@@ -369,9 +414,9 @@ def test_edit_comment(overview_creator):
     assert index.data() == 'activity #7 (edited)'
 
 
-def test_edit_tags(overview_creator):
+def test_edit_tags(qwatson_bot):
     """Test editing the tags in the activity overview table."""
-    overview, qtbot, mocker = overview_creator
+    qwatson, overview, qtbot, mocker = qwatson_bot
 
     # We will test this on the first entry of the fifth table :
 
@@ -381,16 +426,16 @@ def test_edit_tags(overview_creator):
 
     frame = table.view.proxy_model.get_frame_from_index(index)
     assert frame.message == 'activity #8'
-    assert frame.tags == []
-    assert index.data() == ''
+    assert frame.tags == ['CI', 'test', '#8']
+    assert index.data() == '[CI] [test] [#8]'
 
     # Start editing the tags in the overview table :
 
     delegate = table.view.itemDelegate(index)
     table.view.edit(index)
     assert isinstance(delegate, TagEditDelegate)
-    assert delegate.editor.tags == []
-    assert delegate.editor.text() == ''
+    assert delegate.editor.tags == ['#8', 'CI', 'test']
+    assert delegate.editor.text() == 'CI, test, #8'
 
     # Enter a new list of tags for the activity :
 
@@ -403,11 +448,11 @@ def test_edit_tags(overview_creator):
     assert index.data() == '[tag1] [tag2] [tag3]'
 
 
-def test_delete_frame(overview_creator):
+def test_delete_frame(qwatson_bot):
     """
     Test that deleting a frame from the activity overview table work correctly.
     """
-    overview, qtbot, mocker = overview_creator
+    qwatson, overview, qtbot, mocker = qwatson_bot
 
     # We will test this on the last entry of the last table :
 
