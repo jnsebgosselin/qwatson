@@ -11,7 +11,7 @@ added_files = [('../qwatson/ressources/icons_png/*.png',
                 'ressources/icons_png')]
 
 a = Analysis(['../qwatson/mainwindow.py'],
-             pathex=[],
+             pathex=['C:\\Program Files (x86)\\Windows Kits\\10\\Redist\\ucrt\\DLLs\\x64'],
              binaries=[],
              datas=added_files ,
              hiddenimports=[],
