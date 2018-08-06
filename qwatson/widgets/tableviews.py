@@ -86,6 +86,10 @@ class ActivityOverviewWidget(QWidget):
             lambda: self.add_new_activity('below'))
 
         self.btn_load_row_settings = QToolButtonBase('copy_over', 'small')
+        self.btn_load_row_settings.setToolTip(
+            "<b>Setup Mainwindow from Activity</b><br><br>"
+            "Set the project, tags, and comment in the mainwindow"
+            " to the values of the currently selected actitivy.")
         self.btn_load_row_settings.clicked.connect(
             lambda: self.sig_load_settings.emit(
                 self.table_widg.selectedFrame()))
