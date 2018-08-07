@@ -170,13 +170,12 @@ class WatsonTableModel(QAbstractTableModel):
 
     # ---- Watson handlers
 
-    def removeRows(self, index):
-        """Qt method override to remove rows from the model."""
-        self.beginRemoveRows(index.parent(), index.row(), index.row())
-        frame_id = self.client.frames[index.row()].id
-        del self.client.frames[frame_id]
-        self.client.save()
-        self.endRemoveRows()
+    def emit_btn_delrow_clicked(self, index):
+        """
+        Send a signal with the model index where the button to delete an
+        activity has been clicked.
+        """
+        self.sig_btn_delrow_clicked.emit(index)
 
     def editFrame(self, index, start=None, stop=None, project=None,
                   message=None, tags=None):
@@ -203,7 +202,6 @@ class WatsonTableModel(QAbstractTableModel):
 
 
 class WatsonSortFilterProxyModel(QSortFilterProxyModel):
-    sig_btn_delrow_clicked = QSignal(QModelIndex)
     sig_sourcemodel_changed = QSignal()
     sig_total_seconds_changed = QSignal(float)
 
@@ -212,9 +210,6 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
         self.setSourceModel(source_model)
         self.date_span = date_span
         self.total_seconds = None
-
-        self.sig_btn_delrow_clicked.connect(
-            source_model.sig_btn_delrow_clicked.emit)
 
         source_model.dataChanged.connect(self.source_model_changed)
         source_model.rowsInserted.connect(self.source_model_changed)
@@ -299,9 +294,13 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
         return self.sourceModel().get_frameid_from_index(
                    self.mapToSource(proxy_index))
 
-    def removeRows(self, proxy_index):
-        """Map proxy method to source."""
-        self.sourceModel().removeRows(self.mapToSource(proxy_index))
+    def emit_btn_delrow_clicked(self, proxy_index):
+        """
+        Send a signal via the source model with the model index where the
+        button to delete an activity has been clicked.
+        """
+        self.sourceModel().emit_btn_delrow_clicked(
+            self.mapToSource(proxy_index))
 
     def editFrame(self, proxy_index, start=None, stop=None, project=None,
                   message=None, tags=None):

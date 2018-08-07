@@ -38,6 +38,7 @@ from qwatson.models.delegates import (
 class ActivityOverviewWidget(QWidget):
     """A widget to show and edit activities logged with Watson."""
     sig_add_activity = QSignal(int, arrow.Arrow, arrow.Arrow)
+    sig_del_activity = QSignal(int)
     sig_load_settings = QSignal(object)
 
     def __init__(self, model, parent=None):
@@ -46,6 +47,7 @@ class ActivityOverviewWidget(QWidget):
         self.setWindowTitle("Activity Overview")
 
         self.model = model
+        self.model.sig_btn_delrow_clicked.connect(self.del_activity)
 
         self.setup(model)
         self.date_span_changed()
@@ -138,10 +140,30 @@ class ActivityOverviewWidget(QWidget):
         Send a signal containing the index, the start time, and stop time of
         the new activity that needs to be added to Watson's frames.
         The QWatson mainwindow is in charge of actually adding the activity
-        to Watson's frames.
+        to Watson's frames. The argument 'where' indicates wether the new
+        activity is to be added above or below the selected row.
         """
         index, time = self.table_widg.get_new_activity_index_and_time(where)
         self.sig_add_activity.emit(index, time, time)
+
+    def del_activity(self, index):
+        """
+        Ask for confirmation to delete a row and delete or not the row from
+        the model according the answer.
+        """
+        frame = self.model.client.frames[index.row()]
+        ans = QMessageBox.question(
+            self, 'Delete frame', "Do you want to delete frame %s?" % frame.id,
+            defaultButton=QMessageBox.No)
+        if ans == QMessageBox.Yes:
+            self.sig_del_activity.emit(index.row())
+
+            # If the activity that was deleted was selected and was the
+            # last activity in the WatsonTableWidget, we need to clear the
+            # focus of the WatsonMultiTableWidget.
+            table = self.table_widg.last_focused_table
+            if table is not None and table.rowCount() == 0:
+                self.table_widg.clear_focused_table()
 
 
 # ---- TableWidget
@@ -226,8 +248,6 @@ class WatsonMultiTableWidget(QFrame):
                 self.tables.append(WatsonTableWidget(self.model, parent=self))
                 self.tables[-1].sig_tableview_focused_in.connect(
                     self.tableview_focused_in)
-                self.tables[-1].sig_tableview_cleared.connect(
-                    self.tableview_cleared)
                 self.scene.insertWidget(self.scene.count()-1, self.tables[-1])
             else:
                 self.tables.remove(self.tables[-1])
@@ -262,14 +282,6 @@ class WatsonMultiTableWidget(QFrame):
             self.clear_focused_table()
             table.view.set_selected(True)
             self.last_focused_table = table
-
-    def tableview_cleared(self, table):
-        """
-        Handle when one of the tables is now empty due to the user deleting
-        one or more of its activities.
-        """
-        if table == self.last_focused_table:
-            self.clear_focused_table()
 
     def clear_focused_table(self):
         """Clear the last focused table."""
@@ -357,8 +369,6 @@ class WatsonTableWidget(QWidget):
             self.setup_timecount)
         self.view.sig_focused_in.connect(
             lambda: self.sig_tableview_focused_in.emit(self))
-        self.view.sig_table_cleared.connect(
-            lambda: self.sig_tableview_cleared.emit(self))
 
     def setup_titlebar(self):
         """Setup the titlebar of the table."""
@@ -422,7 +432,6 @@ class BasicWatsonTableView(QTableView):
     A single table view that displays Watson activity log and
     allow sorting and filtering of the data through the use of a proxy model.
     """
-    sig_table_cleared = QSignal(object)
 
     def __init__(self, source_model, parent=None):
         super(BasicWatsonTableView, self).__init__(parent)
@@ -430,7 +439,6 @@ class BasicWatsonTableView(QTableView):
 
         self.proxy_model = WatsonSortFilterProxyModel(source_model)
         self.setModel(self.proxy_model)
-        self.proxy_model.sig_btn_delrow_clicked.connect(self.del_model_row)
 
         # ---- Setup the delegates
 
@@ -456,20 +464,6 @@ class BasicWatsonTableView(QTableView):
         self.horizontalHeader().setSectionResizeMode(QHeaderView.Fixed)
         self.horizontalHeader().setSectionResizeMode(
             columns['comment'], QHeaderView.Stretch)
-
-    def del_model_row(self, proxy_index):
-        """
-        Ask for confirmation to delete a row and delete or not the row from
-        the model according the answer.
-        """
-        frame_id = self.proxy_model.get_frameid_from_index(proxy_index)
-        ans = QMessageBox.question(
-            self, 'Delete frame', "Do you want to delete frame %s?" % frame_id,
-            defaultButton=QMessageBox.No)
-        if ans == QMessageBox.Yes:
-            self.proxy_model.removeRows(proxy_index)
-            if self.proxy_model.get_accepted_row_count() == 0:
-                self.sig_table_cleared.emit(self)
 
     def set_date_span(self, date_span):
         """Set the date span in the proxy model."""
@@ -548,8 +542,9 @@ class FormatedWatsonTableView(BasicWatsonTableView):
         Return the index of the selected row if there is one and return
         None otherwise.
         """
-        if self.is_selected:
-            return self.selectionModel().selectedRows()[0].row()
+        selected_rows = self.selectionModel().selectedRows()
+        if self.is_selected and len(selected_rows) > 0:
+            return selected_rows[0].row()
         else:
             return None
 

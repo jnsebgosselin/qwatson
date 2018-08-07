@@ -131,7 +131,7 @@ class ToolButtonDelegate(BaseDelegate):
         """Qt method override."""
         if (event.type() == QEvent.MouseButtonPress
                 and event.button() == Qt.LeftButton):
-            model.sig_btn_delrow_clicked.emit(index)
+            model.emit_btn_delrow_clicked(index)
             return True
         else:
             return super(ToolButtonDelegate, self).editorEvent(
