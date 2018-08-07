@@ -542,8 +542,9 @@ class FormatedWatsonTableView(BasicWatsonTableView):
         Return the index of the selected row if there is one and return
         None otherwise.
         """
-        if self.is_selected:
-            return self.selectionModel().selectedRows()[0].row()
+        selected_rows = self.selectionModel().selectedRows()
+        if self.is_selected and len(selected_rows) > 0:
+            return selected_rows[0].row()
         else:
             return None
 
