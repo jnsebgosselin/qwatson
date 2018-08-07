@@ -140,7 +140,8 @@ class ActivityOverviewWidget(QWidget):
         Send a signal containing the index, the start time, and stop time of
         the new activity that needs to be added to Watson's frames.
         The QWatson mainwindow is in charge of actually adding the activity
-        to Watson's frames.
+        to Watson's frames. The argument 'where' indicates wether the new
+        activity is to be added above or below the selected row.
         """
         index, time = self.table_widg.get_new_activity_index_and_time(where)
         self.sig_add_activity.emit(index, time, time)
