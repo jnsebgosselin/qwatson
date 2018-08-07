@@ -227,6 +227,7 @@ class QWatsonActivityMixin(object):
         """Setup the widget to show and edit activities."""
         self.overview_widg = ActivityOverviewWidget(self.model)
         self.overview_widg.sig_add_activity.connect(self.add_new_activity)
+        self.overview_widg.sig_del_activity.connect(self.del_activity_at)
         self.overview_widg.sig_load_settings.connect(
             self.set_settings_from_index)
 
@@ -236,11 +237,20 @@ class QWatsonActivityMixin(object):
         stop times.
         """
         self.model.beginInsertRows(QModelIndex(), index, index)
-        self.model.client.insert(
+        self.client.insert(
             index, self.currentProject(), start, stop,
             tags=self.tag_manager.tags, message=self.comment_manager.text())
-        self.model.client.save()
+        self.client.save()
         self.model.endInsertRows()
+
+    def del_activity_at(self, frame_index):
+        """
+        Delete the activity located at the specified index from the database.
+        """
+        self.model.beginRemoveRows(QModelIndex(), frame_index, frame_index)
+        del self.client.frames[frame_index]
+        self.client.save()
+        self.model.endRemoveRows()
 
 
 class QWatson(QWidget, QWatsonImportMixin, QWatsonProjectMixin,
