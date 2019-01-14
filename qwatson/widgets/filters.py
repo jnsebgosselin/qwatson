@@ -27,6 +27,8 @@ class FilterButton(QToolButtonBase):
     that can be checked in order to filter which activities are shown in the
     overview table.
     """
+    checked_projects_changed = QSignal(list)
+    checked_tags_changed = QSignal(list)
 
     def __init__(self, client=None):
         super().__init__('filters', 'small', None)
@@ -40,9 +42,13 @@ class FilterButton(QToolButtonBase):
 
         self.projects_menu = FilterProjectsMenu(self.client, self)
         menu.addMenu(self.projects_menu)
+        self.projects_menu.checked_items_changed.connect(
+            self.checked_projects_changed.emit)
 
         self.tags_menu = FilterTagsMenu(self.client, self)
         menu.addMenu(self.tags_menu)
+        self.tags_menu.checked_items_changed.connect(
+            self.checked_tags_changed.emit)
 
         self.setMenu(menu)
 
@@ -126,6 +132,7 @@ class FilterBaseMenu(QMenu):
             checkbox.setTristate(False)
             checkbox.setChecked(False)
         checkbox.blockSignals(False)
+        self.checked_items_changed.emit(self.checked_items())
 
     def handle_select_all_items(self):
         """
@@ -139,6 +146,7 @@ class FilterBaseMenu(QMenu):
             checkbox.blockSignals(True)
             checkbox.setChecked(is_all_project_checked)
             checkbox.blockSignals(False)
+        self.checked_items_changed.emit(self.checked_items())
 
 
 class FilterProjectsMenu(FilterBaseMenu):
