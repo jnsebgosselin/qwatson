@@ -300,6 +300,10 @@ class WatsonMultiTableWidget(QFrame):
         self.total_time_labl.setText(
             "Total : %s" % total_seconds_to_hour_min(self.total_seconds))
 
+    def get_row_count(self):
+        """Return a list with the number of rows shown in each table."""
+        return [table.rowCount() for table in self.tables]
+
     # ---- Table focus handlers
 
     def tableview_focused_in(self, table):
