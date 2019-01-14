@@ -51,6 +51,8 @@ class ActivityOverviewWidget(QWidget):
         self.model.sig_btn_delrow_clicked.connect(self.del_activity)
 
         self.setup(model)
+        self.filter_btn.tags_menu.setup_menu_items()
+        self.filter_btn.projects_menu.setup_menu_items()
         self.date_span_changed()
 
     def setup(self, model):

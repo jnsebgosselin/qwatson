@@ -66,7 +66,6 @@ class FilterBaseMenu(QMenu):
         self._actions = {}
         self.client = client
         self.aboutToShow.connect(self.setup_menu_items)
-        self.setup_menu_items()
 
     def items(self):
         """
