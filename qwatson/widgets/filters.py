@@ -35,7 +35,7 @@ class FilterButton(QToolButtonBase):
         self.setup_menu()
 
     def setup_menu(self):
-        """Setup the button menu.""" 
+        """Setup the button menu."""
         menu = QMenu()
 
         self.projects_menu = FilterProjectsMenu(self.client, self)
@@ -68,7 +68,7 @@ class FilterBaseMenu(QMenu):
         that should appear in the menu.
         """
         raise NotImplementedError
-        
+
     def checked_items(self):
         """
         Return a list of strings with the name of the items that are
