@@ -7,6 +7,15 @@ branches:
   only:
     - master
 
+skip_commits:
+  files:
+    - docs/*
+    - '**/*.html'
+    - '**/*.md'
+    - '**/*.png'
+    - '**/*.svg'
+    - '**/*.jpg'
+
 environment:
   matrix:
     - PYTHON_VERSION: "3.6"
