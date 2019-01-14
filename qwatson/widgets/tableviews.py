@@ -15,7 +15,7 @@ from math import ceil
 
 import arrow
 from PyQt5.QtCore import pyqtSignal as QSignal
-from PyQt5.QtCore import Qt, QPoint, QModelIndex
+from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QCursor
 from PyQt5.QtWidgets import (
     QApplication, QGridLayout, QHeaderView, QLabel, QMessageBox, QScrollArea,
