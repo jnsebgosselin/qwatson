@@ -15,28 +15,34 @@ import os
 from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QStyle
+import qtawesome as qta
 
 from qwatson import __rootdir__
 
-dirname = os.path.join(__rootdir__, 'ressources', 'icons_png')
-ICON_NAMES = {'master': 'qwatson',
-              'process_start': 'process_start',
-              'process_stop': 'process_stop',
-              'process_cancel': 'process_cancel',
-              'plus': 'plus_sign',
-              'minus': 'minus_sign',
-              'clear': 'clear-search',
-              'edit': 'edit',
-              'note': 'note',
-              'erase-left': 'erase_left',
-              'erase-right': 'erase_right',
-              'home': 'home',
-              'go-next': 'go-next',
-              'go-previous': 'go-previous',
-              'info': 'info',
-              'insert_above': 'insert_row_above',
-              'insert_below': 'insert_row_below',
-              'copy_over': 'copy_over'}
+DIRNAME = os.path.join(__rootdir__, 'ressources', 'icons_png')
+APP_ICONS = {
+    'master': 'qwatson',
+    'process_start': 'process_start',
+    'process_stop': 'process_stop',
+    'process_cancel': 'process_cancel',
+    'plus': 'plus_sign',
+    'minus': 'minus_sign',
+    'clear': 'clear-search',
+    'edit': 'edit',
+    'note': 'note',
+    'erase-left': 'erase_left',
+    'erase-right': 'erase_right',
+    'home': 'home',
+    'go-next': 'go-next',
+    'go-previous': 'go-previous',
+    'info': 'info',
+    'insert_above': 'insert_row_above',
+    'insert_below': 'insert_row_below',
+    'copy_over': 'copy_over'}
+
+COLOR = '#282828'
+FA_ICONS = {'filters': [('fa.filter',), {'color': COLOR, 'scale_factor': 1.3}]}
+
 
 ICON_SIZES = {'huge': (128, 128),
               'Large': (64, 64),
@@ -47,7 +53,14 @@ ICON_SIZES = {'huge': (128, 128),
 
 
 def get_icon(name):
-    return QIcon(os.path.join(dirname, ICON_NAMES[name]))
+    """Return a QIcon from a specified icon name."""
+    if name in FA_ICONS:
+        args, kwargs = FA_ICONS[name]
+        return qta.icon(*args, **kwargs)
+    elif name in APP_ICONS:
+        return QIcon(os.path.join(DIRNAME, APP_ICONS[name]))
+    else:
+        return QIcon()
 
 
 def get_iconsize(size):
@@ -77,3 +90,19 @@ def get_standard_iconsize(constant):
         return style.pixelMetric(QStyle.PM_MessageBoxIconSize)
     elif constant == 'small':
         return style.pixelMetric(QStyle.PM_SmallIconSize)
+
+
+if __name__ == '__main__':
+    import sys
+    from qwatson.widgets.toolbar import QToolButtonBase
+    from PyQt5.QtWidgets import QApplication, QWidget, QGridLayout, QToolButton
+
+    app = QApplication(sys.argv)
+
+    window = QWidget()
+    layout = QGridLayout(window)
+    layout.addWidget(QToolButtonBase('go-next'), 0, 0)
+    layout.addWidget(QToolButtonBase('filters'), 0, 1)
+    window.show()
+
+    sys.exit(app.exec_())
