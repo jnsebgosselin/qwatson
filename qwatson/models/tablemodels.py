@@ -210,6 +210,8 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
         self.setSourceModel(source_model)
         self.date_span = date_span
         self.total_seconds = None
+        self.project_filters = None
+        self.tag_filters = None
 
         source_model.dataChanged.connect(self.source_model_changed)
         source_model.rowsInserted.connect(self.source_model_changed)
@@ -228,8 +230,34 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
             self.invalidateFilter()
             self.calcul_total_seconds()
 
+    def set_project_filters(self, project_filters):
+        """
+        Set the list of project for which activies are shown in the table.
+        """
+        if project_filters != self.project_filters:
+            self.project_filters = project_filters
+            self.invalidateFilter()
+            self.calcul_total_seconds()
+
+    def set_tag_filters(self, tag_filters):
+        """
+        Set the list of tags for which activies are shown in the table.
+        """
+        if tag_filters != self.tag_filters:
+            self.tag_filters = tag_filters
+            self.invalidateFilter()
+            self.calcul_total_seconds()
+
     def filterAcceptsRow(self, source_row, source_parent):
         """Qt method override."""
+        if self.project_filters is not None:
+            project = self.sourceModel().client.frames[source_row].project
+            if project not in self.project_filters:
+                return False
+        if self.tag_filters is not None:
+            tags = self.sourceModel().client.frames[source_row].tags
+            if not any([tag in self.tag_filters for tag in tags]):
+                return False
         if self.date_span is None:
             return True
         else:

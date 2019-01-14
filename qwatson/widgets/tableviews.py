@@ -102,6 +102,10 @@ class ActivityOverviewWidget(QWidget):
             "<b>Setup Activity Filters</b><br><br>"
             "Set filters to show activities only for selected "
             "tags and projects in the overview table.")
+        self.filter_btn.checked_projects_changed.connect(
+            self.table_widg.set_project_filters)
+        self.filter_btn.checked_tags_changed.connect(
+            self.table_widg.set_tag_filters)
 
         # Setup the layout.
 
@@ -240,6 +244,20 @@ class WatsonMultiTableWidget(QFrame):
 
         return self.total_time_labl
 
+    def set_project_filters(self, project_filters):
+        """Set the project filters for all the table widgets."""
+        self.scrollarea.widget().hide()
+        for i, table in enumerate(self.tables):
+            table.set_project_filters(project_filters)
+        self.scrollarea.widget().show()
+
+    def set_tag_filters(self, tag_filters):
+        """Set the tag filters for all the table widgets."""
+        self.scrollarea.widget().hide()
+        for i, table in enumerate(self.tables):
+            table.set_tag_filters(tag_filters)
+        self.scrollarea.widget().show()
+
     def set_date_span(self, date_span):
         """
         Set the range over which activities are displayed in the widget
@@ -262,7 +280,7 @@ class WatsonMultiTableWidget(QFrame):
                 self.scene.removeWidget(self.tables[-1])
                 self.tables[-1].deleteLater()
 
-        # We hide the scrollbar widget while the tables are ubdated
+        # We hide the scrollbar widget while the tables are updated
         # to avoid flickering.
         self.scrollarea.widget().hide()
         base_span = date_span[0].span('day')
@@ -415,6 +433,14 @@ class WatsonTableWidget(QWidget):
         self.view.set_date_span(date_span)
         self.title.setText(arrowspan_to_str(date_span))
 
+    def set_project_filters(self, project_filters):
+        """Set the project filters of the table."""
+        self.view.set_project_filters(project_filters)
+
+    def set_tag_filters(self, tag_filters):
+        """Set the tag filters of the table."""
+        self.view.set_tag_filters(tag_filters)
+
     def setup_timecount(self, total_seconds):
         """
         Setup the time count for the activities of the table in the titlebar.
@@ -477,6 +503,14 @@ class BasicWatsonTableView(QTableView):
         """Set the date span in the proxy model."""
         self.proxy_model.set_date_span(date_span)
 
+    def set_project_filters(self, project_filters):
+        """Set the project filters of the proxy model."""
+        self.proxy_model.set_project_filters(project_filters)
+
+    def set_tag_filters(self, tag_filters):
+        """Set the tag filters of the proxy model."""
+        self.proxy_model.set_tag_filters(tag_filters)
+
     def focusInEvent(self, event):
         """Qt method override."""
         self.sig_focused_in.emit(self)
@@ -537,6 +571,21 @@ class FormatedWatsonTableView(BasicWatsonTableView):
         Method override to update table height when setting the date span.
         """
         super(FormatedWatsonTableView, self).set_date_span(date_span)
+        self.update_table_height()
+
+    def set_project_filters(self, project_filters):
+        """
+        Method override to update table height when setting the
+        project filters.
+        """
+        super().set_project_filters(project_filters)
+        self.update_table_height()
+
+    def set_tag_filters(self, tag_filters):
+        """
+        Method override to update table height when setting the tag filters.
+        """
+        super().set_tag_filters(tag_filters)
         self.update_table_height()
 
     # ---- Row selection
