@@ -105,9 +105,14 @@ def test_overview_init(qwatson_bot, span):
     assert overview.table_widg.date_span == span
 
     # Assert that the overview table is showing the right number of activities.
+    assert overview.table_widg.get_row_count() == [2, 2, 2, 2, 2, 2, 2]
 
-    row_counts = [table.rowCount() for table in overview.table_widg.tables]
-    assert row_counts == [2, 2, 2, 2, 2, 2, 2]
+    # Test that the tag and project filters are all checked.
+    for item, action in overview.filter_btn.projects_menu._actions.items():
+        assert action.defaultWidget().isChecked()
+
+    for item, action in overview.filter_btn.tags_menu._actions.items():
+        assert action.defaultWidget().isChecked()
 
 
 def test_overview_row_selection(qwatson_bot):
