@@ -214,6 +214,40 @@ def test_select_all_filter(qwatson_bot, attr):
     assert overview.table_widg.get_row_count() == [2, 2, 2, 2, 2, 2, 2]
     assert overview.table_widg.total_seconds == 7*(2*6)*60*60
 
+
+def test_filter_activities(qwatson_bot):
+    """Test filtering activities by projects and tags."""
+    qwatson, overview, qtbot, mocker = qwatson_bot
+    projects_menu = overview.filter_btn.projects_menu
+    tags_menu = overview.filter_btn.tags_menu
+
+    # Uncheck the (Select All) in the projects and tags menu.
+    projects_menu._actions['__select_all__'].defaultWidget().setChecked(False)
+    tags_menu._actions['__select_all__'].defaultWidget().setChecked(False)
+
+    # Check some projects.
+    checked_projects = ['p0', 'p1', 'p4', 'p6', 'p7']
+    for project in checked_projects:
+        projects_menu._actions[project].defaultWidget().setChecked(True)
+
+    # Check some tags.
+    # Note that the activity associated with the tag '#10' won't be shown
+    # because its associated project is not checked.
+    checked_tags = ['#0', '#1', '#6', '#10']
+    for tag in checked_tags:
+        tags_menu._actions[tag].defaultWidget().setChecked(True)
+
+    assert overview.table_widg.get_row_count() == [2, 0, 0, 1, 0, 0, 0]
+    assert projects_menu.checked_items() == ['p0', 'p1', 'p4', 'p6', 'p7']
+    assert tags_menu.checked_items() == ['#0', '#1', '#10', '#6']
+    assert overview.table_widg.total_seconds == 3*(6*60*60)
+
+    # Check tag 'test'.
+    tags_menu._actions['test'].defaultWidget().setChecked(True)
+    assert overview.table_widg.get_row_count() == [2, 0, 1, 2, 0, 0, 0]
+    assert tags_menu.checked_items() == ['#0', '#1', '#10', '#6', 'test']
+    assert overview.table_widg.total_seconds == 5*(6*60*60)
+
 def test_daterange_navigation(qwatson_bot, span):
     """
     Test that the widget to change the datespan of the activity overview is
