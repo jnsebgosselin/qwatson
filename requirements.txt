@@ -1,5 +1,5 @@
-sip
-pyqt5==5.9
-td-watson
 arrow
 click
+pyqt5==5.9
+qtawesome
+td-watson
