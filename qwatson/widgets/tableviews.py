@@ -29,6 +29,7 @@ from qwatson.watson_ext.watsonhelpers import find_where_to_insert_new_frame
 from qwatson.widgets.layout import ColoredFrame
 from qwatson.widgets.toolbar import QToolButtonBase, ToolBarWidget
 from qwatson.widgets.dates import DateRangeNavigator
+from qwatson.widgets.filters import FilterButton
 from qwatson.models.tablemodels import WatsonSortFilterProxyModel
 from qwatson.models.delegates import (
     BaseDelegate, ToolButtonDelegate, ComboBoxDelegate, LineEditDelegate,
@@ -96,6 +97,12 @@ class ActivityOverviewWidget(QWidget):
             lambda: self.sig_load_settings.emit(
                 self.table_widg.selectedFrame()))
 
+        self.filter_btn = FilterButton(self.model.client)
+        self.filter_btn.setToolTip(
+            "<b>Setup Activity Filters</b><br><br>"
+            "Set filters to show activities only for selected "
+            "tags and projects in the overview table.")
+
         # Setup the layout.
 
         toolbar = ToolBarWidget()
@@ -106,6 +113,7 @@ class ActivityOverviewWidget(QWidget):
         toolbar.addWidget(self.btn_load_row_settings)
         toolbar.addWidget(self.add_act_above_btn)
         toolbar.addWidget(self.add_act_below_btn)
+        toolbar.addWidget(self.filter_btn)
 
         return toolbar
 
