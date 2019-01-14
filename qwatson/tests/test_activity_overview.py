@@ -193,6 +193,27 @@ def test_mouse_hovered_row(qwatson_bot):
     assert tables[4].view._hovered_row == 0
 
 
+@pytest.mark.parametrize("attr", ['projects_menu', 'tags_menu'])
+def test_select_all_filter(qwatson_bot, attr):
+    """Test checking/unchecking all project and tag filters at once."""
+    qwatson, overview, qtbot, mocker = qwatson_bot
+    menu = getattr(overview.filter_btn, attr)
+
+    # Uncheck (Select All).
+    menu._actions['__select_all__'].defaultWidget().setChecked(False)
+    for item, action in menu._actions.items():
+        assert not action.defaultWidget().isChecked()
+    assert menu.checked_items() == []
+    assert overview.table_widg.get_row_count() == [0, 0, 0, 0, 0, 0, 0]
+    assert overview.table_widg.total_seconds == 0
+
+    # Check (Select All).
+    menu._actions['__select_all__'].defaultWidget().setChecked(True)
+    for item, action in menu._actions.items():
+        assert action.defaultWidget().isChecked()
+    assert overview.table_widg.get_row_count() == [2, 2, 2, 2, 2, 2, 2]
+    assert overview.table_widg.total_seconds == 7*(2*6)*60*60
+
 def test_daterange_navigation(qwatson_bot, span):
     """
     Test that the widget to change the datespan of the activity overview is
