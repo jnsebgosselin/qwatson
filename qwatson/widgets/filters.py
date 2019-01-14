@@ -168,7 +168,7 @@ class FilterTagsMenu(FilterBaseMenu):
 
     def items(self):
         """Base class method implementation."""
-        return self.client.tags
+        return [''] + self.client.tags
 
 
 if __name__ == '__main__':

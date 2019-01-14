@@ -255,7 +255,7 @@ class WatsonSortFilterProxyModel(QSortFilterProxyModel):
             if project not in self.project_filters:
                 return False
         if self.tag_filters is not None:
-            tags = self.sourceModel().client.frames[source_row].tags
+            tags = [''] + self.sourceModel().client.frames[source_row].tags
             if not any([tag in self.tag_filters for tag in tags]):
                 return False
         if self.date_span is None:
