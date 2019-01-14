@@ -248,6 +248,30 @@ def test_filter_activities(qwatson_bot):
     assert tags_menu.checked_items() == ['#0', '#1', '#10', '#6', 'test']
     assert overview.table_widg.total_seconds == 5*(6*60*60)
 
+
+def test_filter_no_tags_or_project(qwatson_bot):
+    """Test that activities without tag or project are shown in the table."""
+    qwatson, overview, qtbot, mocker = qwatson_bot
+
+    # Remove all the tags of the first frame.
+    assert qwatson.client.frames[0].tags == ['CI', 'test', '#0']
+    index = qwatson.model.index(0, qwatson.model.COLUMNS['tags'])
+    qwatson.model.editFrame(index, tags=[])
+    assert qwatson.client.frames[0].tags == []
+
+    assert overview.table_widg.total_seconds == (14*6) * (60*60)
+    assert overview.table_widg.get_row_count() == [2, 2, 2, 2, 2, 2, 2]
+
+    # Set the project of the second frame to ''.
+    assert qwatson.client.frames[1].project == 'p1'
+    index = qwatson.model.index(1, qwatson.model.COLUMNS['project'])
+    qwatson.model.editFrame(index, project='')
+    assert qwatson.client.frames[1].project == ''
+
+    assert overview.table_widg.total_seconds == (14*6) * (60*60)
+    assert overview.table_widg.get_row_count() == [2, 2, 2, 2, 2, 2, 2]
+
+
 def test_daterange_navigation(qwatson_bot, span):
     """
     Test that the widget to change the datespan of the activity overview is
