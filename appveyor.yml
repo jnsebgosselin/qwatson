@@ -49,9 +49,9 @@ test_script:
 
 after_test:
   - cmd: set PYTHONPATH=C:\projects\qwatson;%PYTHONPATH%
-  - cd ./releases
-  - pyinstaller.exe qwatson.spec
-  - cd ..
+  - IF ["%APPVEYOR_PULL_REQUEST_NUMBER%"]==[""] (cd ./releases)
+  - IF ["%APPVEYOR_PULL_REQUEST_NUMBER%"]==[""] (pyinstaller.exe qwatson.spec)
+  - IF ["%APPVEYOR_PULL_REQUEST_NUMBER%"]==[""] (cd ..)
 
 on_success:
   - codecov
