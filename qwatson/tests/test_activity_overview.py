@@ -76,7 +76,7 @@ def appdir(now, span):
 
 
 @pytest.fixture
-def qwatson_bot(qtbot, mocker, appdir, now):
+def qwatson(qtbot, mocker, appdir, now):
     mocker.patch('arrow.now', return_value=now)
     qwatson = QWatson(config_dir=appdir)
 
@@ -88,15 +88,15 @@ def qwatson_bot(qtbot, mocker, appdir, now):
     qtbot.mouseClick(qwatson.btn_report, Qt.LeftButton)
     qtbot.waitForWindowShown(qwatson.overview_widg)
 
-    return qwatson, qwatson.overview_widg, qtbot, mocker
+    return qwatson
 
 
 # ---- Tests
 
 
-def test_overview_init(qwatson_bot, span):
+def test_overview_init(qwatson, span):
     """Test that the overview is initialized correctly."""
-    qwatson, overview, qtbot, mocker = qwatson_bot
+    overview = qwatson.overview_widg
 
     assert overview.isVisible()
     assert overview.table_widg.total_seconds == 7*(2*6)*60*60
@@ -115,11 +115,11 @@ def test_overview_init(qwatson_bot, span):
         assert action.defaultWidget().isChecked()
 
 
-def test_overview_row_selection(qwatson_bot):
+def test_overview_row_selection(qwatson, qtbot):
     """
     Test that table and row selection is working as expected.
     """
-    qwatson, overview, qtbot, mocker = qwatson_bot
+    overview = qwatson.overview_widg
     tables = overview.table_widg.tables
 
     # Mouse click on the second row of the second table.
@@ -162,11 +162,11 @@ def test_overview_row_selection(qwatson_bot):
             assert table.get_selected_frame_index() == 2 + 2 + 1 - 1
 
 
-def test_mouse_hovered_row(qwatson_bot):
+def test_mouse_hovered_row(qwatson, qtbot):
     """
     Test that the highlighting of mouse hovered row is working as expected.
     """
-    qwatson, overview, qtbot, mocker = qwatson_bot
+    overview = qwatson.overview_widg
     tables = overview.table_widg.tables
 
     # Mouse hover the second row of the second table.
@@ -194,9 +194,9 @@ def test_mouse_hovered_row(qwatson_bot):
 
 
 @pytest.mark.parametrize("attr", ['projects_menu', 'tags_menu'])
-def test_select_all_filter(qwatson_bot, attr):
+def test_select_all_filter(qwatson, attr):
     """Test checking/unchecking all project and tag filters at once."""
-    qwatson, overview, qtbot, mocker = qwatson_bot
+    overview = qwatson.overview_widg
     menu = getattr(overview.filter_btn, attr)
 
     # Uncheck (Select All).
@@ -215,9 +215,9 @@ def test_select_all_filter(qwatson_bot, attr):
     assert overview.table_widg.total_seconds == 7*(2*6)*60*60
 
 
-def test_filter_activities(qwatson_bot):
+def test_filter_activities(qwatson):
     """Test filtering activities by projects and tags."""
-    qwatson, overview, qtbot, mocker = qwatson_bot
+    overview = qwatson.overview_widg
     projects_menu = overview.filter_btn.projects_menu
     tags_menu = overview.filter_btn.tags_menu
 
@@ -249,9 +249,9 @@ def test_filter_activities(qwatson_bot):
     assert overview.table_widg.total_seconds == 5*(6*60*60)
 
 
-def test_filter_no_tags_or_project(qwatson_bot):
+def test_filter_no_tags_or_project(qwatson):
     """Test that activities without tag or project are shown in the table."""
-    qwatson, overview, qtbot, mocker = qwatson_bot
+    overview = qwatson.overview_widg
     projects_menu = overview.filter_btn.projects_menu
     tags_menu = overview.filter_btn.tags_menu
 
@@ -281,12 +281,12 @@ def test_filter_no_tags_or_project(qwatson_bot):
     assert overview.table_widg.get_row_count() == [0, 2, 2, 2, 2, 2, 2]
 
 
-def test_daterange_navigation(qwatson_bot, span):
+def test_daterange_navigation(qwatson, span, qtbot):
     """
     Test that the widget to change the datespan of the activity overview is
     working as expected.
     """
-    qwatson, overview, qtbot, mocker = qwatson_bot
+    overview = qwatson.overview_widg
     assert not overview.date_range_nav.btn_next.isEnabled()
 
     # Move back one week.
@@ -318,12 +318,12 @@ def test_daterange_navigation(qwatson_bot, span):
     assert not overview.date_range_nav.btn_next.isEnabled()
 
 
-def test_selected_row_is_cleared_when_navigating(qwatson_bot):
+def test_selected_row_is_cleared_when_navigating(qwatson, qtbot):
     """
     Test that the selected row is cleared when changing the date span of the
     overview table with the date range navigator widget.
     """
-    qwatson, overview, qtbot, mocker = qwatson_bot
+    overview = qwatson.overview_widg
     table = overview.table_widg.tables[1]
 
     # Select the second row of the second table.
@@ -345,12 +345,12 @@ def test_selected_row_is_cleared_when_navigating(qwatson_bot):
         assert table.get_selected_row() is None
 
 
-def test_import_frame_settings_to_mainwindow(qwatson_bot):
+def test_import_frame_settings_to_mainwindow(qwatson, qtbot):
     """
     Test that copying over the selected frame data to the mainwindow is
     working as expected.
     """
-    qwatson, overview, qtbot, mocker = qwatson_bot
+    overview = qwatson.overview_widg
 
     assert qwatson.currentProject() == 'p13'
     assert qwatson.tag_manager.tags == ['#13', 'CI', 'test']
@@ -392,9 +392,9 @@ def test_import_frame_settings_to_mainwindow(qwatson_bot):
 # ---- Test Edits
 
 
-def test_edit_start_datetime(qwatson_bot):
+def test_edit_start_datetime(qwatson, qtbot):
     """Test editing the start date in the activity overview table."""
-    qwatson, overview, qtbot, mocker = qwatson_bot
+    overview = qwatson.overview_widg
 
     # Edit the start date of the first frame in the first table.
 
@@ -433,9 +433,9 @@ def test_edit_start_datetime(qwatson_bot):
             '2018-06-11 07:16')
 
 
-def test_edit_stop_datetime(qwatson_bot):
+def test_edit_stop_datetime(qwatson, qtbot):
     """Test editing the stop date in the activity overview table."""
-    qwatson, overview, qtbot, mocker = qwatson_bot
+    overview = qwatson.overview_widg
 
     # Edit the stop date of the first frame of the third table
 
@@ -474,11 +474,11 @@ def test_edit_stop_datetime(qwatson_bot):
             '2018-06-13 18:00')
 
 
-def test_edit_comment(qwatson_bot):
+def test_edit_comment(qwatson, qtbot):
     """
     Test editing the comment in the activity overview table.
     """
-    qwatson, overview, qtbot, mocker = qwatson_bot
+    overview = qwatson.overview_widg
 
     # Edit the comment of the second entry in the fourth table :
 
@@ -507,9 +507,9 @@ def test_edit_comment(qwatson_bot):
     assert index.data() == 'activity #7 (edited)'
 
 
-def test_edit_tags(qwatson_bot):
+def test_edit_tags(qwatson, qtbot):
     """Test editing the tags in the activity overview table."""
-    qwatson, overview, qtbot, mocker = qwatson_bot
+    overview = qwatson.overview_widg
 
     # We will test this on the first entry of the fifth table :
 
@@ -541,12 +541,12 @@ def test_edit_tags(qwatson_bot):
     assert index.data() == '[tag1] [tag2] [tag3]'
 
 
-def test_delete_frame_no(qwatson_bot):
+def test_delete_frame_no(qwatson, qtbot, mocker):
     """
     Test that deleting a frame from the activity overview, but answering no
     works correctly.
     """
-    qwatson, overview, qtbot, mocker = qwatson_bot
+    overview = qwatson.overview_widg
 
     # We will test this on the last entry of the last table :
 
@@ -573,12 +573,12 @@ def test_delete_frame_no(qwatson_bot):
     assert overview.model.client.frames[-1].message == 'activity #13'
 
 
-def test_delete_frame_yes(qwatson_bot):
+def test_delete_frame_yes(qwatson, qtbot, mocker):
     """
     Test that deleting a frame from the activity overview, but answering no
     works correctly.
     """
-    qwatson, overview, qtbot, mocker = qwatson_bot
+    overview = qwatson.overview_widg
 
     # We will test this on the last entry of the last table :
 
