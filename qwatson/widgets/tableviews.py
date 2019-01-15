@@ -104,9 +104,9 @@ class ActivityOverviewWidget(QWidget):
             "<b>Setup Activity Filters</b><br><br>"
             "Set filters to show activities only for selected "
             "tags and projects in the overview table.")
-        self.filter_btn.checked_projects_changed.connect(
+        self.filter_btn.sig_projects_checkstate_changed.connect(
             self.table_widg.set_project_filters)
-        self.filter_btn.checked_tags_changed.connect(
+        self.filter_btn.sig_tags_checkstate_changed.connect(
             self.table_widg.set_tag_filters)
 
         # Setup the layout.
@@ -647,7 +647,7 @@ if __name__ == '__main__':
     import os.path as osp
     from qwatson import __rootdir__
 
-    dirname = osp.join(__rootdir__, 'widgets', 'tests', 'appdir')
+    dirname = osp.join(__rootdir__, 'tests', 'appdir', 'activity_overview')
     client = Watson(config_dir=dirname)
     model = WatsonTableModel(client)
 

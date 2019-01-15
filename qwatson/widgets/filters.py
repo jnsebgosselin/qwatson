@@ -27,8 +27,8 @@ class FilterButton(QToolButtonBase):
     that can be checked in order to filter which activities are shown in the
     overview table.
     """
-    checked_projects_changed = QSignal(list)
-    checked_tags_changed = QSignal(list)
+    sig_projects_checkstate_changed = QSignal(dict)
+    sig_tags_checkstate_changed = QSignal(dict)
 
     def __init__(self, client=None):
         super().__init__('filters', 'small', None)
@@ -42,13 +42,13 @@ class FilterButton(QToolButtonBase):
 
         self.projects_menu = FilterProjectsMenu(self.client, self)
         menu.addMenu(self.projects_menu)
-        self.projects_menu.checked_items_changed.connect(
-            self.checked_projects_changed.emit)
+        self.projects_menu.sig_items_checkstate_changed.connect(
+            self.sig_projects_checkstate_changed.emit)
 
         self.tags_menu = FilterTagsMenu(self.client, self)
         menu.addMenu(self.tags_menu)
-        self.tags_menu.checked_items_changed.connect(
-            self.checked_tags_changed.emit)
+        self.tags_menu.sig_items_checkstate_changed.connect(
+            self.sig_tags_checkstate_changed.emit)
 
         self.setMenu(menu)
 
@@ -59,7 +59,7 @@ class FilterBaseMenu(QMenu):
     (Select All) item that allow checking or un-checking all the menu items
     at once.
     """
-    checked_items_changed = QSignal(list)
+    sig_items_checkstate_changed = QSignal(dict)
 
     def __init__(self, name, client=None, parent=None):
         super().__init__(name, parent)
@@ -82,6 +82,14 @@ class FilterBaseMenu(QMenu):
         return [item for item in self.items() if
                 self._actions[item].defaultWidget().isChecked()]
 
+    def items_checkstate(self):
+        """
+        Return a dict with the checkstate values of all the items that are
+        listed in the menu.
+        """
+        return {item: self._actions[item].defaultWidget().isChecked() for
+                item in self.items()}
+
     def setup_menu_items(self):
         """
         Setup the items listed in the menu, including a (select all) item
@@ -91,7 +99,7 @@ class FilterBaseMenu(QMenu):
         if '__select_all__' not in self._actions:
             checkbox = QCheckBox('(Select All)', self.parent())
             checkbox.setChecked(True)
-            checkbox.stateChanged.connect(self.handle_select_all_items)
+            checkbox.stateChanged.connect(self.handle_select_was_clicked)
             action = QWidgetAction(self.parent())
             action.setDefaultWidget(checkbox)
             self._actions['__select_all__'] = action
@@ -104,14 +112,14 @@ class FilterBaseMenu(QMenu):
                 else:
                     checkbox = QCheckBox(item, self.parent())
                     checkbox.setChecked(True)
-                    checkbox.stateChanged.connect(self.setup_select_all_items)
+                    checkbox.stateChanged.connect(self.handle_item_was_clicked)
                     action = QWidgetAction(self.parent())
                     action.setDefaultWidget(checkbox)
                     self.addAction(action)
                     self._actions[item] = action
-            self.setup_select_all_items()
+            self.setup_select_all_item()
 
-    def setup_select_all_items(self):
+    def setup_select_all_item(self):
         """
         Setup the check state of the (Select All) item depending on the
         check state of the menu items.
@@ -131,9 +139,15 @@ class FilterBaseMenu(QMenu):
             checkbox.setTristate(False)
             checkbox.setChecked(False)
         checkbox.blockSignals(False)
-        self.checked_items_changed.emit(self.checked_items())
 
-    def handle_select_all_items(self):
+    def handle_item_was_clicked(self):
+        """
+        Handle when one of the item checkboxes listed in the menu is clicked.
+        """
+        self.setup_select_all_item()
+        self.sig_items_checkstate_changed.emit(self.items_checkstate())
+
+    def handle_select_was_clicked(self):
         """
         Check or un-check all menu items depending on the check state of the
         (Select All) item.
@@ -145,7 +159,7 @@ class FilterBaseMenu(QMenu):
             checkbox.blockSignals(True)
             checkbox.setChecked(is_all_project_checked)
             checkbox.blockSignals(False)
-        self.checked_items_changed.emit(self.checked_items())
+        self.sig_items_checkstate_changed.emit(self.items_checkstate())
 
 
 class FilterProjectsMenu(FilterBaseMenu):
