@@ -252,6 +252,8 @@ def test_filter_activities(qwatson_bot):
 def test_filter_no_tags_or_project(qwatson_bot):
     """Test that activities without tag or project are shown in the table."""
     qwatson, overview, qtbot, mocker = qwatson_bot
+    projects_menu = overview.filter_btn.projects_menu
+    tags_menu = overview.filter_btn.tags_menu
 
     # Remove all the tags of the first frame.
     assert qwatson.client.frames[0].tags == ['CI', 'test', '#0']
@@ -270,6 +272,13 @@ def test_filter_no_tags_or_project(qwatson_bot):
 
     assert overview.table_widg.total_seconds == (14*6) * (60*60)
     assert overview.table_widg.get_row_count() == [2, 2, 2, 2, 2, 2, 2]
+
+    # Uncheck the '' item in the projects and tags filter menu.
+    projects_menu._actions[''].defaultWidget().setChecked(False)
+    tags_menu._actions[''].defaultWidget().setChecked(False)
+
+    assert overview.table_widg.total_seconds == (12*6) * (60*60)
+    assert overview.table_widg.get_row_count() == [0, 2, 2, 2, 2, 2, 2]
 
 
 def test_daterange_navigation(qwatson_bot, span):
