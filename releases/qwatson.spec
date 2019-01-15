@@ -49,8 +49,7 @@ os.rename('dist', output_dirname)
 
 # Zip the binary folder
 
-cmd = ['C:/Program Files/7-Zip/7z', 'a', output_dirname+'.zip',
-       output_dirname, '-mx9']
+cmd = ['7z', 'a', output_dirname+'.zip', output_dirname, '-mx9']
 sp = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
 
 # Prepare the installer
