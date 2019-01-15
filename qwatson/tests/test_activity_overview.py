@@ -42,12 +42,11 @@ def span(now):
     return now.floor('week').span('week')
 
 
-@pytest.fixture(scope="module")
-def appdir(now, span):
-    # We do not use the tmpdir_factory fixture because we use the files
-    # produces by the tests to test QWatson locally
+@pytest.fixture
+def appdir(now, span, tmpdir):
+    """Temporary app directory fixture that also creates a test Frame file."""
 
-    appdir = osp.join(osp.dirname(__file__), 'appdir', 'activity_overview')
+    appdir = osp.join(str(tmpdir), 'appdir')
 
     delete_folder_recursively(appdir)
     if not osp.exists(appdir):
@@ -77,6 +76,9 @@ def appdir(now, span):
 
 @pytest.fixture
 def qwatson(qtbot, mocker, appdir, now):
+    """
+    QWatson application fixture.
+    """
     mocker.patch('arrow.now', return_value=now)
     qwatson = QWatson(config_dir=appdir)
 
