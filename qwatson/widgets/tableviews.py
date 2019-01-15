@@ -15,7 +15,7 @@ from math import ceil
 
 import arrow
 from PyQt5.QtCore import pyqtSignal as QSignal
-from PyQt5.QtCore import Qt, QPoint, QModelIndex
+from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QCursor
 from PyQt5.QtWidgets import (
     QApplication, QGridLayout, QHeaderView, QLabel, QMessageBox, QScrollArea,
@@ -29,6 +29,7 @@ from qwatson.watson_ext.watsonhelpers import find_where_to_insert_new_frame
 from qwatson.widgets.layout import ColoredFrame
 from qwatson.widgets.toolbar import QToolButtonBase, ToolBarWidget
 from qwatson.widgets.dates import DateRangeNavigator
+from qwatson.widgets.filters import FilterButton
 from qwatson.models.tablemodels import WatsonSortFilterProxyModel
 from qwatson.models.delegates import (
     BaseDelegate, ToolButtonDelegate, ComboBoxDelegate, LineEditDelegate,
@@ -50,6 +51,8 @@ class ActivityOverviewWidget(QWidget):
         self.model.sig_btn_delrow_clicked.connect(self.del_activity)
 
         self.setup(model)
+        self.filter_btn.tags_menu.setup_menu_items()
+        self.filter_btn.projects_menu.setup_menu_items()
         self.date_span_changed()
 
     def setup(self, model):
@@ -96,6 +99,16 @@ class ActivityOverviewWidget(QWidget):
             lambda: self.sig_load_settings.emit(
                 self.table_widg.selectedFrame()))
 
+        self.filter_btn = FilterButton(self.model.client)
+        self.filter_btn.setToolTip(
+            "<b>Setup Activity Filters</b><br><br>"
+            "Set filters to show activities only for selected "
+            "tags and projects in the overview table.")
+        self.filter_btn.sig_projects_checkstate_changed.connect(
+            self.table_widg.set_project_filters)
+        self.filter_btn.sig_tags_checkstate_changed.connect(
+            self.table_widg.set_tag_filters)
+
         # Setup the layout.
 
         toolbar = ToolBarWidget()
@@ -106,6 +119,7 @@ class ActivityOverviewWidget(QWidget):
         toolbar.addWidget(self.btn_load_row_settings)
         toolbar.addWidget(self.add_act_above_btn)
         toolbar.addWidget(self.add_act_below_btn)
+        toolbar.addWidget(self.filter_btn)
 
         return toolbar
 
@@ -232,6 +246,20 @@ class WatsonMultiTableWidget(QFrame):
 
         return self.total_time_labl
 
+    def set_project_filters(self, project_filters):
+        """Set the project filters for all the table widgets."""
+        self.scrollarea.widget().hide()
+        for i, table in enumerate(self.tables):
+            table.set_project_filters(project_filters)
+        self.scrollarea.widget().show()
+
+    def set_tag_filters(self, tag_filters):
+        """Set the tag filters for all the table widgets."""
+        self.scrollarea.widget().hide()
+        for i, table in enumerate(self.tables):
+            table.set_tag_filters(tag_filters)
+        self.scrollarea.widget().show()
+
     def set_date_span(self, date_span):
         """
         Set the range over which activities are displayed in the widget
@@ -254,7 +282,7 @@ class WatsonMultiTableWidget(QFrame):
                 self.scene.removeWidget(self.tables[-1])
                 self.tables[-1].deleteLater()
 
-        # We hide the scrollbar widget while the tables are ubdated
+        # We hide the scrollbar widget while the tables are updated
         # to avoid flickering.
         self.scrollarea.widget().hide()
         base_span = date_span[0].span('day')
@@ -271,6 +299,10 @@ class WatsonMultiTableWidget(QFrame):
         self.total_seconds = self.total_seconds + delta_seconds
         self.total_time_labl.setText(
             "Total : %s" % total_seconds_to_hour_min(self.total_seconds))
+
+    def get_row_count(self):
+        """Return a list with the number of rows shown in each table."""
+        return [table.rowCount() for table in self.tables]
 
     # ---- Table focus handlers
 
@@ -407,6 +439,14 @@ class WatsonTableWidget(QWidget):
         self.view.set_date_span(date_span)
         self.title.setText(arrowspan_to_str(date_span))
 
+    def set_project_filters(self, project_filters):
+        """Set the project filters of the table."""
+        self.view.set_project_filters(project_filters)
+
+    def set_tag_filters(self, tag_filters):
+        """Set the tag filters of the table."""
+        self.view.set_tag_filters(tag_filters)
+
     def setup_timecount(self, total_seconds):
         """
         Setup the time count for the activities of the table in the titlebar.
@@ -468,6 +508,14 @@ class BasicWatsonTableView(QTableView):
     def set_date_span(self, date_span):
         """Set the date span in the proxy model."""
         self.proxy_model.set_date_span(date_span)
+
+    def set_project_filters(self, project_filters):
+        """Set the project filters of the proxy model."""
+        self.proxy_model.set_project_filters(project_filters)
+
+    def set_tag_filters(self, tag_filters):
+        """Set the tag filters of the proxy model."""
+        self.proxy_model.set_tag_filters(tag_filters)
 
     def focusInEvent(self, event):
         """Qt method override."""
@@ -531,6 +579,21 @@ class FormatedWatsonTableView(BasicWatsonTableView):
         super(FormatedWatsonTableView, self).set_date_span(date_span)
         self.update_table_height()
 
+    def set_project_filters(self, project_filters):
+        """
+        Method override to update table height when setting the
+        project filters.
+        """
+        super().set_project_filters(project_filters)
+        self.update_table_height()
+
+    def set_tag_filters(self, tag_filters):
+        """
+        Method override to update table height when setting the tag filters.
+        """
+        super().set_tag_filters(tag_filters)
+        self.update_table_height()
+
     # ---- Row selection
 
     def set_selected(self, value):
@@ -584,7 +647,7 @@ if __name__ == '__main__':
     import os.path as osp
     from qwatson import __rootdir__
 
-    dirname = osp.join(__rootdir__, 'widgets', 'tests', 'appdir')
+    dirname = osp.join(__rootdir__, 'tests', 'appdir', 'activity_overview')
     client = Watson(config_dir=dirname)
     model = WatsonTableModel(client)
 

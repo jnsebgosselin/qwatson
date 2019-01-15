@@ -105,9 +105,14 @@ def test_overview_init(qwatson_bot, span):
     assert overview.table_widg.date_span == span
 
     # Assert that the overview table is showing the right number of activities.
+    assert overview.table_widg.get_row_count() == [2, 2, 2, 2, 2, 2, 2]
 
-    row_counts = [table.rowCount() for table in overview.table_widg.tables]
-    assert row_counts == [2, 2, 2, 2, 2, 2, 2]
+    # Test that the tag and project filters are all checked.
+    for item, action in overview.filter_btn.projects_menu._actions.items():
+        assert action.defaultWidget().isChecked()
+
+    for item, action in overview.filter_btn.tags_menu._actions.items():
+        assert action.defaultWidget().isChecked()
 
 
 def test_overview_row_selection(qwatson_bot):
@@ -186,6 +191,94 @@ def test_mouse_hovered_row(qwatson_bot):
 
     assert tables[1].view._hovered_row is None
     assert tables[4].view._hovered_row == 0
+
+
+@pytest.mark.parametrize("attr", ['projects_menu', 'tags_menu'])
+def test_select_all_filter(qwatson_bot, attr):
+    """Test checking/unchecking all project and tag filters at once."""
+    qwatson, overview, qtbot, mocker = qwatson_bot
+    menu = getattr(overview.filter_btn, attr)
+
+    # Uncheck (Select All).
+    menu._actions['__select_all__'].defaultWidget().setChecked(False)
+    for item, action in menu._actions.items():
+        assert not action.defaultWidget().isChecked()
+    assert menu.checked_items() == []
+    assert overview.table_widg.get_row_count() == [0, 0, 0, 0, 0, 0, 0]
+    assert overview.table_widg.total_seconds == 0
+
+    # Check (Select All).
+    menu._actions['__select_all__'].defaultWidget().setChecked(True)
+    for item, action in menu._actions.items():
+        assert action.defaultWidget().isChecked()
+    assert overview.table_widg.get_row_count() == [2, 2, 2, 2, 2, 2, 2]
+    assert overview.table_widg.total_seconds == 7*(2*6)*60*60
+
+
+def test_filter_activities(qwatson_bot):
+    """Test filtering activities by projects and tags."""
+    qwatson, overview, qtbot, mocker = qwatson_bot
+    projects_menu = overview.filter_btn.projects_menu
+    tags_menu = overview.filter_btn.tags_menu
+
+    # Uncheck the (Select All) in the projects and tags menu.
+    projects_menu._actions['__select_all__'].defaultWidget().setChecked(False)
+    tags_menu._actions['__select_all__'].defaultWidget().setChecked(False)
+
+    # Check some projects.
+    checked_projects = ['p0', 'p1', 'p4', 'p6', 'p7']
+    for project in checked_projects:
+        projects_menu._actions[project].defaultWidget().setChecked(True)
+
+    # Check some tags.
+    # Note that the activity associated with the tag '#10' won't be shown
+    # because its associated project is not checked.
+    checked_tags = ['#0', '#1', '#6', '#10']
+    for tag in checked_tags:
+        tags_menu._actions[tag].defaultWidget().setChecked(True)
+
+    assert overview.table_widg.get_row_count() == [2, 0, 0, 1, 0, 0, 0]
+    assert projects_menu.checked_items() == ['p0', 'p1', 'p4', 'p6', 'p7']
+    assert tags_menu.checked_items() == ['#0', '#1', '#10', '#6']
+    assert overview.table_widg.total_seconds == 3*(6*60*60)
+
+    # Check tag 'test'.
+    tags_menu._actions['test'].defaultWidget().setChecked(True)
+    assert overview.table_widg.get_row_count() == [2, 0, 1, 2, 0, 0, 0]
+    assert tags_menu.checked_items() == ['#0', '#1', '#10', '#6', 'test']
+    assert overview.table_widg.total_seconds == 5*(6*60*60)
+
+
+def test_filter_no_tags_or_project(qwatson_bot):
+    """Test that activities without tag or project are shown in the table."""
+    qwatson, overview, qtbot, mocker = qwatson_bot
+    projects_menu = overview.filter_btn.projects_menu
+    tags_menu = overview.filter_btn.tags_menu
+
+    # Remove all the tags of the first frame.
+    assert qwatson.client.frames[0].tags == ['CI', 'test', '#0']
+    index = qwatson.model.index(0, qwatson.model.COLUMNS['tags'])
+    qwatson.model.editFrame(index, tags=[])
+    assert qwatson.client.frames[0].tags == []
+
+    assert overview.table_widg.total_seconds == (14*6) * (60*60)
+    assert overview.table_widg.get_row_count() == [2, 2, 2, 2, 2, 2, 2]
+
+    # Set the project of the second frame to ''.
+    assert qwatson.client.frames[1].project == 'p1'
+    index = qwatson.model.index(1, qwatson.model.COLUMNS['project'])
+    qwatson.model.editFrame(index, project='')
+    assert qwatson.client.frames[1].project == ''
+
+    assert overview.table_widg.total_seconds == (14*6) * (60*60)
+    assert overview.table_widg.get_row_count() == [2, 2, 2, 2, 2, 2, 2]
+
+    # Uncheck the '' item in the projects and tags filter menu.
+    projects_menu._actions[''].defaultWidget().setChecked(False)
+    tags_menu._actions[''].defaultWidget().setChecked(False)
+
+    assert overview.table_widg.total_seconds == (12*6) * (60*60)
+    assert overview.table_widg.get_row_count() == [0, 2, 2, 2, 2, 2, 2]
 
 
 def test_daterange_navigation(qwatson_bot, span):
