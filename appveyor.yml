@@ -37,6 +37,12 @@ build: false
 test_script:
   - python runtests.py
 
+after_test:
+  - cmd: set PYTHONPATH=C:\projects\qwatson;%PYTHONPATH%
+  - cd ./releases
+  - pyinstaller.exe gwhat.spec
+  - cd ..
+
 on_success:
   - codecov
 
