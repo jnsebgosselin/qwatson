@@ -1,5 +1,5 @@
 arrow
 click
-pyqt5==5.9
+pyqt5==5.9.*
 qtawesome
 td-watson
