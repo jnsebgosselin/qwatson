@@ -25,11 +25,11 @@ import os
 import sys
 
 
-version_info = (0, 3, 7, 'dev0')
+version_info = (0, 3, 7)
 __version__ = '.'.join(map(str, version_info))
 __appname__ = 'QWatson'
 __namever__ = __appname__ + " " + __version__
-__date__ = '14/01/2019'
+__date__ = '16/01/2019'
 __project_url__ = "https://github.com/jnsebgosselin/qwatson"
 __releases_url__ = __project_url__ + "/releases"
 __releases_api__ = ("https://api.github.com/repos/jnsebgosselin/qwatson/"
